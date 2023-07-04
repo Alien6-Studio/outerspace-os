@@ -1,3 +1,0 @@
-[submodule "docker2linux"]
-	path = docker2linux
-	url = https://github.com/iximiuz/docker-to-linux.git

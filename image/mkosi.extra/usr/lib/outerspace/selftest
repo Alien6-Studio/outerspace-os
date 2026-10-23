@@ -4,6 +4,11 @@
 set -euo pipefail
 trap 'echo "OUTERSPACE_SELFTEST_FAIL: command failed at line $LINENO" >&2' ERR
 fail() { echo "OUTERSPACE_SELFTEST_FAIL: $*"; exit 1; }
+. /usr/lib/os-release
+[[ "$OUTERSPACE_PROFILE" == agent || "$OUTERSPACE_PROFILE" == inference ]] || fail 'invalid image profile'
+[[ "$OUTERSPACE_SOURCE_COMMIT" =~ ^[a-f0-9]{40}$ ]] || fail 'invalid source identity'
+printf 'OUTERSPACE_IMAGE_IDENTITY profile=%s hardware=%s architecture=%s commit=%s\n' \
+    "$OUTERSPACE_PROFILE" "$OUTERSPACE_HARDWARE_PROFILE" "$OUTERSPACE_ARCHITECTURE" "$OUTERSPACE_SOURCE_COMMIT"
 [[ $(stat -fc %T /sys/fs/cgroup) == cgroup2fs ]] || fail 'cgroup v2 missing'
 [[ $(stat -fc %T /sys/fs/bpf) == bpf_fs ]] || fail 'bpffs missing'
 [[ -s /sys/kernel/btf/vmlinux ]] || fail 'kernel BTF missing'

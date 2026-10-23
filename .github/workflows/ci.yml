@@ -35,6 +35,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        profile: [agent, inference]
+        arch: [amd64, arm64]
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -47,15 +49,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - run: make builder build smoke package
+      - run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu builder build smoke package
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: outerspace-${{ matrix.arch }}-development
+          name: outerspace-${{ matrix.profile }}-cpu-${{ matrix.arch }}-development
           path: |
-            build/outerspace-*/*.json
-            build/*.manifest
-            build/*.log
+            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/outerspace-*/*.json
+            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.manifest
+            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
           retention-days: 7
   ci:
     name: ci

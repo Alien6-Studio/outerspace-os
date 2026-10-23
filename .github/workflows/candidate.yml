@@ -13,6 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        profile: [agent, inference]
+        arch: [amd64, arm64]
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -30,25 +32,24 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: |
           python3 - <<'PY'
-          import importlib.util, os
+          import os, sys
           from pathlib import Path
-          spec = importlib.util.spec_from_file_location('release', 'scripts/release.py')
-          release = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(release)
+          sys.path.insert(0, str(Path('scripts').resolve()))
+          import release
           version = Path('VERSION').read_text().strip()
           assert release.parse_version(version) != 'dev', 'Development snapshots are not candidates'
           assert os.environ['TAG'] == 'v' + version, 'Tag must match VERSION'
           PY
-      - run: make check builder build smoke package
+      - run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu check builder build smoke package
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: candidate-${{ matrix.arch }}
-          path: build/outerspace-*/
+          name: candidate-${{ matrix.profile }}-cpu-${{ matrix.arch }}
+          path: build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/outerspace-*/
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: failed-boot-${{ matrix.arch }}
-          path: build/*.log
+          name: failed-boot-${{ matrix.profile }}-cpu-${{ matrix.arch }}
+          path: build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
           retention-days: 7

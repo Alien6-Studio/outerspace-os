@@ -1,5 +1,26 @@
 {
-  "schema": 1,
+  "schema": 2,
+  "artifacts": [
+    {"profile": "agent", "hardware_profile": "cpu", "architecture": "amd64"},
+    {"profile": "agent", "hardware_profile": "cpu", "architecture": "arm64"},
+    {"profile": "inference", "hardware_profile": "cpu", "architecture": "amd64"},
+    {"profile": "inference", "hardware_profile": "cpu", "architecture": "arm64"}
+  ],
+  "profiles": {
+    "agent": {"required_capabilities": ["agent_isolation", "agent_resource_limits"]},
+    "inference": {"required_capabilities": ["inference_cpu_serving"]}
+  },
+  "capabilities": {
+    "agent_isolation": {"profiles": ["agent"], "hardware": ["cpu"], "gates": ["agent_isolation"]},
+    "agent_resource_limits": {"profiles": ["agent"], "hardware": ["cpu"], "gates": ["agent_resource_limits"]},
+    "agent_security": {"profiles": ["agent"], "hardware": ["cpu"], "gates": ["agent_security", "agent_fleet"]},
+    "inference_cpu_serving": {"profiles": ["inference"], "hardware": ["cpu"], "gates": ["inference_cpu_serving"]},
+    "inference_gpu_serving": {"profiles": ["inference"], "hardware": ["gpu-nvidia"], "gates": ["inference_gpu_serving"]},
+    "shared_inference": {"profiles": ["inference"], "hardware": ["cpu", "gpu-nvidia"], "gates": ["shared_inference_tenancy", "serving_qos"]},
+    "agent_vm": {"profiles": ["agent"], "hardware": ["cpu"], "gates": ["agent_vm_isolation"]},
+    "openshell": {"profiles": ["agent"], "hardware": ["cpu"], "gates": ["openshell_compatibility"]},
+    "adaptive_budgets": {"profiles": ["agent"], "hardware": ["cpu"], "gates": ["adaptive_agent_budgets", "agent_fleet"]}
+  },
   "stages": {
     "alpha": [
       "boot",

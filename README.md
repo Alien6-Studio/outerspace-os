@@ -46,14 +46,27 @@ Docker VM's native architecture: arm64 on Apple Silicon, amd64 on x86 machines.
 git clone https://github.com/Alien6-Studio/outerspace-os.git
 cd outerspace-os
 make check
-make builder build smoke
+make PROFILE=agent builder build smoke
+# Build and qualify the other profile independently:
+make PROFILE=inference build smoke
 ```
 
-The disposable builder requires privileged mount namespaces. The smoke test boots
+Commit source changes before building; each build consumes an immutable Git archive.
+Select a profile explicitly. The disposable builder requires privileged mount namespaces. The smoke test boots
 the complete disk through UEFI twice, checking root integrity, CRI, writable state
 and stable identity on a disposable overlay. It does not qualify Secure Boot,
 Kubernetes enrollment or physical hardware. Outputs and
 logs are written to `build/`; use disposable VMs while the image is in development.
+
+| Development profile | Hardware | Architectures | Qualification |
+| --- | --- | --- | --- |
+| `agent` | CPU | amd64, arm64 | Independent build/UEFI evidence; agent isolation and density pending |
+| `inference` (`inference-cpu`) | CPU | amd64, arm64 | Independent build/UEFI evidence; real model serving pending |
+
+Both currently share the same kernel, packages and component lock. The immutable
+profile/source identity differs; GPU drivers, OpenShell and agent frameworks are
+not added to either base. GPU and other optional capabilities require their own
+hardware-qualified artifacts and release evidence before support is claimed.
 
 Follow the [build guide](design/building.md) for firmware profiles, artifacts and
 rebuild limits, then the [worker configuration guide](cluster/README.md#configure-a-worker).

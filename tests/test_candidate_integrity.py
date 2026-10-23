@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from image_fixtures import identity
 
 SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
@@ -20,13 +21,15 @@ class CandidateIntegrityTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         self.bundle = Path(self.directory.name)
         (self.bundle / 'image.raw.zst').write_bytes(b'qualified image')
-        (self.bundle / 'build-metadata.json').write_text(json.dumps({'version': '0.1.0-alpha.1', 'commit': 'a' * 40, 'architecture': 'arm64'}))
+        self.artifact = {'identity': identity('agent', 'arm64')}
+        (self.bundle / 'build-metadata.json').write_text(json.dumps({'schema': 2, 'identity': self.artifact['identity']}))
         self.inventory = self.bundle / 'SHA256SUMS'
         self.inventory.write_text(''.join(f'{prepare.sha256(p)}  {p.name}\n' for p in sorted(self.bundle.iterdir())))
         self.digest = prepare.sha256(self.inventory)
+        self.artifact['sha256sums'] = self.digest
 
     def verify(self, digest=None):
-        prepare.verify_bundle(self.bundle, '0.1.0-alpha.1', 'a' * 40, 'arm64', digest or self.digest)
+        prepare.verify_bundle(self.bundle, '0.1.0-alpha.1', 'a' * 40, {**self.artifact, 'sha256sums': digest or self.digest})
 
     def test_accepts_qualified_exact_bytes(self):
         self.verify()
@@ -46,8 +49,11 @@ class CandidateIntegrityTests(unittest.TestCase):
             self.verify('0' * 64)
 
     def test_rejects_other_architecture(self):
-        with self.assertRaisesRegex(ValueError, 'does not match'):
-            prepare.verify_bundle(self.bundle, '0.1.0-alpha.1', 'a' * 40, 'amd64', self.digest)
+        for field, value in [('architecture', 'amd64'), ('profile', 'inference'), ('hardware_profile', 'gpu-nvidia'),
+                             ('raw_image_sha256', '0' * 64), ('commit', 'c' * 40)]:
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'does not match'):
+                artifact = {**self.artifact, 'identity': {**self.artifact['identity'], field: value}}
+                prepare.verify_bundle(self.bundle, '0.1.0-alpha.1', 'a' * 40, artifact)
 
     def test_rejects_traversal_and_symlinks(self):
         with self.subTest('traversal'):

@@ -26,7 +26,8 @@ make check
 For image, runtime, bootstrap or build changes, also use the [build guide](design/building.md):
 
 ```sh
-make builder build smoke package
+make PROFILE=agent builder build smoke package
+make PROFILE=inference build smoke package
 ```
 
 CI runs contract tests on every pull request. Known documentation-only changes

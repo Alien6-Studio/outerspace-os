@@ -17,12 +17,16 @@ def gh_json(*args):
     return json.loads(subprocess.check_output(['gh', *args], text=True))
 
 
-def verify_bundle(bundle, version, commit, arch, expected):
+def verify_bundle(bundle, version, commit, artifact):
+    if (bundle / 'build-metadata.json').is_symlink():
+        raise ValueError('Candidate metadata must not be a symlink')
     metadata = json.loads((bundle / 'build-metadata.json').read_text())
-    if (metadata['version'], metadata['commit'], metadata['architecture']) != (version, commit, arch):
+    identity = metadata.get('identity', {})
+    if (metadata.get('schema') != 2 or identity != artifact['identity']
+            or (identity.get('version'), identity.get('commit')) != (version, commit)):
         raise ValueError('Candidate inventory does not match the qualified release')
     inventory = bundle / 'SHA256SUMS'
-    if inventory.is_symlink() or sha256(inventory) != expected:
+    if inventory.is_symlink() or sha256(inventory) != artifact.get('sha256sums'):
         raise ValueError('Evidence must bind the exact SHA256SUMS of each candidate')
     listed = set()
     for line in inventory.read_text().splitlines():
@@ -58,14 +62,19 @@ def main():
     # checked-out tag. The per-architecture inventories bind the built source SHA.
     assets = ROOT / 'release-assets'
     assets.mkdir(exist_ok=False)
-    for arch in ['amd64', 'arm64']:
+    for artifact in evidence['artifacts']:
+        identity = artifact['identity']
+        key = f'{identity["profile"]}-{identity["hardware_profile"]}-{identity["architecture"]}'
         with tempfile.TemporaryDirectory() as directory:
-            subprocess.run(['gh', 'run', 'download', run_id, '--name', f'candidate-{arch}', '--dir', directory], check=True)
+            subprocess.run(['gh', 'run', 'download', run_id, '--name', f'candidate-{key}', '--dir', directory], check=True)
             source = Path(directory)
-            metadata_path = next(source.rglob('build-metadata.json'))
+            inventories = list(source.rglob('build-metadata.json'))
+            if len(inventories) != 1:
+                raise ValueError('Expected exactly one candidate bundle per artifact')
+            metadata_path = inventories[0]
             bundle = metadata_path.parent
-            verify_bundle(bundle, version, commit, arch, evidence.get('candidate_checksums', {}).get(arch))
-            archive = assets / f'outerspace-{version}-{arch}.tar'
+            verify_bundle(bundle, version, commit, artifact)
+            archive = assets / f'outerspace-{version}-{key}.tar'
             with tarfile.open(archive, 'w') as tar:
                 for path in sorted(bundle.iterdir()):
                     if not path.is_file() or path.is_symlink():

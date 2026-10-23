@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import ssl
 import subprocess
 import tempfile
 import time
@@ -176,7 +177,10 @@ nodes:
         return {'api_server': 'https://' + self.api_ip + ':6443', 'cluster_dns': ['10.97.0.10'],
                 'ca_sha256': digest(ca), 'kubelet_config_sha256': digest(self.state / 'config/kubelet.yaml'),
                 'bootstrap_ttl': '30m', 'client_signing_duration': '10m (test lab only)',
-                'worker_ip': VM_IP, 'kind_image': KIND_IMAGE, 'cilium_chart': '1.20.3'}
+                'worker_ip': VM_IP, 'kind_image': KIND_IMAGE, 'cilium_chart': '1.20.3',
+                'tools': {'kind': run('kind', 'version').stdout.strip(),
+                          'kubectl': json.loads(run('kubectl', 'version', '--client', '-o', 'json').stdout)['clientVersion']['gitVersion'],
+                          'helm': run('helm', 'version', '--short').stdout.strip()}}
 
     def worker(self):
         for node in self.api('nodes')['items']:
@@ -231,6 +235,23 @@ nodes:
         result = self.kube('-n', LAB, 'exec', 'probe', '--', 'python3', '-c',
                            (ROOT / 'tests/integration/node-probe.py').read_text(), check=False)
         return json.loads(result.stdout) if result.returncode == 0 else None
+
+    def client_csr(self, node, probe, rotated=False):
+        for csr in self.api('csr')['items']:
+            pem = csr.get('status', {}).get('certificate')
+            if not pem or csr['spec'].get('signerName') != 'kubernetes.io/kube-apiserver-client-kubelet':
+                continue
+            public = ssl.PEM_cert_to_DER_cert(base64.b64decode(pem).decode())
+            if hashlib.sha256(public).hexdigest() != probe['client_certificate_sha256']:
+                continue
+            user = csr['spec']['username']
+            if rotated and user != 'system:node:' + node:
+                raise ValueError('Rotation did not authenticate with the enrolled node identity')
+            if not rotated and user != 'system:bootstrap:' + self.token_id:
+                raise ValueError('Initial certificate did not use this lab bootstrap token')
+            return {'name': csr['metadata']['name'], 'uid': csr['metadata']['uid'],
+                    'requester': user, 'certificate_sha256': probe['client_certificate_sha256']}
+        raise ValueError('The active client certificate does not match an issued CSR')
 
     def network(self):
         self.kube('-n', LAB, 'delete', 'networkpolicy', 'cpu-allow', '--ignore-not-found')
@@ -294,12 +315,14 @@ def main():
                                                                'version', 'commit', 'components_lock_sha256', 'host_features']}
             if before['identity'] != expected_identity:
                 raise ValueError('Guest identity differs from the packaged source/profile')
+            initial_csr = lab.client_csr(node_name, before)
             lab.network()
             def rotation():
                 lab.approve_serving(node)
                 probe = lab.probe()
                 return probe if probe and probe['client_certificate_sha256'] != before['client_certificate_sha256'] else None
             rotated = wait_for('Waiting for actual kubelet client certificate rotation', rotation, timeout=900)
+            rotated_csr = lab.client_csr(node_name, rotated, rotated=True)
             lab.kube('-n', 'kube-system', 'delete', 'secret', 'bootstrap-token-' + lab.token_id)
             if lab.kube('-n', 'kube-system', 'get', 'secret', 'bootstrap-token-' + lab.token_id, check=False).returncode == 0:
                 raise ValueError('Bootstrap token was not revoked')
@@ -322,6 +345,10 @@ def main():
             evidence = {'schema': 1, 'status': 'passed', 'subject': metadata, 'environment': 'local QEMU UEFI VM',
                         'configuration': config, 'node_uid': node['metadata']['uid'], 'before': before,
                         'rotated': rotated, 'after': after, 'power_cycles': 2, 'bootstrap_revoked': True,
+                        'client_csrs': {'bootstrap': initial_csr, 'rotation': rotated_csr},
+                        'harness_sha256': {name: digest(ROOT / name) for name in
+                                           ['scripts/test-enrollment.py', 'scripts/enrollment-vm.py',
+                                            'tests/integration/node-probe.py', 'tests/integration/cpu-smoke.py']},
                         'recovery_config_drive': False, 'network': ['DNS', 'cross-node service', 'default-deny', 'explicit allow'],
                         'cpu_smoke': {'image': PYTHON_IMAGE, 'result': 'outerspace-cpu-ok:1536'},
                         'limits': ['No physical-machine qualification', 'No production model serving qualification',

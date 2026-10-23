@@ -95,6 +95,37 @@ separate from OCI caching.
 No speed, density or memory target becomes a product claim before measurement.
 The base must stay independently usable when optional agent services are absent.
 
+## Monitoring boundary informed by METR
+
+These are design requirements, not implemented guarantees.
+
+[Rein and Kaufman, 2026-10-22](https://metr.org/blog/2026-10-22-red-teaming-openai-agent-monitoring/)
+describe gaps and bypasses in a historical internal monitoring system assessed
+in July. The post does not establish the current system's coverage. For OuterSpace,
+we derive these requirements:
+
+- Keep monitor configuration, credentials and audit storage outside agent write access.
+- Account for child agents, provider-executed tools, restarts and long-running
+  tasks; monitoring must not depend on the agent ending its turn.
+- Reconcile expected and observed events; expose loss, errors and coverage gaps.
+
+[Haskins et al., 2026-09-27](https://metr.org/notes/2026-09-27-implementing-a-basic-blocking-action-monitor/)
+describe a per-action monitor and incomplete evidence for its effectiveness.
+Our proposed profile must:
+
+- Block a governed action until its required check succeeds; timeouts and errors
+  must not grant permission.
+- Keep review authority and the approval interface inaccessible to the agent.
+- Test hidden child actions, spoofed context, retries, reviewer impersonation and
+  attempts to disable controls.
+
+The kernel enforces deterministic resource/access boundaries. Tool-call context
+and approval semantics need a trusted runtime integration; eBPF alone cannot
+prove complete semantic monitoring. Keep optional model-based review outside the
+base image. Bound local buffers and measure collection/enforcement overhead;
+critical event loss must trigger the profile's explicit blocking/quarantine policy.
+Protect sensitive data and export only the audit fields required by that policy.
+
 ## Design references
 
 - [OpenShell architecture](https://docs.nvidia.com/openshell/v0.1.5/about/architecture)

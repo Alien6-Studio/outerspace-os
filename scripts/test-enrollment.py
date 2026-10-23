@@ -59,11 +59,12 @@ def wait_for(description, function, timeout=600):
     raise RuntimeError(f'Timed out: {description}')
 
 
-def verify_recovery(before, rotated, after, before_node, after_node):
+def verify_recovery(before, rotated, after, before_node, after_node, bootstrap_certificate_sha256=None):
     for key in ['identity', 'hostname', 'machine_id']:
         if not before.get(key) or before[key] != rotated.get(key) or before[key] != after.get(key):
             raise ValueError(f'Node identity did not persist: {key}')
-    if before['client_certificate_sha256'] == rotated['client_certificate_sha256']:
+    initial = bootstrap_certificate_sha256 or before['client_certificate_sha256']
+    if initial == rotated['client_certificate_sha256']:
         raise ValueError('No real client certificate rotation observed')
     if rotated['client_certificate_sha256'] != after['client_certificate_sha256']:
         raise ValueError('The rotated client certificate did not survive the cold boot')
@@ -268,21 +269,30 @@ nodes:
                            (ROOT / 'tests/integration/node-probe.py').read_text(), check=False)
         return json.loads(result.stdout) if result.returncode == 0 else None
 
-    def client_csr(self, node, probe, rotated=False):
+    def client_csr(self, node, probe=None, rotated=False):
         for csr in self.api('csr')['items']:
             pem = csr.get('status', {}).get('certificate')
             if not pem or csr['spec'].get('signerName') != 'kubernetes.io/kube-apiserver-client-kubelet':
                 continue
-            public = ssl.PEM_cert_to_DER_cert(base64.b64decode(pem).decode())
-            if hashlib.sha256(public).hexdigest() != probe['client_certificate_sha256']:
+            certificate = base64.b64decode(pem).decode()
+            fingerprint = hashlib.sha256(ssl.PEM_cert_to_DER_cert(certificate)).hexdigest()
+            if probe and fingerprint != probe['client_certificate_sha256']:
                 continue
             user = csr['spec']['username']
+            if probe is None:
+                if user != 'system:bootstrap:' + self.token_id:
+                    continue
+                subject = run('openssl', 'x509', '-noout', '-subject', '-nameopt', 'RFC2253', data=certificate).stdout.strip()
+                if subject != f'subject=CN=system:node:{node},O=system:nodes':
+                    continue
             if rotated and user != 'system:node:' + node:
                 raise ValueError('Rotation did not authenticate with the enrolled node identity')
             if not rotated and user != 'system:bootstrap:' + self.token_id:
                 raise ValueError('Initial certificate did not use this lab bootstrap token')
             return {'name': csr['metadata']['name'], 'uid': csr['metadata']['uid'],
-                    'requester': user, 'certificate_sha256': probe['client_certificate_sha256']}
+                    'requester': user, 'certificate_sha256': fingerprint}
+        if probe is None:
+            return None
         raise ValueError('The active client certificate does not match an issued CSR')
 
     def network(self):
@@ -353,6 +363,7 @@ def main():
             lab.vm('start', '--config-drive')
             node = wait_for('Waiting for the real OuterSpace worker', lab.worker, timeout=900)
             node_name = node['metadata']['name']
+            initial_csr = wait_for('Recording the initial bootstrap certificate', lambda: lab.client_csr(node_name))
             lab.extend_renewal_lifetime()
             config['client_signing_duration'] = '10m initial bootstrap; 1h renewals (test lab only)'
             lab.kube('wait', '--for=condition=Ready', 'node/' + node_name, '--timeout=900s')
@@ -363,12 +374,11 @@ def main():
                                                                'version', 'commit', 'components_lock_sha256', 'host_features']}
             if before['identity'] != expected_identity:
                 raise ValueError('Guest identity differs from the packaged source/profile')
-            initial_csr = lab.client_csr(node_name, before)
             lab.network()
             def rotation():
                 lab.approve_serving(node)
                 probe = lab.probe()
-                return probe if probe and probe['client_certificate_sha256'] != before['client_certificate_sha256'] else None
+                return probe if probe and probe['client_certificate_sha256'] != initial_csr['certificate_sha256'] else None
             rotated = wait_for('Waiting for actual kubelet client certificate rotation', rotation, timeout=900)
             rotated_csr = lab.client_csr(node_name, rotated, rotated=True)
             lab.kube('-n', 'kube-system', 'delete', 'secret', 'bootstrap-token-' + lab.token_id)
@@ -386,7 +396,7 @@ def main():
             after_node = wait_for('Waiting for Node Ready after cold boot without config drive', recovered, timeout=900)
             wait_for('Checking serving certificate after recovery', lambda: lab.approve_serving(after_node))
             after = wait_for('Reading persisted rotated credentials', lab.probe)
-            verify_recovery(before, rotated, after, node, after_node)
+            verify_recovery(before, rotated, after, node, after_node, initial_csr['certificate_sha256'])
             lab.network()
             if digest(output / 'outerspace.raw') != metadata['raw_image_sha256']:
                 raise ValueError('The original disk changed during qualification')
@@ -421,6 +431,7 @@ def main():
                         ['enrollment-boot-enroll.log', 'enrollment-boot-recover.log',
                          'enrollment-qemu-command-enroll.json', 'enrollment-qemu-command-recover.json']}
     if (harness_commit != run('git', '-C', ROOT, 'rev-parse', 'HEAD').stdout.strip()
+            or run('git', '-C', ROOT, 'status', '--porcelain', '--untracked-files=normal').stdout
             or harness_hashes != {name: digest(ROOT / name) for name in HARNESS_INPUTS}):
         raise ValueError('Qualification source changed while the lab was running')
     report.write_text(json.dumps(evidence, indent=2) + '\n')

@@ -41,6 +41,13 @@ class EnrollmentEvidenceTests(unittest.TestCase):
         return {'username': 'system:node:oos-test', 'signerName': 'kubernetes.io/kubelet-serving',
                 'usages': ['digital signature', 'server auth'], 'request': base64.b64encode(result.stdout).decode()}
 
+    def test_rotation_can_finish_before_the_first_host_probe(self):
+        enrollment.verify_recovery(self.rotated, self.rotated, self.after, self.node, self.node,
+                                   bootstrap_certificate_sha256='initial')
+        with self.assertRaises(ValueError):
+            enrollment.verify_recovery(self.before, self.rotated, self.after, self.node, self.node,
+                                       bootstrap_certificate_sha256='rotated')
+
     def test_serving_approval_refuses_wrong_identity_san_signer_and_usage(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)

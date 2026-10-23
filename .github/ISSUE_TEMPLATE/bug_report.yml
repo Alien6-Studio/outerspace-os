@@ -1,0 +1,34 @@
+name: Bug report
+description: Report an image, runtime, build or website problem.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "For vulnerabilities, use [private reporting](https://github.com/Alien6-Studio/outerspace-os/security/advisories/new). Never attach credentials or a config-drive image."
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Include the image checksum if available. For the website, include the page URL.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Architecture, VM or server model, firmware, build host, and Kubernetes/runtime versions as applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include commands, expected behavior and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove tokens, private keys, kubeconfigs and sensitive registry details before posting.
+      render: text

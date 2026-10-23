@@ -1,0 +1,6 @@
+{
+  "state": "configured",
+  "languages": ["actions", "python"],
+  "query_suite": "default",
+  "threat_model": "remote"
+}

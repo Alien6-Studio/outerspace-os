@@ -10,6 +10,33 @@ tool. kubeadm can create the control plane elsewhere; the worker joins by the
 standard kubelet TLS-bootstrap contract. A control-plane image profile is a
 separate scope because it also needs API server, etcd and their lifecycle.
 
+## Configure a worker
+
+Use a dedicated, short-lived Kubernetes bootstrap token and the control plane CA.
+The target cluster must allow TLS bootstrap and certificate rotation. The kubelet
+minor version must be compatible with that control plane. The CNI is installed by
+the cluster; its binaries live in writable `/opt/cni/bin` (see architecture).
+
+```sh
+python3 scripts/node-config.py \
+  --api-server https://api.example.net:6443 \
+  --ca /secure/cluster-ca.crt \
+  --token-file /secure/bootstrap-token \
+  --cluster-dns 10.96.0.10
+./scripts/config-drive.sh
+```
+
+Attach `build/node-config.raw` as a second virtual disk. It contains credentials;
+do not publish it. Detach it after successful enrollment and revoke the bootstrap
+token. The node keeps its rotated identity in `/var/lib/kubelet`, and its stable
+hostname in `/var/lib/outerspace/hostname`. Serving certificate CSRs still require
+an approval policy on the control plane; there is no blanket auto-approval here.
+
+To warm the CRI cache, add a `prefetch-images` file to `node-config/` before making
+the drive, with one `registry/repository@sha256:<64 hex characters>` per line.
+This initial prefetch supports public registries; private prefetch credential
+delivery remains a release gate. Workload imagePullSecrets are handled by CRI.
+
 ## eBPF network profile
 
 The initial Cilium Helm profile is pinned to chart **1.20.3**. The image checks

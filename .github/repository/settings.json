@@ -1,0 +1,15 @@
+{
+  "description": "Minimal Ubuntu-based Linux for Kubernetes inference workers: immutable host, Dragonfly P2P image delivery and eBPF. In development.",
+  "homepage": "https://os.outerspace.sh/",
+  "has_issues": true,
+  "has_wiki": false,
+  "has_discussions": true,
+  "allow_squash_merge": true,
+  "allow_merge_commit": false,
+  "allow_rebase_merge": false,
+  "delete_branch_on_merge": true,
+  "allow_update_branch": true,
+  "allow_auto_merge": false,
+  "squash_merge_commit_title": "PR_TITLE",
+  "squash_merge_commit_message": "PR_BODY"
+}

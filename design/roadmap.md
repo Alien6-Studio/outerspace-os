@@ -14,7 +14,7 @@
 - Still required: UEFI disk boot, state persistence across reboot, config-drive
   enrollment into a disposable cluster, Node Ready and a CPU inference pod.
 - Still required: AppArmor/seccomp enforcement tests, privilege boundaries,
-  dependency/vulnerability inventory and an agreed source license.
+  dependency/vulnerability inventory and redistribution/corresponding-source review.
 
 ## 0.2 — Faster and smaller delivery, measured
 

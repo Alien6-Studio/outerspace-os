@@ -1,0 +1,23 @@
+name: Feature or hardware support
+description: Propose a capability, integration or qualification target.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and use case
+      description: What deployment or maintenance problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the interface, target hardware or integration. Link upstream documentation when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: qualification
+    attributes:
+      label: Validation and tradeoffs
+      description: How would we test it? Consider footprint, compatibility, security and lifecycle cost.

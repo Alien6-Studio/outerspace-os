@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 """Install only allowlisted, hash-locked upstream binaries into the image."""
 import hashlib
 import json

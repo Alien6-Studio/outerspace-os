@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 import importlib.util
 import json
 from pathlib import Path

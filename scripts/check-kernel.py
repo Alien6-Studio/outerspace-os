@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 """Fail the image build if the kernel lacks the selected eBPF/Cilium primitives."""
 from pathlib import Path
 import sys

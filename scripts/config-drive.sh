@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
 config_dir=$(cd "${1:-$repo/node-config}" && pwd)

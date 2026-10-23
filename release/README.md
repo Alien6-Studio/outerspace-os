@@ -32,7 +32,7 @@ are cumulative. Missing, pending or failed evidence blocks release preparation.
 | Stage | Audience / expectation | Additional gates |
 | --- | --- | --- |
 | dev | Internal engineering, disposable labs | Tests and build feedback; cannot be released |
-| alpha | Experimental preview, data loss possible | Boot, CRI, config contract, checksums, notes |
+| alpha | Experimental preview, data loss possible | Boot, CRI, config contract, checksums, notes, license/source review |
 | beta | Cluster integration testers | OS node ready, Cilium, real P2P, GC, state/reboot |
 | rc | Frozen production candidate | Bare metal, CIS audit, signed boot, upgrade/rollback, SBOM, vulnerability review |
 | stable | Supported within an explicit matrix | Soak qualification and published support policy |
@@ -131,3 +131,11 @@ redistribution notices, publish independently installable qualified artifacts,
 checksums/signatures, release notes, support/security contacts and hardware/install
 instructions. Verify each directory's current admission rules at submission time.
 Listing is a later launch task, not evidence of technical qualification.
+
+## Project licensing
+
+Original OuterSpace source uses Apache License 2.0. Upstream components retain
+their licenses. License notices, transitive dependencies, firmware redistribution
+and exact corresponding-source availability must pass review before any public
+alpha binary. Development CI publishes logs and inventories only; candidate images
+remain qualification artifacts until that review is complete.

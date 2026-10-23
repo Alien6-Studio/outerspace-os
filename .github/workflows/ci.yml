@@ -8,6 +8,9 @@ on:
     - cron: '17 4 * * 1'
 permissions:
   contents: read
+concurrency:
+  group: distribution-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   contracts:
     runs-on: ubuntu-24.04
@@ -34,7 +37,7 @@ jobs:
         with:
           name: outerspace-${{ matrix.arch }}-development
           path: |
-            build/outerspace-*/
+            build/outerspace-*/*.json
             build/*.manifest
             build/*.log
           retention-days: 7

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 """Render a worker config drive without putting a bootstrap token in argv/logs."""
 import argparse
 import base64

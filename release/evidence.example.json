@@ -114,6 +114,12 @@
       "evidence": "",
       "scope": "architectures, image hashes, hardware and test scenario",
       "reviewer": ""
+    },
+    "license_review": {
+      "status": "pending",
+      "evidence": "",
+      "scope": "all bundled components, transitive dependencies, firmware and corresponding source",
+      "reviewer": ""
     }
   }
 }

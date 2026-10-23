@@ -1,9 +1,14 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
 # mkosi mounts BuildSources at /work/src; no tooling enters the OS image.
 python3 /work/src/scripts/install-components.py "$BUILDROOT" "$ARCHITECTURE" /work/src/components.lock.json /work/src/.cache/components
 python3 /work/src/scripts/check-kernel.py "$BUILDROOT"
 root="$BUILDROOT"
+install -D -m 0644 /work/src/LICENSE "$root/usr/share/licenses/outerspace/LICENSE"
+install -D -m 0644 /work/src/NOTICE "$root/usr/share/licenses/outerspace/NOTICE"
+cp -a /work/src/third_party "$root/usr/share/licenses/outerspace/upstream"
 install -D -m 0644 /work/src/branding/outerspace-mark.svg "$root/usr/share/icons/hicolor/scalable/apps/outerspace.svg"
 install -d "$root/etc/systemd/system/multi-user.target.wants" "$root/etc/systemd/system/sysinit.target.wants"
 for service in containerd kubelet dfdaemon auditd outerspace-banner outerspace-provision outerspace-prefetch outerspace-selftest; do

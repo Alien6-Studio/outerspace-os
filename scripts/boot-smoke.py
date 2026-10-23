@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 """Boot split kernel/initrd with the UKI command line using QEMU TCG."""
 from pathlib import Path
 import platform

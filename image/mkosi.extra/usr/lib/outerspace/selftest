@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
 fail() { echo "OUTERSPACE_SELFTEST_FAIL: $*"; exit 1; }
 [[ $(stat -fc %T /sys/fs/cgroup) == cgroup2fs ]] || fail 'cgroup v2 missing'

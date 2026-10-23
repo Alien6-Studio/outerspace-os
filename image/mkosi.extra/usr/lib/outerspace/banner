@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
 cat /usr/share/outerspace/banner.txt
 source /usr/lib/os-release

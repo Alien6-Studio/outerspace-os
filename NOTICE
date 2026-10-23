@@ -1,0 +1,19 @@
+OuterSpace OS
+Copyright (C) 2026 OuterSpace OS contributors
+A project by Alien6
+
+Original OuterSpace source is licensed under the Apache License, Version 2.0.
+See LICENSE for the complete terms, permissions and limitations.
+
+The license of original OuterSpace build tooling, configuration and source does
+not replace the licenses of Ubuntu packages, the Linux kernel, upstream runtime
+binaries, firmware or third-party assets. Their notices and corresponding-source
+obligations remain applicable. Upstream notices in third_party retain their
+original terms.
+
+The image retains Ubuntu package copyright files in /usr/share/doc and copies
+runtime notices into /usr/share/licenses. A full dependency and corresponding-
+source review remains required before public binary release.
+
+This notice does not grant trademark rights or imply that Ubuntu, Kubernetes or
+other upstream projects endorse OuterSpace OS.

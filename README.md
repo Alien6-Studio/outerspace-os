@@ -99,3 +99,10 @@ Ubuntu packages currently track the signed Noble update/security repositories;
 only upstream runtime binaries and builder inputs are hash-locked. Exact
 bit-for-bit rebuilds require a pinned Ubuntu package snapshot and pinned build
 time metadata. Review the generated manifest for every build.
+
+## License
+
+Original OuterSpace source is **Apache License 2.0** (`Apache-2.0`); see
+[LICENSE](LICENSE) and [NOTICE](NOTICE). Bundled components keep their own licenses.
+The initial third-party notices and source provenance live in [third_party](third_party).
+A complete redistribution and corresponding-source review is an alpha release gate.

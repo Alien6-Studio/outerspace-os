@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 """Package a verified build with its exact input identity and SHA256 inventory."""
 import argparse
 import hashlib
@@ -39,6 +41,7 @@ def main():
         shutil.copyfile(output / f'outerspace.{extension}', Path(str(stem) + '.' + extension))
     shutil.copyfile(log, bundle / 'boot-smoke.log')
     shutil.copyfile(ROOT / 'components.lock.json', bundle / 'components.lock.json')
+    subprocess.run(['zstd', '-q', str(output / 'outerspace-source.tar'), '-o', str(bundle / 'source.tar.zst')], check=True)
     metadata = {'schema': 1, 'version': version, 'architecture': arch, 'commit': args.commit,
                 'channel': 'development' if '-dev.' in version else 'candidate',
                 'boot_test': 'QEMU split kernel/initrd, not EFI boot or Secure Boot',

@@ -1,0 +1,33 @@
+{
+  "containerd": {
+    "source": "https://github.com/containerd/containerd/tree/v2.3.7",
+    "files": {
+      "LICENSE": {
+        "url": "https://raw.githubusercontent.com/containerd/containerd/v2.3.7/LICENSE",
+        "sha256": "4bbe3b885e8cd1907ab4cf9a41e862e74e24b5422297a4f2fe524e6a30ada2b4"
+      },
+      "NOTICE": {
+        "url": "https://raw.githubusercontent.com/containerd/containerd/v2.3.7/NOTICE",
+        "sha256": "03f0b4bcaecfdb491ef5a7d320e2c2adf886c732d34e3fff87d52dbaec64d8c3"
+      }
+    }
+  },
+  "kubelet": {
+    "source": "https://github.com/kubernetes/kubernetes/tree/v1.36.5",
+    "files": {
+      "LICENSE": {
+        "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/v1.36.5/LICENSE",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      }
+    }
+  },
+  "crictl": {
+    "source": "https://github.com/kubernetes-sigs/cri-tools/tree/v1.36.0",
+    "files": {
+      "LICENSE": {
+        "url": "https://raw.githubusercontent.com/kubernetes-sigs/cri-tools/v1.36.0/LICENSE",
+        "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+      }
+    }
+  }
+}

@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
 # Source commit must be explicit: do not label dirty local builds as committed.
@@ -7,7 +9,8 @@ if [[ -n $(git -C "$repo" status --porcelain --untracked-files=normal) ]]; then
     exit 1
 fi
 commit=$(git -C "$repo" rev-parse HEAD)
-exec docker run --rm --cap-drop=ALL \
+git -C "$repo" archive --format=tar --output="$repo/build/outerspace-source.tar" HEAD
+exec docker run --rm --cap-drop=ALL --user "$(id -u):$(id -g)" \
     --mount "type=bind,src=$repo,dst=/work,readonly" \
     --mount "type=bind,src=$repo/build,dst=/out" \
     "${OUTERSPACE_BUILDER:-outerspace-builder:dev}" \

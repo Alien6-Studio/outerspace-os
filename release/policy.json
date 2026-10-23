@@ -1,9 +1,66 @@
 {
   "schema": 1,
   "stages": {
-    "alpha": ["boot", "cri", "config_contract", "checksums", "release_notes"],
-    "beta": ["boot", "cri", "config_contract", "checksums", "release_notes", "cluster_ready", "cilium", "dragonfly_p2p", "image_gc", "state_reboot"],
-    "rc": ["boot", "cri", "config_contract", "checksums", "release_notes", "cluster_ready", "cilium", "dragonfly_p2p", "image_gc", "state_reboot", "bare_metal", "cis_audit", "upgrade_rollback", "signed_boot", "sbom", "vulnerability_review"],
-    "stable": ["boot", "cri", "config_contract", "checksums", "release_notes", "cluster_ready", "cilium", "dragonfly_p2p", "image_gc", "state_reboot", "bare_metal", "cis_audit", "upgrade_rollback", "signed_boot", "sbom", "vulnerability_review", "soak", "support_policy"]
+    "alpha": [
+      "boot",
+      "cri",
+      "config_contract",
+      "checksums",
+      "release_notes",
+      "license_review"
+    ],
+    "beta": [
+      "boot",
+      "cri",
+      "config_contract",
+      "checksums",
+      "release_notes",
+      "license_review",
+      "cluster_ready",
+      "cilium",
+      "dragonfly_p2p",
+      "image_gc",
+      "state_reboot"
+    ],
+    "rc": [
+      "boot",
+      "cri",
+      "config_contract",
+      "checksums",
+      "release_notes",
+      "license_review",
+      "cluster_ready",
+      "cilium",
+      "dragonfly_p2p",
+      "image_gc",
+      "state_reboot",
+      "bare_metal",
+      "cis_audit",
+      "upgrade_rollback",
+      "signed_boot",
+      "sbom",
+      "vulnerability_review"
+    ],
+    "stable": [
+      "boot",
+      "cri",
+      "config_contract",
+      "checksums",
+      "release_notes",
+      "license_review",
+      "cluster_ready",
+      "cilium",
+      "dragonfly_p2p",
+      "image_gc",
+      "state_reboot",
+      "bare_metal",
+      "cis_audit",
+      "upgrade_rollback",
+      "signed_boot",
+      "sbom",
+      "vulnerability_review",
+      "soak",
+      "support_policy"
+    ]
   }
 }

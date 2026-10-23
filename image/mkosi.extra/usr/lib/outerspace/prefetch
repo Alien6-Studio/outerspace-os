@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
 while IFS= read -r image || [[ -n "$image" ]]; do
     [[ -z "$image" || "$image" == \#* ]] && continue

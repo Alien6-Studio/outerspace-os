@@ -2,9 +2,14 @@
 
 ## Product boundary
 
-OuterSpace is an inference worker OS. Kubernetes control planes, training
-toolchains, application frameworks and a desktop are outside the host image.
+OuterSpace targets a minimal execution host for inference and isolated agents.
+The first implemented profile is a Kubernetes inference worker. Kubernetes control
+planes, agent frameworks, training toolchains and a desktop are outside the host image.
 Compatibility with ordinary OCI images and Kubernetes CRI is the baseline.
+
+The [agent execution direction](agent-execution.md) defines a lightweight OS
+boundary independent of optional services such as OpenShell. Agent isolation
+profiles and OpenShell compatibility remain unqualified future work.
 
 Ubuntu Noble provides the kernel, glibc, systemd, AppArmor, network stack and
 security package updates. mkosi assembles a new image from the selected packages;

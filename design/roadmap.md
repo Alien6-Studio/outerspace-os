@@ -40,5 +40,14 @@
 - Snapshot-locked Ubuntu inputs, reproducibility comparison, SBOM, provenance and
   release vulnerability policy. No unsigned development image promoted to stable.
 
+## Agent execution track
+
+Build on the same minimal host rather than baking an agent framework into it.
+First qualify an OCI execution profile with resource limits, explicit filesystem
+and network permissions, and negative isolation tests. Measure its footprint
+against the plain runtime. Then qualify an optional OpenShell integration and
+evaluate a stronger isolation profile. See the [execution boundary and gates](agent-execution.md).
+This track does not waive boot, update, hardware or security release gates.
+
 The [release policy](../release/README.md) defines alpha/beta/RC/stable gates,
 maintenance cadence and the distinction between a roadmap milestone and a release.

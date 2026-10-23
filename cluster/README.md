@@ -50,6 +50,9 @@ Requirements: Docker, kind, kubectl, Helm and Python 3.11+ on the development ho
 The harness creates and cleans only `outerspace-enrollment`, its own private
 kubeconfig and a labelled Docker network (`172.30.80.0/24`). It refuses an existing
 lab or overlapping network. The default kubecontext is never used.
+The harness must remain committed and unchanged during the test. Lab pods tolerate
+up to thirty minutes of node unavailability to allow slow emulated cold boots;
+the bounded recovery checks still have to pass.
 
 The packaged disk boots through UEFI in a QEMU VM connected by TAP to a dedicated
 kubeadm-compatible kind control plane. Only that control plane and a reference

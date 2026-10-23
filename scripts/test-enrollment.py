@@ -23,6 +23,8 @@ LABEL = 'io.outerspace.enrollment-lab'
 KIND_IMAGE = 'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5'
 PYTHON_IMAGE = 'python:3.12-alpine@sha256:b658b05ce9c4eb97ec6fc19424818a1f31993659c2b505a532f470e83807815d'
 VM_IP = '172.30.80.10'
+HARNESS_INPUTS = ['scripts/test-enrollment.py', 'scripts/enrollment-vm.py',
+                  'tests/integration/node-probe.py', 'tests/integration/cpu-smoke.py']
 
 
 def run(*args, data=None, check=True, env=None):
@@ -190,7 +192,8 @@ nodes:
                 'worker_ip': VM_IP, 'kind_image': KIND_IMAGE, 'cilium_chart': '1.20.3',
                 'tools': {'kind': run('kind', 'version').stdout.strip(),
                           'kubectl': json.loads(run('kubectl', 'version', '--client', '-o', 'json').stdout)['clientVersion']['gitVersion'],
-                          'helm': run('helm', 'version', '--short').stdout.strip()}}
+                          'helm': run('helm', 'version', '--short').stdout.strip()},
+                'runner_image': run('docker', 'image', 'inspect', 'outerspace-enrollment:dev', '--format', '{{.Id}}').stdout.strip()}
 
     def worker(self):
         for node in self.api('nodes')['items']:
@@ -240,6 +243,9 @@ nodes:
             obj = {'apiVersion': 'v1', 'kind': 'Pod', 'metadata': {'name': name, 'namespace': LAB,
                     'labels': {'app': name, 'access': 'allowed'}},
                    'spec': {'nodeName': host, 'automountServiceAccountToken': False,
+                            'tolerations': [{'key': key, 'operator': 'Exists', 'effect': 'NoExecute',
+                                             'tolerationSeconds': 1800} for key in
+                                            ['node.kubernetes.io/not-ready', 'node.kubernetes.io/unreachable']],
                             'securityContext': {'runAsUser': 0 if root else 65534,
                                                 'seccompProfile': {'type': 'RuntimeDefault'}},
                             'containers': [container]}}
@@ -322,6 +328,10 @@ def main():
     parser.add_argument('--profile', choices=['agent', 'inference'], required=True)
     args = parser.parse_args()
     output = args.output.resolve()
+    if run('git', '-C', ROOT, 'status', '--porcelain', '--untracked-files=normal').stdout:
+        raise ValueError('Commit the qualification harness before running the lab')
+    harness_commit = run('git', '-C', ROOT, 'rev-parse', 'HEAD').stdout.strip()
+    harness_hashes = {name: digest(ROOT / name) for name in HARNESS_INPUTS}
     # Verify every packaged byte before using its read-only raw disk as the VM backing file.
     metadata = json.loads((output / 'build-identity.json').read_text())
     bundle = output / f'outerspace-{metadata["version"]}-{args.profile}-cpu-{metadata["architecture"]}'
@@ -387,9 +397,7 @@ def main():
                         'before_node_info': node['status']['nodeInfo'], 'after_node_info': after_node['status']['nodeInfo'],
                         'rotated': rotated, 'after': after, 'power_cycles': 2, 'bootstrap_revoked': True,
                         'client_csrs': {'bootstrap': initial_csr, 'rotation': rotated_csr},
-                        'harness_sha256': {name: digest(ROOT / name) for name in
-                                           ['scripts/test-enrollment.py', 'scripts/enrollment-vm.py',
-                                            'tests/integration/node-probe.py', 'tests/integration/cpu-smoke.py']},
+                        'harness_commit': harness_commit, 'harness_sha256': harness_hashes,
                         'recovery_config_drive': False, 'network': ['DNS', 'cross-node service', 'default-deny', 'explicit allow'],
                         'cpu_smoke': {'image': PYTHON_IMAGE, 'result': 'outerspace-cpu-ok:1536'},
                         'limits': ['No physical-machine qualification', 'No production model serving qualification',
@@ -412,6 +420,9 @@ def main():
     evidence['logs'] = {name: digest(output / name) for name in
                         ['enrollment-boot-enroll.log', 'enrollment-boot-recover.log',
                          'enrollment-qemu-command-enroll.json', 'enrollment-qemu-command-recover.json']}
+    if (harness_commit != run('git', '-C', ROOT, 'rev-parse', 'HEAD').stdout.strip()
+            or harness_hashes != {name: digest(ROOT / name) for name in HARNESS_INPUTS}):
+        raise ValueError('Qualification source changed while the lab was running')
     report.write_text(json.dumps(evidence, indent=2) + '\n')
     print('OUTERSPACE_ENROLLMENT_OK: ' + str(report), flush=True)
 

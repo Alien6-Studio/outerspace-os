@@ -2,3 +2,12 @@
 :root{--md-text-font:'Space Grotesk';--md-code-font:'Space Mono'}[data-md-color-scheme=slate]{--md-default-bg-color:#10101b;--md-primary-fg-color:#171321;--md-accent-fg-color:#efa4cf;--md-typeset-a-color:#efa4cf;--md-footer-bg-color:#0d0c15;--md-footer-bg-color--dark:#0d0c15}.md-header__title{font-weight:500}.md-typeset h1,.md-typeset h2{font-weight:500;letter-spacing:-.03em}.os-doc-footer{display:flex;gap:12px;align-items:center;justify-content:center;padding:18px;font-size:12px;color:#b1a9be;background:#0d0c15}.os-doc-footer img{height:20px;width:auto;filter:brightness(0) invert(1)}
 
 .md-typeset h1{color:#f8f4ff}
+
+/* Keep documentation and navigation comfortable at the theme's 20px rem. */
+.md-typeset{font-size:.9rem;line-height:1.7}
+.md-nav{font-size:.75rem}
+.md-typeset table:not([class]){font-size:.8rem}
+.md-typeset code{font-size:.85em}
+.md-typeset .admonition,.md-typeset details{font-size:.8rem}
+.md-footer__title{font-size:.8rem}
+.md-footer__direction,.md-copyright,.os-doc-footer{font-size:.7rem}

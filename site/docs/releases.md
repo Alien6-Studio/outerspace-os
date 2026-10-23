@@ -22,7 +22,7 @@ refuses publishing a `-dev.N` version as a release.
 | Phase | Intended use | Required evidence |
 | --- | --- | --- |
 | Development | Internal engineering and disposable labs | Unit/contract checks and image build logs |
-| Alpha | Explicit experimental preview | Boot, CRI, config contract, checksums and release notes |
+| Alpha | Explicit experimental preview | Boot, CRI, config contract, checksums, release notes and license/source review |
 | Beta | Integration testing | Alpha gates plus Node Ready, Cilium, P2P, GC and state persistence |
 | Release candidate | Frozen candidate for qualification | Beta gates plus bare metal, CIS audit, signed boot, upgrade/rollback, SBOM and vulnerability review |
 | Stable | Supported operation within a published matrix | RC gates plus soak tests and an explicit support policy |

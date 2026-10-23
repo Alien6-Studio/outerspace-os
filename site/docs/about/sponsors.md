@@ -15,5 +15,5 @@ the operating system. The footer follows the same “by Alien6” attribution us
 
 Development happens in the [GitHub repository](https://github.com/Alien6-Studio/outerspace-os).
 The distribution source lives on `main`; website source and generated pages live
-on `gh-pages`. Project source licensing must be finalized before public release;
+on `gh-pages`. Original OuterSpace source is licensed under [Apache-2.0](https://github.com/Alien6-Studio/outerspace-os/blob/main/LICENSE).
 Ubuntu packages and bundled upstream components retain their own licenses.

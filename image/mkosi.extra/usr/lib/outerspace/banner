@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+cat /usr/share/outerspace/banner.txt
+source /usr/lib/os-release
+version=$IMAGE_VERSION
+printf '\n  OuterSpace OS %s | Kubernetes inference worker\n' "$version"
+printf '  Development image | by Alien6 | https://os.outerspace.sh\n'
+printf '  Operator: outerspace | interactive access locked until provisioned\n\n'

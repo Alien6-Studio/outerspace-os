@@ -1,0 +1,3 @@
+LABEL=OOS_STATE /var ext4 defaults,nodev,nosuid,x-systemd.growfs 0 2
+tmpfs /tmp tmpfs mode=1777,nosuid,nodev,noexec,size=256M 0 0
+bpffs /sys/fs/bpf bpf defaults,nosuid,nodev,noexec 0 0

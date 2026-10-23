@@ -1,0 +1,11 @@
+-b 8192
+-f 1
+--backlog_wait_time 60000
+-w /etc/passwd -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/containerd -p wa -k container-runtime
+-w /etc/outerspace -p wa -k node-config
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k kernel-modules
+-e 2

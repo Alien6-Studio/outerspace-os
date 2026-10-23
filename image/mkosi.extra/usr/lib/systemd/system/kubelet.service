@@ -1,0 +1,21 @@
+[Unit]
+Description=OuterSpace Kubernetes worker
+Wants=network-online.target
+After=network-online.target containerd.service outerspace-provision.service
+Requires=containerd.service
+RequiresMountsFor=/var/lib/kubelet
+ConditionPathExists=/var/lib/outerspace/cluster-ca.crt
+ConditionPathExists=/var/lib/outerspace/kubelet.yaml
+
+[Service]
+ExecStart=/usr/bin/kubelet --config=/var/lib/outerspace/kubelet.yaml --bootstrap-kubeconfig=/var/lib/kubelet/bootstrap-kubeconfig --kubeconfig=/var/lib/kubelet/kubeconfig --cert-dir=/var/lib/kubelet/pki
+Restart=always
+RestartSec=10
+Delegate=yes
+KillMode=process
+OOMScoreAdjust=-999
+LimitCORE=0
+TasksMax=infinity
+
+[Install]
+WantedBy=multi-user.target

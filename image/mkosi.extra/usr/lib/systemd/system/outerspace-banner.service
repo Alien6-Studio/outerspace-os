@@ -1,0 +1,13 @@
+[Unit]
+Description=OuterSpace OS boot identity
+After=local-fs.target outerspace-provision.service
+Before=containerd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/outerspace/banner
+StandardOutput=journal+console
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+.git
+.trunk
+.cache
+.venv
+build
+node-config
+**/__pycache__

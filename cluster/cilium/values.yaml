@@ -1,0 +1,25 @@
+# Cilium chart 1.20.3. Set k8sServiceHost and k8sServicePort at installation.
+# Use a cluster created without kube-proxy for this profile.
+kubeProxyReplacement: true
+cni:
+  binPath: /opt/cni/bin
+  confPath: /etc/cni/net.d
+bpf:
+  autoMount:
+    enabled: false
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+ipam:
+  mode: kubernetes
+routingMode: tunnel
+tunnelProtocol: vxlan
+operator:
+  replicas: 1
+hubble:
+  enabled: true
+  relay:
+    enabled: false
+  ui:
+    enabled: false

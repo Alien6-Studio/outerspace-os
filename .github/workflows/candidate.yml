@@ -1,0 +1,54 @@
+name: Candidate images
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag, e.g. v0.1.0-alpha.1
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Validate candidate identity
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          python3 - <<'PY'
+          import importlib.util, os
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location('release', 'scripts/release.py')
+          release = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(release)
+          version = Path('VERSION').read_text().strip()
+          assert release.parse_version(version) != 'dev', 'Development snapshots are not candidates'
+          assert os.environ['TAG'] == 'v' + version, 'Tag must match VERSION'
+          PY
+      - run: make check builder build smoke package
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: candidate-${{ matrix.arch }}
+          path: build/outerspace-*/
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: failed-boot-${{ matrix.arch }}
+          path: build/*.log
+          retention-days: 7

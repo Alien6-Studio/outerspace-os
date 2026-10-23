@@ -1,1 +1,11 @@
 **/.DS_Store
+.cache/
+.venv/
+build/
+node-config/
+__pycache__/
+*.pyc
+mkosi.local.conf
+mkosi.key
+mkosi.crt
+release-assets/

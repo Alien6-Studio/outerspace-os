@@ -1,0 +1,35 @@
+[Unit]
+Description=Dragonfly P2P image distribution peer
+After=network-online.target outerspace-provision.service
+Wants=network-online.target
+ConditionPathExists=/var/lib/outerspace/dfdaemon.yaml
+RequiresMountsFor=/var/lib/dragonfly
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=dragonfly
+CacheDirectory=dragonfly
+RuntimeDirectory=dragonfly
+LogsDirectory=dragonfly
+LoadCredential=dfdaemon.yaml:/var/lib/outerspace/dfdaemon.yaml
+ExecStart=/usr/bin/dfdaemon --config %d/dfdaemon.yaml --console
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+LimitCORE=0
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

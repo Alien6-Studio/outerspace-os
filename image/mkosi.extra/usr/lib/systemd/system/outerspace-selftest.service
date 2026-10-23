@@ -1,0 +1,16 @@
+[Unit]
+Description=OuterSpace boot verification (explicit test kernel argument only)
+After=containerd.service systemd-sysctl.service outerspace-provision.service
+Requires=containerd.service
+ConditionKernelCommandLine=outerspace.selftest=1
+SuccessAction=poweroff
+FailureAction=poweroff
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/outerspace/selftest
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

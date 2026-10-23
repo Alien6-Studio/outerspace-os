@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+while IFS= read -r image || [[ -n "$image" ]]; do
+    [[ -z "$image" || "$image" == \#* ]] && continue
+    if [[ ! "$image" =~ ^[^[:space:]]+@sha256:[a-f0-9]{64}$ ]]; then
+        echo 'Prefetch requires an image reference pinned by sha256 digest' >&2
+        exit 1
+    fi
+    /usr/bin/crictl pull "$image"
+done < /var/lib/outerspace/prefetch-images

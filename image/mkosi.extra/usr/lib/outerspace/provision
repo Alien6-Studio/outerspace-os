@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+umask 077
+install -d -m 0700 /var/lib/outerspace /var/lib/kubelet
+if [[ ! -f /var/lib/outerspace/hostname ]]; then
+    printf 'oos-%s\n' "$(cut -c1-12 /proc/sys/kernel/random/uuid)" > /var/lib/outerspace/hostname
+fi
+hostname "$(cat /var/lib/outerspace/hostname)"
+[[ -e /dev/disk/by-label/OOS_CONFIG ]] || exit 0
+config_mount=$(mktemp -d /run/outerspace-config.XXXXXX)
+trap 'umount "$config_mount"; rmdir "$config_mount"' EXIT
+mount -o ro,nosuid,nodev,noexec /dev/disk/by-label/OOS_CONFIG "$config_mount"
+# A config drive is trusted provisioning media; never source or execute its files.
+for name in cluster-ca.crt kubelet.yaml prefetch-images dfdaemon.yaml; do
+    if [[ -f "$config_mount/$name" && ! -L "$config_mount/$name" ]]; then
+        install -m 0600 "$config_mount/$name" "/var/lib/outerspace/$name"
+    fi
+done
+# Do not overwrite a rotated node identity with a bootstrap token on reboot.
+if [[ ! -f /var/lib/kubelet/kubeconfig && -f "$config_mount/bootstrap-kubeconfig" && ! -L "$config_mount/bootstrap-kubeconfig" ]]; then
+    install -m 0600 "$config_mount/bootstrap-kubeconfig" /var/lib/kubelet/bootstrap-kubeconfig
+fi
+# Only regular per-registry hosts.toml files from trusted provisioning media.
+if [[ -d "$config_mount/certs.d" && ! -L "$config_mount/certs.d" ]]; then
+    for directory in "$config_mount/certs.d/"*; do
+        registry=${directory##*/}
+        [[ "$registry" =~ ^[a-z0-9][a-z0-9.:-]*$ ]] || continue
+        [[ -d "$directory" && ! -L "$directory" && -f "$directory/hosts.toml" && ! -L "$directory/hosts.toml" ]] || continue
+        install -d -m 0700 "/var/lib/outerspace/certs.d/$registry"
+        install -m 0600 "$directory/hosts.toml" "/var/lib/outerspace/certs.d/$registry/hosts.toml"
+    done
+fi

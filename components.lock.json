@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "components": {
+    "containerd": {
+      "version": "2.3.7",
+      "binaries": [
+        "bin/containerd",
+        "bin/containerd-shim-runc-v2",
+        "bin/ctr"
+      ],
+      "artifacts": {
+        "amd64": {
+          "url": "https://github.com/containerd/containerd/releases/download/v2.3.7/containerd-2.3.7-linux-amd64.tar.gz",
+          "sha256": "09a1b669ac6d21e7e24c3c33a9805b48987ba5845e8d88f039c47013a0c0025c"
+        },
+        "arm64": {
+          "url": "https://github.com/containerd/containerd/releases/download/v2.3.7/containerd-2.3.7-linux-arm64.tar.gz",
+          "sha256": "e08530c6c8a23c612606da5d2832aed9bed8fc7f8c1b41df0f148a701b931d69"
+        }
+      }
+    },
+    "kubelet": {
+      "version": "1.36.5",
+      "artifacts": {
+        "amd64": {
+          "url": "https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubelet",
+          "sha256": "2127c83a9a6ea4573e176ea42ba7415fadce0f05c998324b7154b4949dd2fdd0"
+        },
+        "arm64": {
+          "url": "https://dl.k8s.io/release/v1.36.5/bin/linux/arm64/kubelet",
+          "sha256": "7ed576edb3fe4e6b5f81c9c468aacee2018da38cfca8e428fcb8253014921df7"
+        }
+      }
+    },
+    "crictl": {
+      "version": "1.36.0",
+      "binaries": [
+        "crictl"
+      ],
+      "artifacts": {
+        "amd64": {
+          "url": "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.36.0/crictl-v1.36.0-linux-amd64.tar.gz",
+          "sha256": "83855e114566a8a8c44c548d515670f51de3a5e1da8b2effb59870e2f10c25a3"
+        },
+        "arm64": {
+          "url": "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.36.0/crictl-v1.36.0-linux-arm64.tar.gz",
+          "sha256": "68328594ccf780a80ae2b092d9f6ce484eec7cf540c275242e8fd954bfd95332"
+        }
+      }
+    },
+    "dfdaemon": {
+      "version": "1.4.9",
+      "artifacts": {
+        "amd64": {
+          "url": "https://github.com/dragonflyoss/client/releases/download/v1.4.9/dragonfly-client-v1.4.9-x86_64-unknown-linux-gnu.tar.gz",
+          "sha256": "04aff1ea0d4380a95e7ff22174d223e470b59a0ab1e6b77dd62cab1576838b32",
+          "binaries": [
+            "dragonfly-client-v1.4.9-x86_64-unknown-linux-gnu/dfdaemon"
+          ],
+          "license": "dragonfly-client-v1.4.9-x86_64-unknown-linux-gnu/LICENSE"
+        },
+        "arm64": {
+          "url": "https://github.com/dragonflyoss/client/releases/download/v1.4.9/dragonfly-client-v1.4.9-aarch64-unknown-linux-gnu.tar.gz",
+          "sha256": "8c19924a16bc4fc038421b46d7cf4a8f75c835086b73ee317a45e6f41e1dfec0",
+          "binaries": [
+            "dragonfly-client-v1.4.9-aarch64-unknown-linux-gnu/dfdaemon"
+          ],
+          "license": "dragonfly-client-v1.4.9-aarch64-unknown-linux-gnu/LICENSE"
+        }
+      }
+    }
+  }
+}

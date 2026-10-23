@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: outerspace-verification
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: echo
+  namespace: outerspace-verification
+  labels:
+    app: outerspace-echo
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: outerspace-lab-worker
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: echo
+      image: busybox:1.37.0
+      command: [sh, -ec, "mkdir -p /tmp/www; echo outerspace-network-ok > /tmp/www/index.html; exec httpd -f -p 8080 -h /tmp/www"]
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 8Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+      volumeMounts:
+        - name: temporary
+          mountPath: /tmp
+  volumes:
+    - name: temporary
+      emptyDir: {}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: outerspace-verification
+  labels:
+    role: test-client
+    access: allowed
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: outerspace-lab-worker2
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: client
+      image: busybox:1.37.0
+      command: [sleep, "3600"]
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]
+      resources:
+        requests:
+          cpu: 10m
+          memory: 8Mi
+        limits:
+          cpu: 100m
+          memory: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo
+  namespace: outerspace-verification
+spec:
+  selector:
+    app: outerspace-echo
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-labelled-client
+  namespace: outerspace-verification
+spec:
+  podSelector:
+    matchLabels:
+      app: outerspace-echo
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              role: test-client
+              access: allowed
+      ports:
+        - protocol: TCP
+          port: 8080

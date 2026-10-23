@@ -1,0 +1,47 @@
+name: Prepare draft release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Qualified existing version tag
+        required: true
+        type: string
+      candidate_run:
+        description: Successful Candidate images workflow run ID (no rebuild on promotion)
+        required: true
+        type: string
+      evidence:
+        description: Qualification evidence JSON for this exact version and commit
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: draft-release-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  draft:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag }}
+      CANDIDATE_RUN: ${{ inputs.candidate_run }}
+      EVIDENCE_JSON: ${{ inputs.evidence }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Check qualification, download exact candidate, verify inventory
+        run: python3 scripts/prepare-release.py
+      - name: Create a draft only
+        run: |
+          version=$(cat VERSION)
+          args=(release create "$TAG" --verify-tag --draft --title "OuterSpace OS $version" --notes-file "release/notes/$version.md")
+          if [[ "$version" == *-* ]]; then args+=(--prerelease); fi
+          mapfile -d '' assets < <(find release-assets -type f -print0)
+          gh "${args[@]}" "${assets[@]}"

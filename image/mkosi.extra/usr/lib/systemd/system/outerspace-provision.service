@@ -1,0 +1,14 @@
+[Unit]
+Description=Import the local OuterSpace configuration drive
+After=local-fs.target
+Before=containerd.service kubelet.service
+RequiresMountsFor=/var/lib/outerspace /var/lib/kubelet
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/outerspace/provision
+RemainAfterExit=yes
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

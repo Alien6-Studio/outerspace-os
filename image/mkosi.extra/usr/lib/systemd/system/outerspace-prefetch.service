@@ -1,0 +1,20 @@
+[Unit]
+Description=Warm the Kubernetes CRI image cache with digest-pinned images
+After=network-online.target containerd.service outerspace-provision.service
+Wants=network-online.target
+Requires=containerd.service
+ConditionPathExists=/var/lib/outerspace/prefetch-images
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/outerspace/prefetch
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=30min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

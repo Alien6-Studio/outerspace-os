@@ -69,12 +69,13 @@ def main():
             f'--dhcp-option=3,{gateway}', f'--dhcp-option=6,{runner}',
             '--user=root', '--pid-file=/state/dnsmasq.pid', '--dhcp-leasefile=/state/dnsmasq.leases')
         shutil.copyfile(uefi.FIRMWARE[platform.machine()][4], state / 'vars.fd')
-        run('qemu-img', 'create', '-q', '-f', 'qcow2', '-F', 'raw', '-b', '/image/outerspace.raw', '/state/disk.qcow2')
+        run('qemu-img', 'create', '-q', '-f', 'qcow2', '-F', 'raw', '-b', '/state/packaged.raw', '/state/disk.qcow2')
         (state / 'uuid').write_text(str(uuid.uuid4()))
     args_qemu = uefi.qemu_command(platform.machine(), '/state/disk.qcow2', '/state/vars.fd',
                                  (state / 'uuid').read_text(), 'unused', 'unused')
     # Enrollment boots never use the selftest's shutdown hook or an external kernel.
     args_qemu = args_qemu[:-2]
+    args_qemu += ['-smbios', 'type=11,value=io.systemd.stub.kernel-cmdline-extra=systemd.journald.forward_to_console=1']
     nic = args_qemu.index('-nic')
     args_qemu[nic:nic + 2] = ['-netdev', 'tap,id=net0,ifname=tap0,script=no,downscript=no',
                               '-device', 'virtio-net-pci,netdev=net0,mac=52:54:00:80:00:10']

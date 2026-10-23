@@ -171,6 +171,15 @@ nodes:
             '--mount', f'type=bind,src={self.output},dst=/image,readonly',
             '--mount', f'type=bind,src={self.state},dst=/state', 'outerspace-enrollment:dev', 'sleep', 'infinity')
         self.runner_created = True
+        compressed = list(self.output.glob('outerspace-*/*.raw.zst'))
+        if len(compressed) != 1:
+            raise ValueError('Expected exactly one packaged disk')
+        run('docker', 'exec', RUNNER, 'zstd', '-q', '-d', '--sparse',
+            '/image/' + str(compressed[0].relative_to(self.output)), '-o', '/state/packaged.raw')
+        identity = json.loads((self.output / 'build-identity.json').read_text())
+        if digest(self.state / 'packaged.raw') != identity['raw_image_sha256']:
+            raise ValueError('The decompressed packaged disk differs from its qualified identity')
+        (self.state / 'packaged.raw').chmod(0o400)
         run('docker', 'exec', RUNNER, 'bash', '-euc',
             'umask 077; truncate -s 16M /state/node-config.raw; mkfs.vfat -n OOS_CONFIG /state/node-config.raw; '
             'mcopy -s -i /state/node-config.raw /state/config/* ::/')
@@ -188,6 +197,19 @@ nodes:
                 if not node['metadata']['name'].startswith('oos-') or '6.8.0-147' not in node['status']['nodeInfo']['kernelVersion']:
                     raise ValueError('The worker does not use the OuterSpace kernel/identity')
                 return node
+
+    def extend_renewal_lifetime(self):
+        # Short initial certificates trigger a real renewal promptly; renewed
+        # certificates must remain valid throughout a slow emulated cold boot.
+        name = 'kube-controller-manager-' + self.control_plane
+        previous = self.api('-n', 'kube-system', 'pod', name)['status']['containerStatuses'][0]['containerID']
+        run('docker', 'exec', self.control_plane, 'sed', '-i',
+            's/cluster-signing-duration=10m/cluster-signing-duration=1h/',
+            '/etc/kubernetes/manifests/kube-controller-manager.yaml')
+        def restarted():
+            states = self.api('-n', 'kube-system', 'pod', name)['status'].get('containerStatuses', [])
+            return any(s.get('containerID') != previous and s.get('ready') for s in states)
+        wait_for('Extending lab renewal lifetime before the first rotation', restarted)
 
     def approve_serving(self, node):
         name = node['metadata']['name']
@@ -258,6 +280,10 @@ nodes:
         client = ['-n', LAB, 'exec', 'client', '--', 'python3', '-c']
         # Confirm DNS independently so an exec/DNS failure cannot count as a policy denial.
         self.kube(*client, 'import socket; assert socket.gethostbyname("cpu.' + LAB + '.svc.cluster.local")')
+        wait_for('Verifying cluster DNS from the OuterSpace workload', lambda:
+                 self.kube('-n', LAB, 'exec', 'cpu', '--', 'python3', '-c',
+                           'import socket; assert socket.gethostbyname("kubernetes.default.svc.cluster.local")',
+                           check=False).returncode == 0)
         request = 'import urllib.request; assert urllib.request.urlopen("http://cpu.' + LAB + '.svc.cluster.local:8080", timeout=3).read() == b"outerspace-cpu-ok:1536\\n"'
         denied = ('import socket,sys; s=socket.socket(); s.settimeout(3); '
                   'result=s.connect_ex(("cpu.' + LAB + '.svc.cluster.local",8080)); sys.exit(0 if result in (11,110) else 1)')
@@ -307,6 +333,8 @@ def main():
             lab.vm('start', '--config-drive')
             node = wait_for('Waiting for the real OuterSpace worker', lab.worker, timeout=900)
             node_name = node['metadata']['name']
+            lab.extend_renewal_lifetime()
+            config['client_signing_duration'] = '10m initial bootstrap; 1h renewals (test lab only)'
             lab.kube('wait', '--for=condition=Ready', 'node/' + node_name, '--timeout=900s')
             wait_for('Validating the exact node serving CSR', lambda: lab.approve_serving(node))
             lab.workloads(node_name)
@@ -342,8 +370,11 @@ def main():
             lab.network()
             if digest(output / 'outerspace.raw') != metadata['raw_image_sha256']:
                 raise ValueError('The original disk changed during qualification')
+            if digest(lab.state / 'packaged.raw') != metadata['raw_image_sha256']:
+                raise ValueError('The packaged backing disk changed during qualification')
             evidence = {'schema': 1, 'status': 'passed', 'subject': metadata, 'environment': 'local QEMU UEFI VM',
                         'configuration': config, 'node_uid': node['metadata']['uid'], 'before': before,
+                        'before_node_info': node['status']['nodeInfo'], 'after_node_info': after_node['status']['nodeInfo'],
                         'rotated': rotated, 'after': after, 'power_cycles': 2, 'bootstrap_revoked': True,
                         'client_csrs': {'bootstrap': initial_csr, 'rotation': rotated_csr},
                         'harness_sha256': {name: digest(ROOT / name) for name in
@@ -356,6 +387,12 @@ def main():
             report.write_text(json.dumps(evidence, indent=2) + '\n')
             print('OUTERSPACE_ENROLLMENT_OK: ' + str(report), flush=True)
         finally:
+            if lab.kind_created and lab.kubeconfig.exists():
+                for name, command in [('nodes', ['get', 'nodes', '-o', 'json']),
+                                      ('system-pods', ['-n', 'kube-system', 'get', 'pods', '-o', 'json']),
+                                      ('events', ['get', 'events', '-A', '-o', 'json'])]:
+                    result = lab.kube(*command, check=False)
+                    (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
             if lab.runner_created:
                 for name in ['boot-enroll.log', 'boot-recover.log', 'qemu-command.json']:
                     path = lab.state / name

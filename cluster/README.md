@@ -61,7 +61,8 @@ The test checks Node Ready, a deterministic CPU classifier, cross-node Cilium
 DNS/service traffic, default-deny and explicit allow. A read-only host probe
 checks locked accounts and public certificate fingerprints. Serving CSRs are
 approved only after checking requester, subject, usages and the exact node SANs.
-The lab alone uses ten-minute client certificates to observe real rotation.
+The lab alone uses ten-minute initial client certificates to observe real rotation,
+then one-hour renewals so the credential stays valid during an emulated cold boot.
 It then revokes the bootstrap token, powers off the VM, detaches the config drive
 and checks the same Node UID, hostname, machine ID and rotated certificate on the
 next boot, followed by workload/network recovery. A fresh disk overlay and stable

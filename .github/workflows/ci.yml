@@ -61,6 +61,7 @@ jobs:
             build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.manifest
             build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
             build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment.json
+            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment-*.json
           retention-days: 7
   ci:
     name: ci

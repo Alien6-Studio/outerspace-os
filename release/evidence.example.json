@@ -1,125 +1,118 @@
 {
+  "schema": 2,
   "version": "0.1.0-alpha.1",
-  "commit": "REPLACE_WITH_FULL_CANDIDATE_SOURCE_SHA",
+  "commit": "REPLACE_WITH_FULL_SOURCE_SHA",
   "candidate_run": "REPLACE_WITH_RUN_ID",
-  "candidate_checksums": {
-    "amd64": "SHA256_OF_AMD64_SHA256SUMS_FILE",
-    "arm64": "SHA256_OF_ARM64_SHA256SUMS_FILE"
-  },
-  "gates": {
-    "boot": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
+  "artifacts": [
+    {
+      "identity": {
+        "schema": 1,
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "amd64",
+        "version": "0.1.0-alpha.1",
+        "commit": "REPLACE_WITH_FULL_SOURCE_SHA",
+        "raw_image_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "uki_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "verity_root_hash": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "manifest_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "components_lock_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "source_archive_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY"
+      },
+      "sha256sums": "SHA256_OF_THIS_CANDIDATE_SHA256SUMS",
+      "capabilities": [
+        "agent_isolation",
+        "agent_resource_limits"
+      ],
+      "gates": {
+        "boot": {
+          "status": "pending",
+          "evidence": "",
+          "subject": {}
+        }
+      }
     },
-    "cri": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
+    {
+      "identity": {
+        "schema": 1,
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "version": "0.1.0-alpha.1",
+        "commit": "REPLACE_WITH_FULL_SOURCE_SHA",
+        "raw_image_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "uki_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "verity_root_hash": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "manifest_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "components_lock_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "source_archive_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY"
+      },
+      "sha256sums": "SHA256_OF_THIS_CANDIDATE_SHA256SUMS",
+      "capabilities": [
+        "agent_isolation",
+        "agent_resource_limits"
+      ],
+      "gates": {
+        "boot": {
+          "status": "pending",
+          "evidence": "",
+          "subject": {}
+        }
+      }
     },
-    "config_contract": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
+    {
+      "identity": {
+        "schema": 1,
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "amd64",
+        "version": "0.1.0-alpha.1",
+        "commit": "REPLACE_WITH_FULL_SOURCE_SHA",
+        "raw_image_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "uki_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "verity_root_hash": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "manifest_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "components_lock_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "source_archive_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY"
+      },
+      "sha256sums": "SHA256_OF_THIS_CANDIDATE_SHA256SUMS",
+      "capabilities": [
+        "inference_cpu_serving"
+      ],
+      "gates": {
+        "boot": {
+          "status": "pending",
+          "evidence": "",
+          "subject": {}
+        }
+      }
     },
-    "checksums": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "release_notes": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "cluster_ready": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "cilium": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "dragonfly_p2p": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "image_gc": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "state_reboot": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "bare_metal": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "cis_audit": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "upgrade_rollback": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "signed_boot": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "sbom": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "vulnerability_review": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "soak": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "support_policy": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "architectures, image hashes, hardware and test scenario",
-      "reviewer": ""
-    },
-    "license_review": {
-      "status": "pending",
-      "evidence": "",
-      "scope": "all bundled components, transitive dependencies, firmware and corresponding source",
-      "reviewer": ""
+    {
+      "identity": {
+        "schema": 1,
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "version": "0.1.0-alpha.1",
+        "commit": "REPLACE_WITH_FULL_SOURCE_SHA",
+        "raw_image_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "uki_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "verity_root_hash": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "manifest_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "components_lock_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY",
+        "source_archive_sha256": "COPY_FROM_THIS_CANDIDATE_BUILD_IDENTITY"
+      },
+      "sha256sums": "SHA256_OF_THIS_CANDIDATE_SHA256SUMS",
+      "capabilities": [
+        "inference_cpu_serving"
+      ],
+      "gates": {
+        "boot": {
+          "status": "pending",
+          "evidence": "",
+          "subject": {}
+        }
+      }
     }
-  }
+  ]
 }

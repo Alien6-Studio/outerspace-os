@@ -6,6 +6,7 @@ import argparse
 import json
 from pathlib import Path
 import re
+from profiles import selection
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_PATTERN = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(dev|alpha|beta|rc)\.(0|[1-9][0-9]*))?")
@@ -29,11 +30,47 @@ def validate_release(version, tag, commit, evidence, policy):
         raise ValueError("Development snapshots cannot be published as releases")
     if evidence.get("version") != version or evidence.get("commit") != commit:
         raise ValueError("Evidence must identify this exact version and commit")
+    if policy.get('schema') != 2 or evidence.get('schema') != 2 or not re.fullmatch(r'[a-f0-9]{40}', commit):
+        raise ValueError('Profile-bound schema 2 evidence and a full source commit are required')
+    expected = {(item['profile'], item['hardware_profile'], item['architecture']) for item in policy['artifacts']}
+    seen = set()
     failures = []
-    for name in policy["stages"][stage]:
-        gate = evidence.get("gates", {}).get(name, {})
-        if gate.get("status") != "passed" or not gate.get("evidence"):
-            failures.append(name)
+    for artifact in evidence.get('artifacts', []):
+        identity = artifact.get('identity', {})
+        selected = selection(identity.get('profile'), identity.get('hardware_profile'), identity.get('architecture', 'invalid'))
+        key = (selected['profile'], selected['hardware_profile'], selected['architecture'])
+        if key not in expected or key in seen:
+            raise ValueError('Unknown or duplicate profile/hardware/architecture artifact')
+        seen.add(key)
+        if identity.get('version') != version or identity.get('commit') != commit:
+            raise ValueError('Artifact must identify this exact version and commit')
+        for field in ['raw_image_sha256', 'uki_sha256', 'verity_root_hash', 'manifest_sha256',
+                      'components_lock_sha256', 'source_archive_sha256']:
+            if not re.fullmatch(r'[a-f0-9]{64}', identity.get(field, '')):
+                raise ValueError(f'Missing exact image identity: {field}')
+        if not re.fullmatch(r'[a-f0-9]{64}', artifact.get('sha256sums', '')):
+            raise ValueError('Each candidate needs its qualified SHA256SUMS digest')
+        capabilities = artifact.get('capabilities', [])
+        if (not isinstance(capabilities, list) or any(not isinstance(c, str) for c in capabilities)
+                or len(set(capabilities)) != len(capabilities)):
+            raise ValueError('Capabilities must be a unique list')
+        mandatory = set(policy['profiles'][key[0]]['required_capabilities'])
+        if not mandatory.issubset(capabilities):
+            raise ValueError('Mandatory profile capabilities cannot be omitted')
+        required = set(policy['stages'][stage])
+        for capability in capabilities:
+            definition = policy['capabilities'].get(capability)
+            if (not definition or key[0] not in definition['profiles']
+                    or key[1] not in definition['hardware']):
+                raise ValueError(f'Unsupported capability for this profile/hardware: {capability}')
+            required.update(definition['gates'])
+        for name in sorted(required):
+            gate = artifact.get('gates', {}).get(name, {})
+            if (gate.get('status') != 'passed' or not isinstance(gate.get('evidence'), str)
+                    or not gate['evidence'].strip() or gate.get('subject') != identity):
+                failures.append('/'.join(key) + ':' + name)
+    if seen != expected:
+        raise ValueError('Evidence must qualify every required profile/hardware/architecture artifact')
     if failures:
         raise ValueError("Release gates not satisfied: " + ", ".join(failures))
     return stage

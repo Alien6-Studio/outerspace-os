@@ -29,6 +29,14 @@ version string. An upstream Linux LTS label is not an Ubuntu kernel support poli
 The machine-readable minimum gates are in [policy.json](policy.json). All gates
 are cumulative. Missing, pending or failed evidence blocks release preparation.
 
+Schema 2 also requires independent evidence for every profile/hardware/architecture
+in the policy matrix. Agent images require isolation and resource-limit gates;
+Inference images require real CPU serving. Selected optional capabilities add
+their own gates. GPU capability is refused on CPU artifacts. Copy each candidate's
+complete `build-identity.json` into its artifact `identity` and every gate's
+`subject`; no gate or checksum from another artifact can qualify it. The example
+contains pending placeholders, not qualification results.
+
 | Stage | Audience / expectation | Additional gates |
 | --- | --- | --- |
 | dev | Internal engineering, disposable labs | Tests and build feedback; cannot be released |
@@ -53,7 +61,7 @@ cannot waive those minimum gates by changing their descriptions.
    Update VERSION, locked runtimes/hashes, kernel ABI and version-specific notes.
    Define the exact configuration and hardware matrix for this release.
 2. Create an immutable candidate tag after contracts pass. Run **Candidate images**
-   with that existing tag. Both native amd64/arm64 jobs build, QEMU-smoke, package
+   with that existing tag. The Agent/Inference × native amd64/arm64 matrix builds, QEMU-smokes, packages
    and upload candidate bundles. No release is published by a tag push.
 3. Download those bundles and run the phase-specific tests against these exact
    images. Preserve logs/reports outside the source commit, so evidence can refer
@@ -84,7 +92,7 @@ release should be created while signing/updater/audit gates are unimplemented.
 
 ## Release contents
 
-Per architecture: a tar bundle containing compressed raw disk, UKI, exact package
+Per profile, hardware and architecture: a tar bundle containing compressed raw disk, UKI, exact package
 manifest, runtime lock, build metadata, QEMU log and SHA256SUMS. The tar also gets
 an external checksum; qualification evidence accompanies the draft. The manifest
 is an inventory, not a complete SPDX/CycloneDX SBOM. RC requires a proper SBOM,

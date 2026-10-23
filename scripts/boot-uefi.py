@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
+from profiles import marker, verify_identity
 
 ESP = 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
 FIRMWARE = {
@@ -78,8 +79,9 @@ def verify_log(content, returncode, phase):
         raise RuntimeError(f'UEFI {phase} verification failed')
 
 
-def boot(output):
+def boot(output, profile, hardware):
     output = output.resolve()
+    identity = verify_identity(output, profile, hardware)
     disk = output / 'outerspace.raw'
     if disk.is_symlink() or not disk.is_file():
         raise ValueError('Expected a regular build/outerspace.raw image')
@@ -116,19 +118,24 @@ def boot(output):
                     log.write(f'\n=== UEFI {phase} ===\n' + content)
             print(content[-6000:], flush=True)
             verify_log(content, result.returncode, phase)
+            if marker(identity) not in content:
+                raise RuntimeError('Booted image profile/source identity does not match the build')
     if sha256(disk) != image_hash:
         raise RuntimeError('The source disk changed during qualification')
-    report = {'schema': 1, 'status': 'passed', 'architecture': {'aarch64': 'arm64', 'x86_64': 'amd64'}[arch],
+    report = {'schema': 2, 'status': 'passed', 'identity': identity,
+              'architecture': {'aarch64': 'arm64', 'x86_64': 'amd64'}[arch],
               'image_sha256': image_hash, 'firmware_sha256': sha256(Path(code)),
               'boot': 'UEFI firmware → systemd-boot → on-disk UKI → dm-verity root',
               'secure_boot': False, 'power_cycles': 2,
               'persistence': ['nonce', 'hostname', 'machine-id'],
               'machine_id_source': 'Stable QEMU VM UUID; physical-host machine-id persistence is not qualified',
               'limits': ['No Secure Boot qualification', 'No physical hardware qualification',
-                         'No Kubernetes enrollment or workload qualification']}
+                         'No Kubernetes enrollment or workload qualification'],
+              'logs': {name: sha256(output / name) for name in
+                       ['boot-smoke.log', 'boot-uefi-prepare.log', 'boot-uefi-verify.log']}}
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     print('OUTERSPACE_UEFI_PERSISTENCE_OK')
 
 
 if __name__ == '__main__':
-    boot(Path(sys.argv[1]))
+    boot(Path(sys.argv[1]), sys.argv[2], sys.argv[3])

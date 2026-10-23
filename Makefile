@@ -1,4 +1,6 @@
 SHELL := /bin/bash
+PROFILE ?=
+HARDWARE ?= cpu
 .PHONY: check builder build smoke smoke-split package
 
 check:
@@ -9,13 +11,13 @@ builder:
 	docker build -t outerspace-builder:dev -f build-support/Dockerfile .
 
 build:
-	./scripts/build.sh
+	./scripts/build.sh "$(PROFILE)" "$(HARDWARE)"
 
 smoke:
-	./scripts/smoke.sh
+	./scripts/smoke.sh "$(PROFILE)" "$(HARDWARE)" uefi
 
 smoke-split:
-	./scripts/smoke.sh split
+	./scripts/smoke.sh "$(PROFILE)" "$(HARDWARE)" split
 
 package:
-	./scripts/package.sh
+	./scripts/package.sh "$(PROFILE)" "$(HARDWARE)"

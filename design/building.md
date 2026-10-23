@@ -8,9 +8,8 @@ git clone https://github.com/Alien6-Studio/outerspace-os.git
 cd outerspace-os
 make check
 make builder
-make build
-make smoke
-make package
+make PROFILE=agent build smoke package
+make PROFILE=inference build smoke package
 ```
 
 The disposable builder needs privileged mount namespaces; no host devices or
@@ -18,26 +17,36 @@ Docker socket are exposed to it. Run only trusted source in this builder. The
 QEMU smoke test runs without extra privileges. Do not write a development image
 to a physical disk containing data.
 
+Builds require committed source and consume that exact Git archive. `PROFILE` is
+mandatory; output directories are `build/PROFILE-HARDWARE-ARCH/`, with `cpu` as the
+default hardware profile. Builds and proof files from one profile cannot qualify
+another. Existing unprofiled output is not accepted by this contract.
+
 ## Firmware and kernel
 
 For hardware discovery with the complete Ubuntu firmware set (larger image):
 
 ```sh
-./scripts/build.sh --profile=full-firmware
+make PROFILE=inference HARDWARE=cpu-full-firmware build smoke package
 ```
 
 The default uses the same generic kernel on physical servers and in VMs; firmware
 still needs qualification for each server model. The kernel ABI is pinned and
 must be deliberately updated with security releases. Runtime versions, source
 URLs and hashes are recorded in [components.lock.json](../components.lock.json).
+The discovery variant is development-only and is outside the default release
+matrix until its own hardware qualification is added to release policy.
 
 ## Artifacts and smoke-test scope
 
-Outputs under `build/` include the raw GPT disk, UKI, split kernel/initrd,
+Outputs under each profile directory include the raw GPT disk, UKI, split kernel/initrd,
 package manifest and boot log. `make package` adds the compressed image, source
 archive, component inventory, build metadata and SHA256 checksums to a versioned
 bundle. Development CI publishes logs and inventories only; binary redistribution
 is gated by license and source review.
+`build-identity.json` binds profile, hardware, architecture, commit, component lock,
+disk/UKI/manifest/source digests and verity root hash. The immutable guest identity
+must appear in each boot log; schema 2 smoke reports bind this identity and all logs.
 
 The default smoke test starts QEMU with UEFI firmware and the complete GPT disk.
 It loads systemd-boot and the on-disk UKI without passing an external kernel or
@@ -54,8 +63,8 @@ Outputs include `boot-uefi-prepare.log`, `boot-uefi-verify.log`, the combined
 `boot-smoke.log` and `uefi-smoke.json`. The report binds success to the raw disk's
 SHA256. Packaging rejects absent, failed, partial or stale boot evidence.
 
-For diagnostics, `make smoke-split` still boots the extracted kernel/initrd.
-It cannot qualify a package; rerun `make smoke` before packaging. Neither mode
+For diagnostics, `make PROFILE=agent smoke-split` still boots the extracted kernel/initrd.
+It cannot qualify a package; rerun `make PROFILE=agent smoke` before packaging. Neither mode
 qualifies Secure Boot, Kubernetes Node Ready, GPU execution or model latency.
 The earlier [development report](../tests/reports/2026-10-23-development.md)
 records the original split-kernel test and its limits.

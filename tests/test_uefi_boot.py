@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 import struct
 import unittest
+from image_fixtures import profiles
 
 spec = importlib.util.spec_from_file_location('boot_uefi', Path(__file__).resolve().parents[1] / 'scripts/boot-uefi.py')
 uefi = importlib.util.module_from_spec(spec)

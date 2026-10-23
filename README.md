@@ -50,8 +50,9 @@ make builder build smoke
 ```
 
 The disposable builder requires privileged mount namespaces. The smoke test boots
-QEMU and checks root integrity, writable state and the CRI runtime. It does not
-qualify UEFI disk boot, Kubernetes enrollment or physical hardware. Outputs and
+the complete disk through UEFI twice, checking root integrity, CRI, writable state
+and stable identity on a disposable overlay. It does not qualify Secure Boot,
+Kubernetes enrollment or physical hardware. Outputs and
 logs are written to `build/`; use disposable VMs while the image is in development.
 
 Follow the [build guide](design/building.md) for firmware profiles, artifacts and

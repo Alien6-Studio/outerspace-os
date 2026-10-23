@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.PHONY: check builder build smoke package
+.PHONY: check builder build smoke smoke-split package
 
 check:
 	python3 -m unittest discover -s tests -v
@@ -13,6 +13,9 @@ build:
 
 smoke:
 	./scripts/smoke.sh
+
+smoke-split:
+	./scripts/smoke.sh split
 
 package:
 	./scripts/package.sh

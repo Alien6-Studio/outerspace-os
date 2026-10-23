@@ -8,11 +8,13 @@
 - Native arm64 development build and native amd64/arm64 CI pipeline.
 - Bare-metal generic kernel/modules, eBPF/BTF build checks, Cilium cluster profile,
   native Dragonfly peer integration and independent runtime/peer cache retention.
-- Passed locally on arm64: QEMU boot with CRI available and read-only root.
+- Passed locally on arm64: full UEFI disk boot, CRI and read-only root, then a
+  second cold start retaining test state/hostname and stable VM identity.
 - Passed separately in kind: three-node Cilium DNS/service routing, deny and restore.
 - This lab does not qualify an OuterSpace node in Kubernetes.
-- Still required: UEFI disk boot, state persistence across reboot, config-drive
-  enrollment into a disposable cluster, Node Ready and a CPU inference pod.
+- Still required: config-drive enrollment into a disposable cluster, Node Ready,
+  rotated kubelet identity persistence and a CPU inference pod. Physical-host
+  identity and hardware qualification remain separate gates.
 - Still required: AppArmor/seccomp enforcement tests, privilege boundaries,
   dependency/vulnerability inventory and redistribution/corresponding-source review.
 

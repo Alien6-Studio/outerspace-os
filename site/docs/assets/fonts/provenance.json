@@ -1,0 +1,33 @@
+{
+  "css_source": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Space+Mono&display=swap",
+  "files": [
+    {
+      "file": "space-grotesk-latin-variable.woff2",
+      "source": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4Cw.woff2",
+      "family": "Space Grotesk",
+      "weight": "400 700",
+      "bytes": 22288,
+      "sha256": "0640890476fc1198ab4de571fb658de443c4d85b66466ec09534a8737ab1ce9d"
+    },
+    {
+      "file": "space-mono-latin-400.woff2",
+      "source": "https://fonts.gstatic.com/s/spacemono/v17/i7dPIFZifjKcF5UAWdDRYEF8RQ.woff2",
+      "family": "Space Mono",
+      "weight": "400",
+      "bytes": 16520,
+      "sha256": "fb4a81a2d0a893e5c38c394a7e716a1cef0b24610a0af49c96f6d529bd66bf2b"
+    },
+    {
+      "file": "SpaceGrotesk-OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacegrotesk/OFL.txt",
+      "bytes": 4495,
+      "sha256": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72"
+    },
+    {
+      "file": "SpaceMono-OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/spacemono/OFL.txt",
+      "bytes": 4392,
+      "sha256": "8e4ee42b2553e1e01504e61cb0d46d148cd8c9e5eacaa3622a7df2d4f2955b9f"
+    }
+  ]
+}

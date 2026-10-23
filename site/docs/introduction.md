@@ -1,27 +1,33 @@
-# Introduction
+---
+title: Introduction
+description: What OuterSpace OS builds, who it is for, and what the development image supports today.
+---
+# A Linux host with one mission
 
-Welcome to __OuterSpace OS__ - an innovative open-source operating system optimized for __Machine Learning__ and __Artificial Intelligence__. Developed with a vision to tackle the complex challenges of the new technology era, OuterSpace OS aims to provide an efficient and secure solution for cloud computing environments and Kubernetes Infrastructure as a Service (IaaS) clusters.
+OuterSpace OS is an Ubuntu-based operating system for Kubernetes inference workers,
+installed on bare metal or tested in virtual machines. A small host supplies Linux,
+systemd, containerd and kubelet. Inference engines, model frameworks and user-space
+accelerator libraries belong in containers.
 
-OuterSpace OS is designed to be lightweight yet robust, making it ideal for deployment in cloud environments, where resource optimization is key. With its integrated support for Kubernetes, OuterSpace OS is perfectly equipped to orchestrate large-scale containerized applications, enabling users to easily manage their workloads and services on IaaS.
+!!! warning "Development — 0.1.0-dev.0"
+    There is no stable release, supported production image or CIS certification.
+    The source and tests are available; hardware qualification, secure updates and
+    security audit evidence are still required.
 
-Beyond its performance and flexibility, OuterSpace OS is open-source. We firmly believe in the power of collaboration and shared innovation, and we encourage contributions from anyone interested in developing and improving our system.
+The first foundation uses Ubuntu 24.04 LTS, a generic server kernel, a read-only
+root protected by dm-verity, and a writable `/var` for runtime state. Native
+Dragonfly integration provides optional P2P image delivery. Cilium supplies the
+cluster networking and policy profile.
 
-This documentation is intended to guide you through the various features and functionalities of OuterSpace OS, and to help you understand how you can use it to propel your Artificial Intelligence to new horizons.
+## Where it fits
 
-Together, let's push the boundaries of what's possible.
+- Physical inference workers in self-managed Kubernetes / kubeadm clusters.
+- Virtual machines for image qualification and self-managed cloud clusters.
+- Local Docker/kind tests for cluster integration, separately from OS image tests.
 
-## What is an OS for Machine Learning in the Cloud?
+Managed AKS node pools require provider-supported OS images. OuterSpace cannot
+replace their base OS. On Azure, test this OS on VMs running a self-managed cluster;
+AKS can separately test portable workloads and supported cluster components.
 
-A cloud-based operating system dedicated to Machine Learning, like OuterSpace OS, is a purpose-built platform designed to facilitate and optimize the process of developing, deploying, and managing Machine Learning models and applications in cloud environments.
-
-But what sets it apart from traditional operating systems? Let's break it down.
-
-1. __Optimization for Machine Learning Workloads__: This type of OS is tailored to the specific needs of Machine Learning tasks. It can handle high computational requirements, manage large datasets, and ensure seamless execution of Machine Learning algorithms. Moreover, it is designed to take full advantage of hardware accelerations like GPUs, which are often critical for Machine Learning computations.
-
-1. __Cloud Readiness__: As it's designed for the cloud, this OS is inherently scalable and flexible. You can easily ramp up your computational resources to train complex models or handle larger data sets, and then scale back when your needs are more modest. It allows for distributed processing, which is a cornerstone of large-scale Machine Learning applications.
-
-1. __Container Orchestration and Microservices__: Machine Learning operations often consist of numerous interrelated tasks. With built-in support for technologies like Kubernetes, a Machine Learning-dedicated OS can manage these tasks effectively, allowing for efficient orchestration of microservices and containerized applications.
-
-1. __Open-Source and Collaborative__: Much like the wider Machine Learning community, these types of operating systems often embrace open-source principles. This means that they are constantly evolving, with developers worldwide contributing to their development, identifying bugs, and adding new features.
-
-By leveraging a cloud-based OS dedicated to Machine Learning, developers and data scientists can focus on what matters most: building effective Machine Learning models and solutions, without worrying about the underlying infrastructure.
+Start with the [build guide](getting-started.md), [architecture](architecture.md),
+and [release policy](releases.md).

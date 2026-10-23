@@ -1,70 +1,53 @@
 site_name: OuterSpace OS
-site_url: https://os.outerspace.sh
-site_author: Ludovic FERNANDEZ, Alien6
-site_description: >-
-  A lightweight, secure, and open-source operating system optimized for Machine Learning and Artificial Intelligence.
-
-# Repository
-repo_name: alien6-studio/outerspace-os
-repo_url: https://github.com/alien6-studio/outerspace-os
-
-# Copyright
-copyright: Copyright &copy; 2023 Alien6
-
+site_url: https://os.outerspace.sh/
+site_author: Alien6
+site_description: An Ubuntu-based Linux distribution for bare-metal Kubernetes inference. Immutable hosts, Dragonfly image delivery and eBPF networking. In development.
+repo_name: Alien6-Studio/outerspace-os
+repo_url: https://github.com/Alien6-Studio/outerspace-os
+copyright: OuterSpace OS — by Alien6. Development project; no stable release available.
+strict: true
 theme:
   name: material
   custom_dir: overrides
-  logo: assets/images/logo.png
+  language: en
+  logo: assets/images/outerspace-mark.svg
+  favicon: assets/images/outerspace-mark.svg
+  font: false
   palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  font:
-    text: Roboto
-    code: Roboto Mono
-  favicon: assets/images/logo.png
+    scheme: slate
+    primary: custom
+    accent: custom
   features:
-    - announce.dismiss
-    # - content.action.edit
-    # - content.action.view
-    # - content.code.annotate
-    # - content.code.copy
-    # - content.tabs.link
-    - content.tooltips
-    - header.autohide
-    - navigation.expand
-    - navigation.footer
-    - navigation.indexes
-    # - navigation.instant
-    # - navigation.prune
     - navigation.sections
-    # - navigation.tabs
-    # - navigation.tabs.sticky
+    - navigation.footer
     - navigation.top
-    - navigation.tracking
-    - search.highlight
-    - search.share
+    - content.code.copy
     - search.suggest
-    - toc.follow
-    #- toc.integrate
-
+    - search.highlight
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.highlight
+  - pymdownx.superfences
+extra_css:
+  - assets/stylesheets/docs.css
 extra:
   generator: false
-
-# Page tree
+  version: 0.1.0-dev.0
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Alien6-Studio/outerspace-os
 nav:
   - Home: index.md
   - Documentation:
-    - Introduction: introduction.md
-    - Key Features: features.md
+      - Overview: introduction.md
+      - Architecture: architecture.md
+      - Build and test: getting-started.md
+      - Features and status: features.md
+      - Releases: releases.md
+      - Security: security.md
+      - FAQ: faq.md
   - About:
-    - Sponsoring: about/sponsors.md
+      - Alien6: about/sponsors.md

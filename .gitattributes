@@ -1,2 +1,4 @@
 # Generated MkDocs output retains upstream template whitespace.
 docs/** -whitespace
+# Preserve the original upstream font license files byte for byte.
+site/docs/assets/fonts/*-OFL.txt -whitespace

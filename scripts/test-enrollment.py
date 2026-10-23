@@ -262,7 +262,18 @@ nodes:
                    {'apiVersion': 'networking.k8s.io/v1', 'kind': 'NetworkPolicy',
                     'metadata': {'name': 'cpu-deny', 'namespace': LAB},
                     'spec': {'podSelector': {'matchLabels': {'app': 'cpu'}}, 'policyTypes': ['Ingress'], 'ingress': []}})
-        self.kube('-n', LAB, 'wait', '--for=condition=Ready', 'pod', '--all', '--timeout=600s')
+        self.kube('-n', LAB, 'wait', '--for=condition=Ready', 'pod', '--all', '--timeout=900s')
+
+    def cilium_ready(self, node):
+        pods = self.api('-n', 'kube-system', 'pods', '--field-selector', 'spec.nodeName=' + node)['items']
+        required = {'cilium-agent', 'cilium-envoy'}
+        ready = set()
+        for pod in pods:
+            containers = {container['name'] for container in pod['spec']['containers']}
+            if any(condition['type'] == 'Ready' and condition['status'] == 'True'
+                   for condition in pod.get('status', {}).get('conditions', [])):
+                ready.update(required & containers)
+        return ready == required
 
     def probe(self):
         result = self.kube('-n', LAB, 'exec', 'probe', '--', 'python3', '-c',
@@ -296,7 +307,6 @@ nodes:
         raise ValueError('The active client certificate does not match an issued CSR')
 
     def network(self):
-        self.kube('-n', LAB, 'delete', 'networkpolicy', 'cpu-allow', '--ignore-not-found')
         client = ['-n', LAB, 'exec', 'client', '--', 'python3', '-c']
         # Confirm DNS independently so an exec/DNS failure cannot count as a policy denial.
         self.kube(*client, 'import socket; assert socket.gethostbyname("cpu.' + LAB + '.svc.cluster.local")')
@@ -307,14 +317,19 @@ nodes:
         request = 'import urllib.request; assert urllib.request.urlopen("http://cpu.' + LAB + '.svc.cluster.local:8080", timeout=3).read() == b"outerspace-cpu-ok:1536\\n"'
         denied = ('import socket,sys; s=socket.socket(); s.settimeout(3); '
                   'result=s.connect_ex(("cpu.' + LAB + '.svc.cluster.local",8080)); sys.exit(0 if result in (11,110) else 1)')
-        wait_for('Verifying default-deny on the OuterSpace endpoint',
-                 lambda: self.kube(*client, denied, check=False).returncode == 0)
-        self.apply({'apiVersion': 'networking.k8s.io/v1', 'kind': 'NetworkPolicy',
+        allow = {'apiVersion': 'networking.k8s.io/v1', 'kind': 'NetworkPolicy',
                     'metadata': {'name': 'cpu-allow', 'namespace': LAB},
                     'spec': {'podSelector': {'matchLabels': {'app': 'cpu'}}, 'policyTypes': ['Ingress'],
                              'ingress': [{'from': [{'podSelector': {'matchLabels': {'app': 'client'}}}],
-                                          'ports': [{'protocol': 'TCP', 'port': 8080}]}]}})
-        wait_for('Verifying allowed cross-node DNS/service/CPU response',
+                                          'ports': [{'protocol': 'TCP', 'port': 8080}]}]}}
+        self.apply(allow)
+        wait_for('Verifying healthy cross-node service before policy denial',
+                 lambda: self.kube(*client, request, check=False).returncode == 0)
+        self.kube('-n', LAB, 'delete', 'networkpolicy', 'cpu-allow')
+        wait_for('Verifying default-deny on the OuterSpace endpoint',
+                 lambda: self.kube(*client, denied, check=False).returncode == 0)
+        self.apply(allow)
+        wait_for('Verifying restored cross-node DNS/service/CPU response',
                  lambda: self.kube(*client, request, check=False).returncode == 0)
 
     def cleanup(self):
@@ -368,6 +383,8 @@ def main():
             config['client_signing_duration'] = '10m initial bootstrap; 1h renewals (test lab only)'
             lab.kube('wait', '--for=condition=Ready', 'node/' + node_name, '--timeout=900s')
             wait_for('Validating the exact node serving CSR', lambda: lab.approve_serving(node))
+            wait_for('Waiting for Cilium and Envoy Ready before workloads',
+                     lambda: lab.cilium_ready(node_name), timeout=900)
             lab.workloads(node_name)
             before = wait_for('Reading immutable image and client identity', lab.probe)
             expected_identity = {key: metadata[key] for key in ['schema', 'profile', 'hardware_profile', 'architecture',
@@ -395,6 +412,8 @@ def main():
                         return current
             after_node = wait_for('Waiting for Node Ready after cold boot without config drive', recovered, timeout=900)
             wait_for('Checking serving certificate after recovery', lambda: lab.approve_serving(after_node))
+            wait_for('Waiting for Cilium and Envoy Ready after recovery',
+                     lambda: lab.cilium_ready(node_name), timeout=900)
             after = wait_for('Reading persisted rotated credentials', lab.probe)
             verify_recovery(before, rotated, after, node, after_node, initial_csr['certificate_sha256'])
             lab.network()
@@ -420,6 +439,15 @@ def main():
                                           ('events', ['get', 'events', '-A', '-o', 'json'])]:
                         result = lab.kube(*command, check=False)
                         (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
+                    # Preserve the system agent's explanation of slow/failed
+                    # endpoint creation; serial logs only contain the CNI client.
+                    if 'node_name' in locals():
+                        pods = lab.api('-n', 'kube-system', 'pods', '--field-selector', 'spec.nodeName=' + node_name)['items']
+                        for pod in pods:
+                            if any(c['name'] == 'cilium-agent' for c in pod['spec']['containers']):
+                                result = lab.kube('-n', 'kube-system', 'logs', pod['metadata']['name'],
+                                                  '-c', 'cilium-agent', '--tail=300', '--timestamps', check=False)
+                                (output / 'enrollment-cilium.log').write_text(result.stdout + result.stderr)
                 if lab.runner_created:
                     for name in ['boot-enroll.log', 'boot-recover.log', 'qemu-command-enroll.json', 'qemu-command-recover.json']:
                         path = lab.state / name

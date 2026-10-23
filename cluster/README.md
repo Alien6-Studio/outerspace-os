@@ -53,6 +53,11 @@ lab or overlapping network. The default kubecontext is never used.
 The harness must remain committed and unchanged during the test. Lab pods tolerate
 up to thirty minutes of node unavailability to allow slow emulated cold boots;
 the bounded recovery checks still have to pass.
+The emulated worker uses two vCPUs and 4 GiB of RAM, leaving CPU time for the
+reference nodes on CI hosts. The harness waits for both Cilium and Envoy Ready
+before launching application pods and after reboot. Network checks establish a
+healthy service response, require default-deny to block it, then require recovery
+after an explicit allow policy.
 
 The packaged disk boots through UEFI in a QEMU VM connected by TAP to a dedicated
 kubeadm-compatible kind control plane. Only that control plane and a reference

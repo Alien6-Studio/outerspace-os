@@ -1,0 +1,18 @@
+name: Website build
+on:
+  push:
+    branches: [gh-pages]
+    paths: ["site/**", ".github/workflows/website.yml"]
+  pull_request:
+    branches: [gh-pages]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: |
+          python3 -m venv "$RUNNER_TEMP/website"
+          "$RUNNER_TEMP/website/bin/pip" install -r site/requirements.txt
+          "$RUNNER_TEMP/website/bin/mkdocs" build --strict -f site/mkdocs.yml --site-dir "$RUNNER_TEMP/html"

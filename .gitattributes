@@ -1,0 +1,2 @@
+# Generated MkDocs output retains upstream template whitespace.
+docs/** -whitespace

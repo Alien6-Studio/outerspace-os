@@ -167,6 +167,7 @@ nodes:
                                          ['10.97.0.10'], 'cluster.local', self.state / 'config')
         run('docker', 'run', '-d', '--name', RUNNER, '--label', LABEL + '=true', '--network', LAB,
             '--cap-drop=ALL', '--cap-add=NET_ADMIN', '--cap-add=NET_RAW', '--cap-add=NET_BIND_SERVICE',
+            '--cap-add=DAC_OVERRIDE',
             '--device=/dev/net/tun', '--mount', f'type=bind,src={ROOT},dst=/work,readonly',
             '--mount', f'type=bind,src={self.output},dst=/image,readonly',
             '--mount', f'type=bind,src={self.state},dst=/state', 'outerspace-enrollment:dev', 'sleep', 'infinity')
@@ -174,13 +175,13 @@ nodes:
         compressed = list(self.output.glob('outerspace-*/*.raw.zst'))
         if len(compressed) != 1:
             raise ValueError('Expected exactly one packaged disk')
-        run('docker', 'exec', RUNNER, 'zstd', '-q', '-d', '--sparse',
+        run('docker', 'exec', '--user', f'{os.getuid()}:{os.getgid()}', RUNNER, 'zstd', '-q', '-d', '--sparse',
             '/image/' + str(compressed[0].relative_to(self.output)), '-o', '/state/packaged.raw')
         identity = json.loads((self.output / 'build-identity.json').read_text())
         if digest(self.state / 'packaged.raw') != identity['raw_image_sha256']:
             raise ValueError('The decompressed packaged disk differs from its qualified identity')
         (self.state / 'packaged.raw').chmod(0o400)
-        run('docker', 'exec', RUNNER, 'bash', '-euc',
+        run('docker', 'exec', '--user', f'{os.getuid()}:{os.getgid()}', RUNNER, 'bash', '-euc',
             'umask 077; truncate -s 16M /state/node-config.raw; mkfs.vfat -n OOS_CONFIG /state/node-config.raw; '
             'mcopy -s -i /state/node-config.raw /state/config/* ::/')
         return {'api_server': 'https://' + self.api_ip + ':6443', 'cluster_dns': ['10.97.0.10'],
@@ -207,7 +208,10 @@ nodes:
             's/cluster-signing-duration=10m/cluster-signing-duration=1h/',
             '/etc/kubernetes/manifests/kube-controller-manager.yaml')
         def restarted():
-            states = self.api('-n', 'kube-system', 'pod', name)['status'].get('containerStatuses', [])
+            result = self.kube('-n', 'kube-system', 'get', 'pod', name, '-o', 'json', check=False)
+            if result.returncode:
+                return False
+            states = json.loads(result.stdout).get('status', {}).get('containerStatuses', [])
             return any(s.get('containerID') != previous and s.get('ready') for s in states)
         wait_for('Extending lab renewal lifetime before the first rotation', restarted)
 
@@ -298,12 +302,18 @@ nodes:
                  lambda: self.kube(*client, request, check=False).returncode == 0)
 
     def cleanup(self):
+        failures = []
         if self.runner_created:
-            run('docker', 'rm', '-f', RUNNER, check=False)
+            if run('docker', 'rm', '-f', RUNNER, check=False).returncode:
+                failures.append('VM runner')
         if self.kind_created:
-            run('kind', 'delete', 'cluster', '--name', LAB, '--kubeconfig', self.kubeconfig, check=False)
+            if run('kind', 'delete', 'cluster', '--name', LAB, '--kubeconfig', self.kubeconfig, check=False).returncode:
+                failures.append('kind control plane')
         if self.network_created:
-            run('docker', 'network', 'rm', LAB, check=False)
+            if run('docker', 'network', 'rm', LAB, check=False).returncode:
+                failures.append('lab network')
+        if failures:
+            raise RuntimeError('Lab cleanup failed: ' + ', '.join(failures))
 
 
 def main():
@@ -384,21 +394,26 @@ def main():
                         'cpu_smoke': {'image': PYTHON_IMAGE, 'result': 'outerspace-cpu-ok:1536'},
                         'limits': ['No physical-machine qualification', 'No production model serving qualification',
                                    'No Secure Boot or CIS compliance claim']}
-            report.write_text(json.dumps(evidence, indent=2) + '\n')
-            print('OUTERSPACE_ENROLLMENT_OK: ' + str(report), flush=True)
         finally:
-            if lab.kind_created and lab.kubeconfig.exists():
-                for name, command in [('nodes', ['get', 'nodes', '-o', 'json']),
-                                      ('system-pods', ['-n', 'kube-system', 'get', 'pods', '-o', 'json']),
-                                      ('events', ['get', 'events', '-A', '-o', 'json'])]:
-                    result = lab.kube(*command, check=False)
-                    (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
-            if lab.runner_created:
-                for name in ['boot-enroll.log', 'boot-recover.log', 'qemu-command.json']:
-                    path = lab.state / name
-                    if path.is_file():
-                        shutil.copyfile(path, output / ('enrollment-' + name))
-            lab.cleanup()
+            try:
+                if lab.kind_created and lab.kubeconfig.exists():
+                    for name, command in [('nodes', ['get', 'nodes', '-o', 'json']),
+                                          ('system-pods', ['-n', 'kube-system', 'get', 'pods', '-o', 'json']),
+                                          ('events', ['get', 'events', '-A', '-o', 'json'])]:
+                        result = lab.kube(*command, check=False)
+                        (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
+                if lab.runner_created:
+                    for name in ['boot-enroll.log', 'boot-recover.log', 'qemu-command-enroll.json', 'qemu-command-recover.json']:
+                        path = lab.state / name
+                        if path.is_file():
+                            shutil.copyfile(path, output / ('enrollment-' + name))
+            finally:
+                lab.cleanup()
+    evidence['logs'] = {name: digest(output / name) for name in
+                        ['enrollment-boot-enroll.log', 'enrollment-boot-recover.log',
+                         'enrollment-qemu-command-enroll.json', 'enrollment-qemu-command-recover.json']}
+    report.write_text(json.dumps(evidence, indent=2) + '\n')
+    print('OUTERSPACE_ENROLLMENT_OK: ' + str(report), flush=True)
 
 
 if __name__ == '__main__':

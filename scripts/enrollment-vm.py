@@ -85,7 +85,7 @@ def main():
                   '-pidfile', '/state/qemu.pid']
     if args.config_drive:
         args_qemu += ['-drive', 'if=virtio,format=raw,readonly=on,file=/state/node-config.raw']
-    (state / 'qemu-command.json').write_text(json.dumps(args_qemu, indent=2) + '\n')
+    (state / ('qemu-command-enroll.json' if args.config_drive else 'qemu-command-recover.json')).write_text(json.dumps(args_qemu, indent=2) + '\n')
     with (state / ('boot-enroll.log' if args.config_drive else 'boot-recover.log')).open('w') as log:
         process = subprocess.Popen(args_qemu, stdout=log, stderr=subprocess.STDOUT)
     for _ in range(100):

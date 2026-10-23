@@ -55,6 +55,9 @@ def main():
         run('ip', 'link', 'add', 'br0', 'type', 'bridge')
         run('ip', 'addr', 'flush', 'dev', 'eth0')
         run('ip', 'link', 'set', 'eth0', 'master', 'br0')
+        # Docker can reflect broadcasts back through this port. Do not let
+        # reflected guest frames move its MAC from the TAP to the uplink.
+        run('bridge', 'link', 'set', 'dev', 'eth0', 'learning', 'off')
         run('ip', 'addr', 'add', f'{runner}/{prefix}', 'dev', 'br0')
         run('ip', 'link', 'set', 'br0', 'up')
         run('ip', 'route', 'replace', 'default', 'via', gateway, 'dev', 'br0')
@@ -64,7 +67,7 @@ def main():
         mask = str(ipaddress.IPv4Network(f'0.0.0.0/{prefix}').netmask)
         dhcp_args = ['dnsmasq', '--no-daemon', '--interface=br0', '--bind-interfaces', '--no-resolv',
             '--server=127.0.0.11', f'--listen-address={runner}',
-            '--dhcp-authoritative', f'--dhcp-range=172.30.80.10,172.30.80.10,{mask},1h',
+            '--dhcp-authoritative', '--dhcp-broadcast', f'--dhcp-range=172.30.80.10,172.30.80.10,{mask},1h',
             '--dhcp-host=52:54:00:80:00:10,172.30.80.10',
             f'--dhcp-option=3,{gateway}', f'--dhcp-option=6,{runner}',
             '--dhcp-leasefile=/state/dnsmasq.leases']

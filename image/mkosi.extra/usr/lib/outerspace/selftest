@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
+trap 'echo "OUTERSPACE_SELFTEST_FAIL: command failed at line $LINENO" >&2' ERR
 fail() { echo "OUTERSPACE_SELFTEST_FAIL: $*"; exit 1; }
 [[ $(stat -fc %T /sys/fs/cgroup) == cgroup2fs ]] || fail 'cgroup v2 missing'
 [[ $(stat -fc %T /sys/fs/bpf) == bpf_fs ]] || fail 'bpffs missing'
@@ -23,4 +24,43 @@ systemctl is-active --quiet containerd || fail 'containerd inactive'
 /usr/bin/kubelet --version
 free -m
 df -h / /var
+phase=
+nonce=
+for option in $(cat /proc/cmdline); do
+    case "$option" in
+        outerspace.selftest.phase=*) phase=${option#*=} ;;
+        outerspace.selftest.nonce=*) nonce=${option#*=} ;;
+    esac
+done
+if [[ -n "$phase" ]]; then
+    [[ -d /sys/firmware/efi ]] || fail 'not booted through UEFI'
+    efi=/sys/firmware/efi/efivars
+    vendor=4a67b082-0a4c-41cf-b6c7-440b29bb8c4f
+    [[ -f "$efi/LoaderInfo-$vendor" && -f "$efi/StubInfo-$vendor" ]] || fail 'EFI loader/stub evidence missing'
+    # efivarfs does not support seeking; copy to a pipe before removing attributes.
+    loader=$(cat "$efi/LoaderInfo-$vendor" | tail -c +5 | tr -d '\000')
+    stub=$(cat "$efi/StubInfo-$vendor" | tail -c +5 | tr -d '\000')
+    [[ "$loader" == 'systemd-boot '* && "$stub" == 'systemd-stub '* ]] || fail 'unexpected EFI loader/stub'
+    printf 'OUTERSPACE_UEFI_OK: %s -> %s\n' "$loader" "$stub"
+    [[ "$nonce" =~ ^[a-f0-9]{32}$ ]] || fail 'invalid persistence nonce'
+    state=/var/lib/outerspace/selftest-persistence
+    case "$phase" in
+        prepare)
+            [[ ! -e "$state" ]] || fail 'persistence test state is not fresh'
+            (umask 077; printf '%s\n' "$nonce" "$(hostname)" "$(cat /etc/machine-id)" "$(cat /proc/sys/kernel/random/boot_id)" > "$state")
+            sync -f "$state"
+            echo OUTERSPACE_PERSISTENCE_PREPARE_OK
+            ;;
+        verify)
+            [[ -f "$state" && ! -L "$state" ]] || fail 'state did not survive poweroff'
+            mapfile -t prior < "$state"
+            [[ ${#prior[@]} == 4 && "${prior[0]}" == "$nonce" ]] || fail 'wrong persisted test identity'
+            [[ "${prior[1]}" == "$(hostname)" ]] || fail 'hostname changed after poweroff'
+            [[ "${prior[2]}" == "$(cat /etc/machine-id)" ]] || fail 'machine-id changed after poweroff'
+            [[ "${prior[3]}" != "$(cat /proc/sys/kernel/random/boot_id)" ]] || fail 'second boot was not a new kernel boot'
+            echo OUTERSPACE_PERSISTENCE_VERIFY_OK
+            ;;
+        *) fail 'invalid persistence test phase' ;;
+    esac
+fi
 echo OUTERSPACE_SELFTEST_OK

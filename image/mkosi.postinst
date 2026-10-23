@@ -5,6 +5,7 @@ set -euo pipefail
 # mkosi mounts BuildSources at /work/src; no tooling enters the OS image.
 python3 /work/src/scripts/install-components.py "$BUILDROOT" "$ARCHITECTURE" /work/src/components.lock.json /work/src/.cache/components
 python3 /work/src/scripts/check-kernel.py "$BUILDROOT"
+python3 /work/src/scripts/prepare-kernel.py "$BUILDROOT" "$ARCHITECTURE"
 root="$BUILDROOT"
 install -D -m 0644 /work/src/LICENSE "$root/usr/share/licenses/outerspace/LICENSE"
 install -D -m 0644 /work/src/NOTICE "$root/usr/share/licenses/outerspace/NOTICE"

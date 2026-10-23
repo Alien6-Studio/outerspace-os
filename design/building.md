@@ -39,10 +39,33 @@ archive, component inventory, build metadata and SHA256 checksums to a versioned
 bundle. Development CI publishes logs and inventories only; binary redistribution
 is gated by license and source review.
 
-The smoke test boots the split kernel/initrd with the UKI's embedded verity root
-hash. It checks read-only root, writable state, cgroup v2, AppArmor, selected
-sysctls and the CRI API. It does not prove EFI disk boot, Secure Boot, Kubernetes
-Node Ready, GPU execution or model latency. See the [validation report](../tests/reports/2026-10-23-development.md).
+The default smoke test starts QEMU with UEFI firmware and the complete GPT disk.
+It loads systemd-boot and the on-disk UKI without passing an external kernel or
+initrd. Two cold starts share a disposable qcow2 overlay and firmware variables.
+The original raw image must remain unchanged.
+
+Both boots check read-only root, cgroup v2, AppArmor, selected sysctls and the CRI
+API. A nonce and hostname written to `/var` must survive shutdown. The second
+boot must have a new boot ID and the same machine ID; the VM's fixed UUID supplies
+the latter. This does not qualify machine-ID persistence on physical hardware or
+the persistence of a rotated Kubernetes worker identity.
+
+Outputs include `boot-uefi-prepare.log`, `boot-uefi-verify.log`, the combined
+`boot-smoke.log` and `uefi-smoke.json`. The report binds success to the raw disk's
+SHA256. Packaging rejects absent, failed, partial or stale boot evidence.
+
+For diagnostics, `make smoke-split` still boots the extracted kernel/initrd.
+It cannot qualify a package; rerun `make smoke` before packaging. Neither mode
+qualifies Secure Boot, Kubernetes Node Ready, GPU execution or model latency.
+The earlier [development report](../tests/reports/2026-10-23-development.md)
+records the original split-kernel test and its limits.
+
+The current disk profile uses 512-byte logical sectors consistently for GPT and
+EFI FAT32. Native 4K-sector disks require a separately qualified image profile.
+ARM64 Ubuntu gzip kernels are decompressed into EFI-loadable payloads before UKI
+assembly; package-input and prepared hashes are recorded inside the image at
+`/usr/share/outerspace/kernel-preparation.json`. The ESP contains EFI boot assets,
+not duplicate loose kernels or kernel debug metadata.
 
 Ubuntu packages currently track the signed Noble update/security repositories;
 upstream runtime binaries and builder inputs are hash-locked. Exact bit-for-bit

@@ -38,8 +38,11 @@ are cumulative. Missing, pending or failed evidence blocks release preparation.
 | stable | Supported within an explicit matrix | Soak qualification and published support policy |
 
 A kind lab uses Docker's kernel. It cannot satisfy the `cluster_ready`, `cilium`
-or `dragonfly_p2p` gates for an OuterSpace image. Likewise split-kernel QEMU smoke
-does not qualify UEFI boot, Secure Boot or a physical server. Each evidence record
+or `dragonfly_p2p` gates for an OuterSpace image. `make smoke` now exercises full
+UEFI disk boot and state/hostname persistence across two cold starts. Its report
+is bound to the raw image hash and required by packaging. The diagnostic
+split-kernel test cannot satisfy this requirement. Neither test qualifies Secure
+Boot, a physical server or persistence of a rotated kubelet identity. Each evidence record
 must say which architecture, hardware, image checksum and scenario it covers.
 An alpha explicitly documents its unsigned boot and absent updater. RC/stable
 cannot waive those minimum gates by changing their descriptions.

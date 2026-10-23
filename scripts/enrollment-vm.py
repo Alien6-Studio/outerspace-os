@@ -62,12 +62,19 @@ def main():
         run('ip', 'link', 'set', 'tap0', 'master', 'br0')
         run('ip', 'link', 'set', 'tap0', 'up')
         mask = str(ipaddress.IPv4Network(f'0.0.0.0/{prefix}').netmask)
-        run('dnsmasq', '--interface=br0', '--bind-interfaces', '--no-resolv',
+        dhcp_args = ['dnsmasq', '--no-daemon', '--interface=br0', '--bind-interfaces', '--no-resolv',
             '--server=127.0.0.11', f'--listen-address={runner}',
             '--dhcp-authoritative', f'--dhcp-range=172.30.80.10,172.30.80.10,{mask},1h',
             '--dhcp-host=52:54:00:80:00:10,172.30.80.10',
             f'--dhcp-option=3,{gateway}', f'--dhcp-option=6,{runner}',
-            '--user=root', '--pid-file=/state/dnsmasq.pid', '--dhcp-leasefile=/state/dnsmasq.leases')
+            '--dhcp-leasefile=/state/dnsmasq.leases']
+        # Debug/foreground mode preserves the runner's existing uid/gid and
+        # capabilities. Daemon mode tries to switch groups and needs SETGID.
+        with (state / 'dnsmasq.log').open('w') as log:
+            dhcp = subprocess.Popen(dhcp_args, stdout=log, stderr=subprocess.STDOUT)
+        time.sleep(.2)
+        if dhcp.poll() is not None:
+            raise RuntimeError('Lab DHCP failed: ' + (state / 'dnsmasq.log').read_text())
         shutil.copyfile(uefi.FIRMWARE[platform.machine()][4], state / 'vars.fd')
         run('qemu-img', 'create', '-q', '-f', 'qcow2', '-F', 'raw', '-b', '/state/packaged.raw', '/state/disk.qcow2')
         (state / 'uuid').write_text(str(uuid.uuid4()))

@@ -90,9 +90,9 @@ def main():
     args_qemu[nic:nic + 2] = ['-netdev', 'tap,id=net0,ifname=tap0,script=no,downscript=no',
                               '-device', 'virtio-net-pci,netdev=net0,mac=52:54:00:80:00:10']
     args_qemu[args_qemu.index('-m') + 1] = '4096'
-    # Leave CPU time for the reference nodes on four-core CI hosts. Extra TCG
-    # vCPUs contend while the guest compiles/loads the first Cilium datapaths.
-    args_qemu[args_qemu.index('-smp') + 1] = '2'
+    # Cilium datapath initialization and image unpacking need concurrent guest
+    # CPU time under TCG; two vCPUs caused startup-probe restarts on arm64 CI.
+    args_qemu[args_qemu.index('-smp') + 1] = '4'
     args_qemu += ['-qmp', 'unix:/state/qmp.sock,server=on,wait=off',
                   '-pidfile', '/state/qemu.pid']
     if args.config_drive:

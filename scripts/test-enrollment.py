@@ -444,10 +444,15 @@ def main():
                     if 'node_name' in locals():
                         pods = lab.api('-n', 'kube-system', 'pods', '--field-selector', 'spec.nodeName=' + node_name)['items']
                         for pod in pods:
-                            if any(c['name'] == 'cilium-agent' for c in pod['spec']['containers']):
-                                result = lab.kube('-n', 'kube-system', 'logs', pod['metadata']['name'],
-                                                  '-c', 'cilium-agent', '--tail=300', '--timestamps', check=False)
-                                (output / 'enrollment-cilium.log').write_text(result.stdout + result.stderr)
+                            for container, stem in [('cilium-agent', 'cilium'), ('cilium-envoy', 'envoy')]:
+                                if not any(c['name'] == container for c in pod['spec']['containers']):
+                                    continue
+                                restarted = any(c['name'] == container and c['restartCount'] > 0
+                                                for c in pod['status'].get('containerStatuses', []))
+                                for suffix, extra in [('', []), ('-previous', ['--previous'])] if restarted else [('', [])]:
+                                    result = lab.kube('-n', 'kube-system', 'logs', pod['metadata']['name'],
+                                                      '-c', container, '--tail=300', '--timestamps', *extra, check=False)
+                                    (output / f'enrollment-{stem}{suffix}.log').write_text(result.stdout + result.stderr)
                 if lab.runner_created:
                     for name in ['boot-enroll.log', 'boot-recover.log', 'qemu-command-enroll.json', 'qemu-command-recover.json']:
                         path = lab.state / name

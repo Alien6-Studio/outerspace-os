@@ -6,6 +6,10 @@ A minimal, Ubuntu-based Linux distribution for **Kubernetes inference workers**.
 Install it on bare metal, keep the host small, and run inference engines and their
 dependencies in containers.
 
+The [agent execution direction](design/agent-execution.md) extends this minimal
+host to isolated agents, with optional integrations such as OpenShell. That
+profile is planned; it is not an existing compatibility claim.
+
 [![Distribution checks](https://github.com/Alien6-Studio/outerspace-os/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Alien6-Studio/outerspace-os/actions/workflows/ci.yml?query=branch%3Amain)
 [![Website](https://github.com/Alien6-Studio/outerspace-os/actions/workflows/website.yml/badge.svg?branch=gh-pages)](https://os.outerspace.sh/)
 [![Stage: development](https://img.shields.io/badge/stage-development-purple)](release/README.md)

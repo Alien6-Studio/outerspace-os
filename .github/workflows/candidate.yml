@@ -32,11 +32,10 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: |
           python3 - <<'PY'
-          import importlib.util, os
+          import os, sys
           from pathlib import Path
-          spec = importlib.util.spec_from_file_location('release', 'scripts/release.py')
-          release = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(release)
+          sys.path.insert(0, str(Path('scripts').resolve()))
+          import release
           version = Path('VERSION').read_text().strip()
           assert release.parse_version(version) != 'dev', 'Development snapshots are not candidates'
           assert os.environ['TAG'] == 'v' + version, 'Tag must match VERSION'

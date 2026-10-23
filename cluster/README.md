@@ -37,6 +37,42 @@ the drive, with one `registry/repository@sha256:<64 hex characters>` per line.
 This initial prefetch supports public registries; private prefetch credential
 delivery remains a release gate. Workload imagePullSecrets are handled by CRI.
 
+A fresh node without a complete config drive reports
+`OUTERSPACE_ENROLLMENT_CONFIG_INVALID` and fails the provisioning unit. Kubelet
+requires successful provisioning. An enrolled node can boot without the drive;
+the provisioning unit removes its obsolete local bootstrap kubeconfig.
+
+## VM worker qualification
+
+After building, smoke-testing and packaging a committed source tree, run
+`make PROFILE=agent enrollment` and `make PROFILE=inference enrollment` separately.
+Requirements: Docker, kind, kubectl, Helm and Python 3.11+ on the development host.
+The harness creates and cleans only `outerspace-enrollment`, its own private
+kubeconfig and a labelled Docker network (`172.30.80.0/24`). It refuses an existing
+lab or overlapping network. The default kubecontext is never used.
+
+The packaged disk boots through UEFI in a QEMU VM connected by TAP to a dedicated
+kubeadm-compatible kind control plane. Only that control plane and a reference
+client use Docker's kernel. The OuterSpace worker must expose its own pinned
+kernel and immutable profile/source identity. The test runner needs TUN and
+network capabilities; no Docker socket or host network namespace enters it.
+
+The test checks Node Ready, a deterministic CPU classifier, cross-node Cilium
+DNS/service traffic, default-deny and explicit allow. A read-only host probe
+checks locked accounts and public certificate fingerprints. Serving CSRs are
+approved only after checking requester, subject, usages and the exact node SANs.
+The lab alone uses ten-minute client certificates to observe real rotation.
+It then revokes the bootstrap token, powers off the VM, detaches the config drive
+and checks the same Node UID, hostname, machine ID and rotated certificate on the
+next boot, followed by workload/network recovery. A fresh disk overlay and stable
+VM UUID are used; the packaged raw disk must remain unchanged.
+
+`enrollment.json` binds the result to the full image identity, public configuration,
+probe snapshots and selected workload digest. Private config drives and tokens
+remain in a temporary directory removed during cleanup. This is VM enrollment
+evidence, not physical-server, production model-serving, CIS or Secure Boot
+qualification. Existing UEFI smoke and enrollment reports remain distinct gates.
+
 ## eBPF network profile
 
 The initial Cilium Helm profile is pinned to chart **1.20.3**. The image checks

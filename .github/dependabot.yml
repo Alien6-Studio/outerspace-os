@@ -5,8 +5,15 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ["*"]
   - package-ecosystem: docker
     directory: /build-support
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    # Stay on the selected Ubuntu LTS; platform migrations need a reviewed plan.
+    ignore:
+      - dependency-name: ubuntu
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]

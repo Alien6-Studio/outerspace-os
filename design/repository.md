@@ -22,8 +22,10 @@ gh api --method PUT repos/Alien6-Studio/outerspace-os/private-vulnerability-repo
 
 Secret scanning and secret push protection must remain enabled. CodeQL's native
 default setup scans Python and Actions; there is no duplicate custom workflow.
-Dependabot proposes pinned Actions and Docker base-image updates. The custom
-runtime lock and Ubuntu security updates still need maintainer review.
+Dependabot groups Actions updates and proposes Docker digest updates on the
+selected Ubuntu LTS. Ubuntu major/minor migrations are deliberate platform work,
+not routine dependency bumps. The custom runtime lock and Ubuntu security updates
+still need maintainer review.
 
 The default workflow token is read-only and cannot approve pull requests. The
 draft-release job alone requests the write access it needs. Third-party actions

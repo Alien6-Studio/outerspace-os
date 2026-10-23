@@ -6,6 +6,12 @@ from image_fixtures import profiles
 
 
 class ProfileSelectionTests(unittest.TestCase):
+    def test_mkosi_and_os_architecture_names_share_canonical_identity(self):
+        for name, expected in [('x86-64', 'amd64'), ('x86_64', 'amd64'), ('amd64', 'amd64'),
+                               ('aarch64', 'arm64'), ('arm64', 'arm64')]:
+            with self.subTest(name=name):
+                self.assertEqual(profiles.selection('agent', 'cpu', name)['architecture'], expected)
+
     def test_profile_is_required_before_any_docker_operation(self):
         for command in [['make', 'build'], ['make', 'smoke'], ['make', 'package'],
                         ['make', 'PROFILE=unknown', 'build']]:

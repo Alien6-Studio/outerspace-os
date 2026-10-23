@@ -15,7 +15,15 @@ commit=$(git -C "$repo" rev-parse HEAD)
 output="$repo/build/$directory"
 mkdir -p "$output" "$repo/.cache"
 source_tree=$(mktemp -d "${TMPDIR:-/tmp}/outerspace-source.XXXXXX")
-trap 'rm -rf "$source_tree"' EXIT
+cleanup_source() {
+    # Docker Desktop can return before releasing a nested read-only bind mount.
+    for attempt in 1 2 3 4 5; do
+        if rm -rf "$source_tree" 2>/dev/null; then return; fi
+        sleep 1
+    done
+    rm -rf "$source_tree"
+}
+trap cleanup_source EXIT
 git -C "$repo" archive --format=tar --output="$source_tree/source.tar" "$commit"
 mkdir -p "$source_tree/tree/.cache"
 tar -xf "$source_tree/source.tar" -C "$source_tree/tree"

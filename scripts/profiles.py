@@ -26,7 +26,8 @@ def sha256(path):
 def architecture(machine=None):
     name = machine or platform.machine()
     try:
-        return {'aarch64': 'arm64', 'arm64': 'arm64', 'x86_64': 'amd64', 'amd64': 'amd64'}[name]
+        return {'aarch64': 'arm64', 'arm64': 'arm64', 'x86_64': 'amd64',
+                'x86-64': 'amd64', 'amd64': 'amd64'}[name]
     except KeyError:
         raise ValueError(f'Unsupported architecture: {name}') from None
 

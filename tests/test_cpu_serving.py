@@ -49,6 +49,14 @@ class CPUServingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 serving.verify_model(path, {**model, 'bytes': len(payload) - 1})
 
+    def test_storage_pressure_is_rejected_before_model_staging(self):
+        enough = {'state_capacity_bytes': 8 * 1024**3, 'state_available_bytes': 6 * 1024**3}
+        serving.verify_storage(enough)
+        for probe in [{}, {**enough, 'state_capacity_bytes': 2 * 1024**3},
+                      {**enough, 'state_available_bytes': 1024**3}]:
+            with self.subTest(probe=probe), self.assertRaises(ValueError):
+                serving.verify_storage(probe)
+
     def pod(self):
         scenario = serving.Serving.__new__(serving.Serving)
         scenario.lock, scenario.node, scenario.namespace = self.lock, 'oos-test', 'outerspace-enrollment'

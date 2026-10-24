@@ -16,6 +16,10 @@ name and network as `make enrollment` are used, so run them sequentially. The
 model is approximately 101 MiB; the CPU server image is downloaded separately.
 No cloud resource or public HTTP listener is created. There is one emulated
 OuterSpace worker, with four vCPUs and 4 GiB RAM.
+Rebuild the Inference image with its 8 GiB state partition. Earlier 2 GiB images
+can pass enrollment but exhaust writable storage while unpacking the server image.
+Serving qualification rejects an undersized disk or less than 2 GiB of available
+state space before staging the model. The Agent profile retains its 2 GiB minimum.
 
 ## Fixed workload
 

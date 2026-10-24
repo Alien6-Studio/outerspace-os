@@ -50,6 +50,15 @@ def verify_model(path, model):
             raise ValueError('Model is not GGUF')
 
 
+def verify_storage(probe):
+    # Leave room for OCI extraction and cache/log growth instead of waiting for
+    # kubelet eviction. Filesystem metadata makes usable capacity smaller than
+    # the Inference profile's 8 GiB partition.
+    if (probe.get('state_capacity_bytes', 0) < 7 * 1024**3
+            or probe.get('state_available_bytes', 0) < 2 * 1024**3):
+        raise ValueError('CPU serving requires the 8 GiB Inference state disk and at least 2 GiB available')
+
+
 def fetch_model(lock):
     model = lock['model']
     cache = ROOT / '.cache/models'
@@ -136,6 +145,8 @@ class Serving:
         self.started = time.monotonic()
 
     def prepare(self):
+        self.storage_before = self.wait_for('Checking model-serving state capacity', self.lab.probe)
+        verify_storage(self.storage_before)
         print('Staging the SHA256-verified CPU model inside the private lab', flush=True)
         model = fetch_model(self.lock)
         # This is a reference kind node created by this lab, never the OS host.
@@ -315,6 +326,8 @@ class Serving:
                 'lock_sha256': digest(ROOT / 'benchmarks/cpu-serving.lock.json'),
                 'observations': self.observations, 'pod': pods[0], 'runtime_version': version_text.strip(),
                 'running_model_sha256': model_hash,
+                'state_before': {key: self.storage_before[key] for key in
+                                 ['state_capacity_bytes', 'state_available_bytes']},
                 'limits': ['QEMU VM only; no physical hardware or performance guarantee',
                            'No matched Ubuntu baseline or NUMA/power measurement',
                            'Single-node drain/uncordon recovery tested; multi-node migration not qualified',

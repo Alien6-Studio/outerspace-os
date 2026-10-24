@@ -16,6 +16,22 @@ spec.loader.exec_module(enrollment)
 
 
 class EnrollmentEvidenceTests(unittest.TestCase):
+    def test_pressure_events_can_be_recorded_on_the_container_below_the_pod_limit(self):
+        before = {'path': 'pod', 'files': {'cpu.max': '50000 100000', 'memory.max': '134217728',
+                  'pids.max': '256', 'pids.current': '2', 'pids.events': 'max 0',
+                  'cpu.stat': 'usage_usec 0\nnr_throttled 0'},
+                  'descendants': {'container': {'cpu.stat': 'nr_throttled 0', 'pids.events': 'max 0'}}}
+        after = copy.deepcopy(before)
+        after['files']['pids.current'] = '255'
+        after['files']['cpu.stat'] = 'usage_usec 500000\nnr_throttled 0'
+        self.assertFalse(enrollment.agent_pressure_observed('fork', before, after))
+        self.assertFalse(enrollment.agent_pressure_observed('cpu', before, after))
+        after['descendants']['container'] = {'cpu.stat': 'nr_throttled 3', 'pids.events': 'max 1'}
+        self.assertTrue(enrollment.agent_pressure_observed('fork', before, after))
+        self.assertTrue(enrollment.agent_pressure_observed('cpu', before, after))
+        after['files']['pids.current'] = '257'
+        self.assertFalse(enrollment.agent_pressure_observed('fork', before, after))
+
     def test_resource_pressure_requires_actual_limits_and_kernel_events(self):
         pod = {'path': 'kubepods.slice/test', 'files': {
             'cpu.max': '50000 100000', 'memory.max': '134217728', 'pids.max': '256',

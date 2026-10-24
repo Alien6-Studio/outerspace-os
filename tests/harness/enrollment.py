@@ -107,7 +107,12 @@ def agent_pressure_observed(mode, before, after):
                 group['cpu.stat'].splitlines())['nr_throttled']) for group in pod.get('descendants', {}).values())
         return throttles(after) > throttles(before) and increase('cpu.stat', 'usage_usec') > 100000
     if mode == 'fork':
-        return increase('pids.events', 'max') > 0 and int(after['files']['pids.current']) >= 250
+        # On the reference 6.8 kernel an ancestor PID limit can refuse a fork
+        # while the event is recorded only on the forking container's scope.
+        def refusals(pod):
+            return counter(pod, 'pids.events', 'max') + sum(int(dict(line.split() for line in
+                group['pids.events'].splitlines())['max']) for group in pod.get('descendants', {}).values())
+        return refusals(after) > refusals(before) and 250 <= int(after['files']['pids.current']) <= 256
     if mode == 'oom':
         return increase('memory.events', 'oom_kill') > 0 and after['result'] == 'oom-container-restarted'
     if mode == 'scratch':

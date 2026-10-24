@@ -929,9 +929,16 @@ def main():
             rotated_csr = lab.client_csr(node_name, rotated, rotated=True)
             (output / 'enrollment-identity-rotated.json').write_text(json.dumps(rotated, indent=2) + '\n')
             lab.revoke_bootstrap()
+            shutdown_started = time.monotonic()
             lab.vm('poweroff')
+            # Container scopes may spend 90s each on TERM and KILL before
+            # systemd finalizes the disk. Allow that bounded shutdown under TCG.
             wait_for('Waiting for clean worker poweroff', lambda: run('docker', 'exec', RUNNER, 'sh', '-c',
-                     '! kill -0 "$(cat /state/qemu.pid)" 2>/dev/null', check=False).returncode == 0, timeout=180)
+                     '! kill -0 "$(cat /state/qemu.pid)" 2>/dev/null', check=False).returncode == 0, timeout=600)
+            if 'reboot: Power down' not in (lab.state / 'boot-enroll.log').read_text():
+                raise ValueError('The worker exited without a kernel powerdown confirmation')
+            shutdown = {'method': 'ACPI system_powerdown', 'kernel_powerdown_confirmed': True,
+                        'wall_seconds': time.monotonic() - shutdown_started, 'timeout_seconds': 600}
             lab.vm('start')
             def recovered():
                 current = lab.worker()
@@ -960,6 +967,7 @@ def main():
                         'configuration': config, 'node_uid': node['metadata']['uid'], 'before': before,
                         'before_node_info': node['status']['nodeInfo'], 'after_node_info': after_node['status']['nodeInfo'],
                         'rotated': rotated, 'after': after, 'power_cycles': 2, 'bootstrap_revoked': True,
+                        'shutdown': shutdown,
                         'client_csrs': {'bootstrap': initial_csr, 'rotation': rotated_csr},
                         'harness_commit': harness_commit, 'harness_sha256': harness_hashes,
                         'recovery_config_drive': False, 'network': ['DNS', 'cross-node service', 'default-deny', 'explicit allow'],

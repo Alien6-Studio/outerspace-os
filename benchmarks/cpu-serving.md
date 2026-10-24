@@ -47,6 +47,9 @@ reference kind worker. A read-only model-source pod serves it inside the private
 cluster; the OuterSpace pod's init container verifies it again before startup.
 The model has its own 128 MiB `emptyDir`, separate from OCI image retention and
 host boot state. A pod replacement deliberately reloads this model cache.
+When an init container runs again after a node reboot, it re-verifies and reuses
+the retained file without DNS or network access. A present but invalid or symlinked
+cache entry fails; it is never silently replaced by another download.
 
 The server runs as UID 65534, with a read-only root and model mount, all
 capabilities dropped, no privilege escalation, default seccomp and no service

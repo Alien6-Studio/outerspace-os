@@ -211,12 +211,7 @@ class Serving:
 
     def deployment(self, python_image):
         model = self.lock['model']
-        stage = ('import hashlib,pathlib,urllib.request; '
-                 'p=pathlib.Path("/models/model.gguf"); '
-                 'r=urllib.request.urlopen("http://model-source:8090/model.gguf",timeout=120); '
-                 f'b=r.read({model["bytes"] + 1}); '
-                 f'assert len(b)=={model["bytes"]} and hashlib.sha256(b).hexdigest()=="{model["sha256"]}","Untrusted model"; '
-                 'assert b[:4]==b"GGUF"; p.write_bytes(b)')
+        stage = (ROOT / 'tests/integration/model-stage.py').read_text()
         # curl is in the digest-pinned server image. Readiness requires real token
         # generation, not merely an open port or loaded model.
         readiness = ('curl --fail --silent --max-time 50 -H "Content-Type: application/json" '
@@ -235,7 +230,10 @@ class Serving:
                                               'tolerationSeconds': 1800} for key in
                                              ['node.kubernetes.io/not-ready', 'node.kubernetes.io/unreachable']],
                              'initContainers': [{'name': 'verify-model', 'image': python_image,
-                                'command': ['python3', '-c', stage], 'securityContext': self.security(),
+                                'command': ['python3', '-c', stage, '--path', '/models/model.gguf',
+                                            '--url', 'http://model-source:8090/model.gguf',
+                                            '--bytes', str(model['bytes']), '--sha256', model['sha256']],
+                                'securityContext': self.security(),
                                 'resources': {'requests': {'cpu': '100m', 'memory': '128Mi'},
                                               'limits': {'cpu': '1', 'memory': '256Mi'}},
                                 'volumeMounts': [{'name': 'model', 'mountPath': '/models'}]}],

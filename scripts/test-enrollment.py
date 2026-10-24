@@ -26,7 +26,7 @@ VM_IP = '172.30.80.10'
 HARNESS_INPUTS = ['scripts/test-enrollment.py', 'scripts/enrollment-vm.py',
                   'tests/integration/node-probe.py', 'tests/integration/cpu-smoke.py',
                   'scripts/cpu-serving.py', 'tests/integration/serving-client.py',
-                  'benchmarks/cpu-serving.lock.json']
+                  'tests/integration/model-stage.py', 'benchmarks/cpu-serving.lock.json']
 
 
 def run(*args, data=None, check=True, env=None, timeout=900):

@@ -69,6 +69,7 @@ jobs:
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment-*.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-isolation*.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-resources*.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-resources*.log
           retention-days: 7
   ci:
     name: ci

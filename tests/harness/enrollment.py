@@ -975,6 +975,13 @@ def main():
                                               ('events', ['get', 'events', '-o', 'json'])]:
                             result = lab.kube('-n', AGENT_NAMESPACE, *command, check=False)
                             (output / ('agent-isolation-' + name + '.json')).write_text(result.stdout)
+                        # Keep LSM refusal metadata when teardown itself fails.
+                        # Never export the complete audit log or workload input.
+                        result = lab.kube('-n', LAB, 'exec', 'probe', '--', 'python3', '-c',
+                            'from pathlib import Path; p=Path("/host/var/log/audit/audit.log"); '
+                            'print("\\n".join(line for line in p.read_text().splitlines() '
+                            'if "apparmor=" in line and "operation=\\\"signal\\\"" in line)[-65536:])', check=False)
+                        (output / 'agent-resources-audit.log').write_text(result.stdout + result.stderr)
                     # Preserve the system agent's explanation of slow/failed
                     # endpoint creation; serial logs only contain the CNI client.
                     if 'node_name' in locals():

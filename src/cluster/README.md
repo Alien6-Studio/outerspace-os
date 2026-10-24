@@ -160,6 +160,11 @@ quiescent enrolled-node, platform and per-pod measurements separately. It does
 not establish a bare idle-host baseline, a matched standard-worker comparison,
 10/100-Agent density or aggregate block-I/O throttling.
 
+The AppArmor signal boundary permits reception from the host and Ubuntu's named
+`runc` runtime profile, so CRI can terminate and reap an exhausted workload.
+Agent children retain the Agent profile when executing tools; this does not
+grant an Agent the runtime's profile or authority.
+
 PID and log configuration use the existing Kubernetes
 [PID limits](https://kubernetes.io/docs/concepts/policy/pid-limiting/) and
 [kubelet configuration](https://v1-36.docs.kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/)

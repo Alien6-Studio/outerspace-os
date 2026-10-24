@@ -21,6 +21,9 @@ profile outerspace-agent-v1 flags=(attach_disconnected,mediate_deleted) {
   network unix stream,
   signal (send,receive) peer=outerspace-agent-v1,
   signal (receive) peer=unconfined,
+  # Ubuntu names its otherwise unconfined OCI runtime "runc". Permit the
+  # trusted runtime to stop/reap workloads, including forced SIGKILL teardown.
+  signal (receive) peer=runc,
 
   deny mount,
   deny umount,

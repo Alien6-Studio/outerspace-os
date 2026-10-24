@@ -136,6 +136,7 @@ class Serving:
         self.started = time.monotonic()
 
     def prepare(self):
+        print('Staging the SHA256-verified CPU model inside the private lab', flush=True)
         model = fetch_model(self.lock)
         # This is a reference kind node created by this lab, never the OS host.
         worker = self.namespace + '-worker'
@@ -146,6 +147,7 @@ class Serving:
         image = self.lab.api('-n', self.namespace, 'pod', 'client')['spec']['containers'][0]['image']
         self.lab.apply(self.source(image), self.service('model-source', 8090), *self.policies(download=True))
         self.lab.kube('-n', self.namespace, 'wait', '--for=condition=Ready', 'pod/model-source', '--timeout=300s')
+        print('Starting the locked llama.cpp CPU server on the OuterSpace worker', flush=True)
         self.lab.apply(self.deployment(image), self.service('inference', 8080))
         self.ready()
         self.source_ip = self.lab.api('-n', self.namespace, 'service', 'model-source')['spec']['clusterIP']
@@ -239,9 +241,11 @@ class Serving:
                                          {'name': 'scratch', 'emptyDir': {'sizeLimit': '16Mi'}}]}}}}
 
     def ready(self):
+        print('Waiting for model readiness through actual token generation', flush=True)
         self.lab.kube('-n', self.namespace, 'rollout', 'status', 'deployment/inference', '--timeout=900s')
 
     def sample(self, phase):
+        print('Sampling real CPU inference: ' + phase, flush=True)
         self.ready()
         self.wait_for('Verifying model-server egress is denied', lambda:
                       self.lab.kube('-n', self.namespace, 'exec', 'deployment/inference', '--',
@@ -263,6 +267,7 @@ class Serving:
         (self.lab.output / ('cpu-serving-' + phase + '.log')).write_text(logs.stdout + logs.stderr)
 
     def restart(self):
+        print('Replacing the serving pod and reloading its verified model cache', flush=True)
         self.lab.apply(*self.policies(download=True))
         self.lab.kube('-n', self.namespace, 'rollout', 'restart', 'deployment/inference')
         self.ready()
@@ -270,6 +275,7 @@ class Serving:
         self.sample('pod_restart')
 
     def drain_recover(self):
+        print('Draining and restoring the serving Deployment on the same worker', flush=True)
         before = self.lab.api('-n', self.namespace, 'pods', '-l', 'app=inference')['items'][0]['metadata']['uid']
         self.lab.apply(*self.policies(download=True))
         try:

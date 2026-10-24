@@ -5,6 +5,12 @@
 # entire pod; no cleanup command needs to fork inside an exhausted PID budget.
 set -eu
 mode=$1
+if [ "$mode" = oom ] && [ -e /workspace/previous-workspace ]; then
+    # cgroup v2 kills the whole container on OOM. An OnFailure restart keeps
+    # the Pod cgroup/event history alive for the external observer.
+    printf 'oom-container-restarted\n' > /workspace/result
+    exec sleep 300
+fi
 test ! -e /workspace/previous-workspace
 test ! -e /scratch/previous-workspace
 printf 'fresh\n' > /workspace/ready

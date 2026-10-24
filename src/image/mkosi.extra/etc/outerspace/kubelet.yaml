@@ -25,6 +25,7 @@
   "seccompDefault": true,
   "serializeImagePulls": true,
   "podPidsLimit": 256,
+  "singleProcessOOMKill": false,
   "maxPods": 32,
   "containerLogMaxSize": "1Mi",
   "containerLogMaxFiles": 2,

@@ -100,11 +100,16 @@ def agent_pressure_observed(mode, before, after):
     def increase(file, key):
         return counter(after, file, key) - counter(before, file, key)
     if mode == 'cpu':
-        return increase('cpu.stat', 'nr_throttled') > 0 and increase('cpu.stat', 'usage_usec') > 100000
+        # CFS throttle counts are not hierarchical. A container's own quota
+        # can fire before its identical parent Pod quota is exhausted.
+        def throttles(pod):
+            return counter(pod, 'cpu.stat', 'nr_throttled') + sum(int(dict(line.split() for line in
+                group['cpu.stat'].splitlines())['nr_throttled']) for group in pod.get('descendants', {}).values())
+        return throttles(after) > throttles(before) and increase('cpu.stat', 'usage_usec') > 100000
     if mode == 'fork':
         return increase('pids.events', 'max') > 0 and int(after['files']['pids.current']) >= 250
     if mode == 'oom':
-        return increase('memory.events', 'oom_kill') > 0 and after['result'] == 'oom-killed'
+        return increase('memory.events', 'oom_kill') > 0 and after['result'] == 'oom-container-restarted'
     if mode == 'scratch':
         fs = after.get('scratch', {})
         return (after['result'] == 'scratch-full' and fs.get('capacity_bytes') == 16 * 1024**2
@@ -696,7 +701,7 @@ nodes:
             print('Qualifying Agent resource pressure: ' + mode, flush=True)
             workload = json.loads((ROOT / 'src/cluster/agent/workload-v1.json').read_text())
             workload['metadata']['name'] = 'pressure'
-            workload['spec']['restartPolicy'] = 'Never'
+            workload['spec']['restartPolicy'] = 'OnFailure' if mode == 'oom' else 'Never'
             workload['spec']['containers'][0]['command'] = ['/bin/sh', '-euc',
                 (ROOT / 'tests/integration/agent-resources.sh').read_text(), 'agent-resources', mode]
             started = time.monotonic()
@@ -732,6 +737,12 @@ nodes:
                 pod = self.api('-n', AGENT_NAMESPACE, 'pod', 'pressure')
                 if pod['spec']['nodeName'] != self.agent_node:
                     raise ValueError('Resource pressure ran on another worker')
+                if mode == 'oom':
+                    status = pod['status']['containerStatuses'][0]
+                    terminated = status.get('lastState', {}).get('terminated', {})
+                    if (status['restartCount'] != 1 or terminated.get('reason') != 'OOMKilled'
+                            or terminated.get('exitCode') != 137):
+                        raise ValueError('Whole-container OOM and a single contained restart were not proven')
                 cases[mode] = {'pod_uid': uid, 'warm_create_to_ready_wall_seconds': launch_seconds,
                                'before': before, 'after': after, 'responsiveness': pulses, 'pod': pod}
             finally:

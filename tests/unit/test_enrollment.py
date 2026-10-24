@@ -33,7 +33,7 @@ class EnrollmentEvidenceTests(unittest.TestCase):
         self.assertTrue(enrollment.agent_pressure_observed('fork', pod, observed))
         observed['files']['memory.events'] = 'oom_kill 1'
         self.assertFalse(enrollment.agent_pressure_observed('oom', pod, observed))
-        observed['result'] = 'oom-killed'
+        observed['result'] = 'oom-container-restarted'
         self.assertTrue(enrollment.agent_pressure_observed('oom', pod, observed))
         observed['scratch'] = {'capacity_bytes': 16 * 1024**2, 'used_bytes': 16 * 1024**2}
         observed['result'] = 'scratch-full'

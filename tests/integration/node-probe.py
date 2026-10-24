@@ -69,6 +69,8 @@ if len(sys.argv) == 2:
                 processes.append(int(path.parent.name))
         groups[uid] = {'path': str(paths[0].relative_to(cgroup_root)) if paths else None,
                        'files': read_group(paths[0]) if paths else {},
+                       'descendants': {str(path.relative_to(paths[0])): read_group(path)
+                                       for path in paths[0].rglob('*.scope')} if paths else {},
                        'processes': processes, 'mounts': mounts,
                        'workspace_present': workspace.exists(), 'log_files': log_files}
         scratch = workspace / 'volumes/kubernetes.io~empty-dir/scratch'

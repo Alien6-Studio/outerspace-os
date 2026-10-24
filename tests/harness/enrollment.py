@@ -714,12 +714,16 @@ nodes:
                     'test "$(cat /workspace/ready)" = fresh; test ! -e /workspace/previous-workspace; '
                     'test ! -e /scratch/previous-workspace', check=False).returncode == 0, timeout=60)
                 before = self.agent_resource_snapshot([uid])
+                diagnostic = self.output / ('agent-resources-' + mode + '-latest.json')
+                diagnostic.write_text(json.dumps({'pod_uid': uid, 'before': before}, indent=2) + '\n')
                 verify_agent_resource_limits(before['pods'][uid])
                 self.kube('-n', AGENT_NAMESPACE, 'exec', 'pressure', '--', 'touch', '/workspace/go')
                 pulses = []
                 def exercised():
                     pulses.append(self.agent_resource_pulse())
                     sample = self.agent_resource_snapshot([uid])
+                    diagnostic.write_text(json.dumps({'pod_uid': uid, 'before': before, 'after': sample,
+                                                      'responsiveness': pulses}, indent=2) + '\n')
                     if agent_pressure_observed(mode, before['pods'][uid], sample['pods'][uid]):
                         return sample
                 after = wait_for('Observing enforced ' + mode + ' boundary and a responsive neighbor', exercised, timeout=180)

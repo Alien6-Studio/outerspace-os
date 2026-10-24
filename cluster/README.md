@@ -59,7 +59,9 @@ before launching application pods and after reboot. Network checks establish a
 healthy service response, require default-deny to block it, then require recovery
 after an explicit allow policy.
 Both boots then require the named probe, CPU server and client pods to become
-Ready within fifteen minutes. Agent readiness alone does not prove endpoint
+Ready within twenty minutes. This TCG lab budget includes endpoint compilation
+and image extraction; it is not a hardware startup target. The supervising
+process allows kubectl to report its own bounded timeout. Agent readiness alone does not prove endpoint
 creation or application recovery. Failed runs retain workload pod status alongside
 node status, events and Cilium logs to distinguish CNI startup from probe failures.
 

@@ -27,6 +27,12 @@ systemctl is-active --quiet containerd || fail 'containerd inactive'
 /usr/bin/crictl info >/run/outerspace-cri-info.json || fail 'CRI not serving'
 /usr/bin/containerd --version
 /usr/bin/kubelet --version
+if [[ ! -e /dev/disk/by-label/OOS_CONFIG && ! -e /var/lib/kubelet/kubeconfig ]]; then
+    systemctl is-failed --quiet outerspace-provision || fail 'missing enrollment configuration was silently accepted'
+    journalctl -b -u outerspace-provision --no-pager | grep -q OUTERSPACE_ENROLLMENT_CONFIG_INVALID || fail 'missing enrollment diagnostic'
+    ! systemctl is-active --quiet kubelet || fail 'unconfigured kubelet started'
+    echo OUTERSPACE_ENROLLMENT_UNCONFIGURED_OK
+fi
 free -m
 df -h / /var
 phase=

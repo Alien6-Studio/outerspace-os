@@ -3,18 +3,34 @@
 # Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
 umask 077
+fail() { echo "OUTERSPACE_ENROLLMENT_CONFIG_INVALID: $*" >&2; exit 1; }
+validate_enrollment() {
+    for path in /var/lib/outerspace/cluster-ca.crt /var/lib/outerspace/kubelet.yaml; do
+        [[ -s "$path" && -f "$path" && ! -L "$path" ]] || fail "missing regular ${path##*/}"
+    done
+    if [[ -s /var/lib/kubelet/kubeconfig && ! -L /var/lib/kubelet/kubeconfig ]]; then
+        # Enrollment has completed; never retain or restore bootstrap credentials.
+        rm -f /var/lib/kubelet/bootstrap-kubeconfig
+    else
+        [[ -s /var/lib/kubelet/bootstrap-kubeconfig && ! -L /var/lib/kubelet/bootstrap-kubeconfig ]] || fail 'missing bootstrap or enrolled identity'
+    fi
+}
 install -d -m 0700 /var/lib/outerspace /var/lib/kubelet
 if [[ ! -f /var/lib/outerspace/hostname ]]; then
     printf 'oos-%s\n' "$(cut -c1-12 /proc/sys/kernel/random/uuid)" > /var/lib/outerspace/hostname
 fi
 hostname "$(cat /var/lib/outerspace/hostname)"
-[[ -e /dev/disk/by-label/OOS_CONFIG ]] || exit 0
+if [[ ! -e /dev/disk/by-label/OOS_CONFIG ]]; then
+    validate_enrollment
+    exit 0
+fi
 config_mount=$(mktemp -d /run/outerspace-config.XXXXXX)
 trap 'umount "$config_mount"; rmdir "$config_mount"' EXIT
 mount -o ro,nosuid,nodev,noexec /dev/disk/by-label/OOS_CONFIG "$config_mount"
 # A config drive is trusted provisioning media; never source or execute its files.
 for name in cluster-ca.crt kubelet.yaml prefetch-images dfdaemon.yaml; do
     if [[ -f "$config_mount/$name" && ! -L "$config_mount/$name" ]]; then
+        [[ -s "$config_mount/$name" ]] || fail "empty $name"
         install -m 0600 "$config_mount/$name" "/var/lib/outerspace/$name"
     fi
 done
@@ -22,6 +38,7 @@ done
 if [[ ! -f /var/lib/kubelet/kubeconfig && -f "$config_mount/bootstrap-kubeconfig" && ! -L "$config_mount/bootstrap-kubeconfig" ]]; then
     install -m 0600 "$config_mount/bootstrap-kubeconfig" /var/lib/kubelet/bootstrap-kubeconfig
 fi
+validate_enrollment
 # Only regular per-registry hosts.toml files from trusted provisioning media.
 if [[ -d "$config_mount/certs.d" && ! -L "$config_mount/certs.d" ]]; then
     for directory in "$config_mount/certs.d/"*; do

@@ -2,10 +2,8 @@
 Description=OuterSpace Kubernetes worker
 Wants=network-online.target
 After=network-online.target containerd.service outerspace-provision.service
-Requires=containerd.service
+Requires=containerd.service outerspace-provision.service
 RequiresMountsFor=/var/lib/kubelet
-ConditionPathExists=/var/lib/outerspace/cluster-ca.crt
-ConditionPathExists=/var/lib/outerspace/kubelet.yaml
 
 [Service]
 ExecStart=/usr/bin/kubelet --config=/var/lib/outerspace/kubelet.yaml --bootstrap-kubeconfig=/var/lib/kubelet/bootstrap-kubeconfig --kubeconfig=/var/lib/kubelet/kubeconfig --cert-dir=/var/lib/kubelet/pki

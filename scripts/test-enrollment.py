@@ -262,7 +262,15 @@ nodes:
                    {'apiVersion': 'networking.k8s.io/v1', 'kind': 'NetworkPolicy',
                     'metadata': {'name': 'cpu-deny', 'namespace': LAB},
                     'spec': {'podSelector': {'matchLabels': {'app': 'cpu'}}, 'policyTypes': ['Ingress'], 'ingress': []}})
-        self.kube('-n', LAB, 'wait', '--for=condition=Ready', 'pod', '--all', '--timeout=900s')
+        self.wait_workloads()
+
+    def wait_workloads(self):
+        # Agent readiness precedes endpoint compilation, especially under TCG.
+        # Use the same bounded pod-start budget on first boot and recovery.
+        # Named pods also prevent an empty namespace from satisfying this gate.
+        print('Waiting for the probe, CPU server and client pods to be Ready', flush=True)
+        self.kube('-n', LAB, 'wait', '--for=condition=Ready',
+                  'pod/probe', 'pod/cpu', 'pod/client', '--timeout=900s')
 
     def cilium_ready(self, node):
         pods = self.api('-n', 'kube-system', 'pods', '--field-selector', 'spec.nodeName=' + node)['items']
@@ -414,6 +422,7 @@ def main():
             wait_for('Checking serving certificate after recovery', lambda: lab.approve_serving(after_node))
             wait_for('Waiting for Cilium and Envoy Ready after recovery',
                      lambda: lab.cilium_ready(node_name), timeout=900)
+            lab.wait_workloads()
             after = wait_for('Reading persisted rotated credentials', lab.probe)
             verify_recovery(before, rotated, after, node, after_node, initial_csr['certificate_sha256'])
             lab.network()
@@ -436,6 +445,7 @@ def main():
                 if lab.kind_created and lab.kubeconfig.exists():
                     for name, command in [('nodes', ['get', 'nodes', '-o', 'json']),
                                           ('system-pods', ['-n', 'kube-system', 'get', 'pods', '-o', 'json']),
+                                          ('workload-pods', ['-n', LAB, 'get', 'pods', '-o', 'json']),
                                           ('events', ['get', 'events', '-A', '-o', 'json'])]:
                         result = lab.kube(*command, check=False)
                         (output / ('enrollment-' + name + '.json')).write_text(result.stdout)

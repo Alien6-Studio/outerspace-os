@@ -58,6 +58,10 @@ Cilium startup to progress concurrently. The harness waits for both Cilium and E
 before launching application pods and after reboot. Network checks establish a
 healthy service response, require default-deny to block it, then require recovery
 after an explicit allow policy.
+Both boots then require the named probe, CPU server and client pods to become
+Ready within fifteen minutes. Agent readiness alone does not prove endpoint
+creation or application recovery. Failed runs retain workload pod status alongside
+node status, events and Cilium logs to distinguish CNI startup from probe failures.
 
 The packaged disk boots through UEFI in a QEMU VM connected by TAP to a dedicated
 kubeadm-compatible kind control plane. Only that control plane and a reference

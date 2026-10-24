@@ -11,10 +11,13 @@
 - Passed locally on arm64: full UEFI disk boot, CRI and read-only root, then a
   second cold start retaining test state/hostname and stable VM identity.
 - Passed separately in kind: three-node Cilium DNS/service routing, deny and restore.
-- This lab does not qualify an OuterSpace node in Kubernetes.
-- Still required: config-drive enrollment into a disposable cluster, Node Ready,
-  rotated kubelet identity persistence and a CPU inference pod. Physical-host
-  identity and hardware qualification remain separate gates.
+- Passed on the actual OS kernel: both Agent and Inference enrollment, Node Ready,
+  Cilium policy, real kubelet client rotation and recovery without bootstrap
+  credentials. Native amd64/arm64 evidence is attached to the enrollment work.
+- Passed in an arm64 QEMU VM: real pinned CPU model serving, pod replacement,
+  drain recovery and cold-node recovery. These are functional results, not
+  comparative performance or physical-machine qualification.
+- Physical-host identity and hardware qualification remain separate gates.
 - Still required: AppArmor/seccomp enforcement tests, privilege boundaries,
   dependency/vulnerability inventory and redistribution/corresponding-source review.
 

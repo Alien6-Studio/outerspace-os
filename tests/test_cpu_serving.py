@@ -67,6 +67,9 @@ class CPUServingTests(unittest.TestCase):
                    lambda p: p['spec']['containers'][0]['resources']['limits'].update(memory='4Gi'),
                    lambda p: p['spec']['containers'][0].update(image='runtime:latest'),
                    lambda p: p['spec']['containers'][0]['args'].remove('--offline'),
+                   lambda p: p['spec']['containers'][0]['args'].extend(['--n-gpu-layers', '1']),
+                   lambda p: p['spec']['containers'][0]['securityContext'].update(seccompProfile={'type': 'Unconfined'}),
+                   lambda p: p['spec']['containers'][0].update(command=['/bin/sh']),
                    lambda p: p['spec']['containers'][0]['volumeMounts'][0].update(readOnly=False),
                    lambda p: p['spec']['volumes'].append({'name': 'escape', 'hostPath': {'path': '/'}})]
         for index, change in enumerate(changes):

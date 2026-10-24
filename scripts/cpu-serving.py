@@ -11,6 +11,9 @@ import time
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
+SERVER_ARGS = ('--model', '/models/model.gguf', '--host', '0.0.0.0', '--port', '8080',
+               '--n-gpu-layers', '0', '--threads', '2', '--ctx-size', '256',
+               '--batch-size', '32', '--ubatch-size', '32', '--parallel', '1', '--offline')
 
 
 def digest(path):
@@ -113,15 +116,14 @@ def verify_runtime_pod(pod, node, lock):
             or control.get('allowPrivilegeEscalation') is not False
             or control.get('readOnlyRootFilesystem') is not True
             or control.get('privileged', False)
+            or control.get('seccompProfile', security['seccompProfile']).get('type') != 'RuntimeDefault'
             or control.get('capabilities', {}).get('drop') != ['ALL']
             or control.get('capabilities', {}).get('add')
             or not any(v.get('mountPath') == '/models' and v.get('readOnly') for v in server.get('volumeMounts', []))
             or any('hostPath' in volume for volume in spec.get('volumes', []))):
         raise ValueError('Serving pod lacks the locked image, resource or filesystem controls')
-    arguments = server.get('args', [])
-    if ('--offline' not in arguments or '--n-gpu-layers' not in arguments
-            or arguments[arguments.index('--n-gpu-layers') + 1:arguments.index('--n-gpu-layers') + 2] != ['0']):
-        raise ValueError('Serving must explicitly use the local model and CPU only')
+    if server.get('command') or server.get('args') != list(SERVER_ARGS):
+        raise ValueError('Serving must use the locked local model and CPU execution settings')
 
 
 class Serving:
@@ -225,9 +227,7 @@ class Serving:
                                               'limits': {'cpu': '1', 'memory': '256Mi'}},
                                 'volumeMounts': [{'name': 'model', 'mountPath': '/models'}]}],
                              'containers': [{'name': 'server', 'image': self.lock['runtime']['image'],
-                                'args': ['--model', '/models/model.gguf', '--host', '0.0.0.0', '--port', '8080',
-                                         '--n-gpu-layers', '0', '--threads', '2', '--ctx-size', '256',
-                                         '--batch-size', '32', '--ubatch-size', '32', '--parallel', '1', '--offline'],
+                                'args': list(SERVER_ARGS),
                                 'securityContext': self.security(),
                                 'resources': {'requests': {'cpu': '500m', 'memory': '256Mi'},
                                               'limits': {'cpu': '2', 'memory': '512Mi'}},

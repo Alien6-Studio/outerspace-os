@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "runtime": {
+    "image": "ghcr.io/ggml-org/llama.cpp:server@sha256:8c74db29f1a2bef3f0a331b52c4d6214601dfceed4bee0b94cc48b3b23ff257d",
+    "version": "b11804",
+    "commit": "c7fc5094179bf8a9c73c18593db714f8da41a402",
+    "license": "MIT"
+  },
+  "model": {
+    "repository": "bartowski/SmolLM2-135M-Instruct-GGUF",
+    "revision": "09816acd5d99df7be770d85ea30822623dab342c",
+    "file": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+    "sha256": "2e8040ceae7815abe0dcb3540b9995eaa1fa0d2ca9e797d0a635ae4433c68c2d",
+    "bytes": 105454432,
+    "quantization": "Q4_K_M",
+    "license": "Apache-2.0",
+    "base_repository": "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "reference_base_revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+    "tokenizer": "Embedded in the SHA256-locked GGUF; base revision is provenance, not a conversion reproducibility claim"
+  },
+  "resources": {
+    "cpu_limit": 2,
+    "memory_mib": 512,
+    "model_cache_mib": 128,
+    "context_tokens": 256,
+    "output_tokens": 8,
+    "concurrency": 1
+  }
+}

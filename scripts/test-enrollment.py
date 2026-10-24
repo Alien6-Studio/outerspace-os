@@ -24,7 +24,9 @@ KIND_IMAGE = 'kindest/node:v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784
 PYTHON_IMAGE = 'python:3.12-alpine@sha256:b658b05ce9c4eb97ec6fc19424818a1f31993659c2b505a532f470e83807815d'
 VM_IP = '172.30.80.10'
 HARNESS_INPUTS = ['scripts/test-enrollment.py', 'scripts/enrollment-vm.py',
-                  'tests/integration/node-probe.py', 'tests/integration/cpu-smoke.py']
+                  'tests/integration/node-probe.py', 'tests/integration/cpu-smoke.py',
+                  'scripts/cpu-serving.py', 'tests/integration/serving-client.py',
+                  'benchmarks/cpu-serving.lock.json']
 
 
 def run(*args, data=None, check=True, env=None):
@@ -359,7 +361,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--profile', choices=['agent', 'inference'], required=True)
+    parser.add_argument('--cpu-serving', action='store_true', help='Also qualify the locked real CPU model on Inference')
     args = parser.parse_args()
+    if args.cpu_serving and args.profile != 'inference':
+        parser.error('--cpu-serving requires the inference profile')
+    if args.cpu_serving:
+        serving_module = load_script('cpu-serving')
+        serving_module.validate_lock(json.loads((ROOT / 'benchmarks/cpu-serving.lock.json').read_text()))
     output = args.output.resolve()
     if run('git', '-C', ROOT, 'status', '--porcelain', '--untracked-files=normal').stdout:
         raise ValueError('Commit the qualification harness before running the lab')
@@ -377,6 +385,8 @@ def main():
     run(*verify_args)
     report = output / 'enrollment.json'
     report.unlink(missing_ok=True)
+    if args.cpu_serving:
+        (output / 'cpu-serving.json').unlink(missing_ok=True)
     os.umask(0o077)
     with tempfile.TemporaryDirectory(prefix='outerspace-enrollment-') as temporary:
         lab = Lab(Path(temporary), output)
@@ -400,6 +410,12 @@ def main():
             if before['identity'] != expected_identity:
                 raise ValueError('Guest identity differs from the packaged source/profile')
             lab.network()
+            if args.cpu_serving:
+                serving = serving_module.Serving(lab, node_name, run, wait_for)
+                serving.prepare()
+                serving.sample('initial')
+                serving.restart()
+                serving.drain_recover()
             def rotation():
                 lab.approve_serving(node)
                 probe = lab.probe()
@@ -426,6 +442,8 @@ def main():
             after = wait_for('Reading persisted rotated credentials', lab.probe)
             verify_recovery(before, rotated, after, node, after_node, initial_csr['certificate_sha256'])
             lab.network()
+            if args.cpu_serving:
+                serving.sample('node_recovery')
             if digest(output / 'outerspace.raw') != metadata['raw_image_sha256']:
                 raise ValueError('The original disk changed during qualification')
             if digest(lab.state / 'packaged.raw') != metadata['raw_image_sha256']:
@@ -440,6 +458,8 @@ def main():
                         'cpu_smoke': {'image': PYTHON_IMAGE, 'result': 'outerspace-cpu-ok:1536'},
                         'limits': ['No physical-machine qualification', 'No production model serving qualification',
                                    'No Secure Boot or CIS compliance claim']}
+            if args.cpu_serving:
+                evidence['cpu_serving'] = serving.evidence()
         finally:
             try:
                 if lab.kind_created and lab.kubeconfig.exists():
@@ -449,6 +469,11 @@ def main():
                                           ('events', ['get', 'events', '-A', '-o', 'json'])]:
                         result = lab.kube(*command, check=False)
                         (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
+                    if args.cpu_serving:
+                        for container in ['verify-model', 'server']:
+                            result = lab.kube('-n', LAB, 'logs', 'deployment/inference', '-c', container,
+                                              '--tail=500', '--timestamps', check=False)
+                            (output / ('cpu-serving-final-' + container + '.log')).write_text(result.stdout + result.stderr)
                     # Preserve the system agent's explanation of slow/failed
                     # endpoint creation; serial logs only contain the CNI client.
                     if 'node_name' in locals():
@@ -478,6 +503,10 @@ def main():
             or harness_hashes != {name: digest(ROOT / name) for name in HARNESS_INPUTS}):
         raise ValueError('Qualification source changed while the lab was running')
     report.write_text(json.dumps(evidence, indent=2) + '\n')
+    if args.cpu_serving:
+        (output / 'cpu-serving.json').write_text(json.dumps({
+            'subject': metadata, 'harness_commit': harness_commit, 'harness_sha256': harness_hashes,
+            'enrollment_report_sha256': digest(report), **evidence['cpu_serving']}, indent=2) + '\n')
     print('OUTERSPACE_ENROLLMENT_OK: ' + str(report), flush=True)
 
 

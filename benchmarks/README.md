@@ -3,6 +3,10 @@
 No performance numbers have been established yet. Capture raw results before
 choosing a snapshotter or advertising a reduction.
 
+The opt-in [real CPU model serving lab](cpu-serving.md) adds fixed-model HTTP
+generation, streaming timings and restart/reboot checks to the enrollment test.
+Its emulated VM observations do not replace this hardware benchmark protocol.
+
 For each run record the OS build/manifest, kernel, runtime, image digest, model
 hash, hardware, node count, link bandwidth/latency and registry location. Use the
 same CNI and workload. Measure cold and warm states separately and report the

@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 PROFILE ?=
 HARDWARE ?= cpu
-.PHONY: check builder build smoke smoke-split package enrollment
+.PHONY: check builder build smoke smoke-split package enrollment cpu-serving
 
 check:
 	python3 -m unittest discover -s tests -v
@@ -26,3 +26,9 @@ enrollment:
 	@test "$(HARDWARE)" = cpu
 	docker build -t outerspace-enrollment:dev -f build-support/enrollment.Dockerfile .
 	python3 scripts/test-enrollment.py --profile "$(PROFILE)" --output "build/$$(python3 scripts/profiles.py directory --profile '$(PROFILE)' --hardware cpu)"
+
+cpu-serving:
+	@test "$(PROFILE)" = inference
+	@test "$(HARDWARE)" = cpu
+	docker build -t outerspace-enrollment:dev -f build-support/enrollment.Dockerfile .
+	python3 scripts/test-enrollment.py --profile inference --cpu-serving --output "build/$$(python3 scripts/profiles.py directory --profile inference --hardware cpu)"

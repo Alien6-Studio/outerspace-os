@@ -1,7 +1,7 @@
 [Unit]
 Description=Load the OuterSpace OCI Agent v1 AppArmor profile
 After=apparmor.service
-Before=kubelet.service
+Before=kubelet.service outerspace-selftest.service
 
 [Service]
 Type=oneshot

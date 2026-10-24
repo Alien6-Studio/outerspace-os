@@ -38,6 +38,17 @@ class UEFIBootTests(unittest.TestCase):
             self.assertIn('if=virtio,format=qcow2,file=/tmp/shared.qcow2', args)
             self.assertIn('if=pflash,format=raw,file=/tmp/shared-vars.fd', args)
 
+    def test_rejects_an_inference_image_that_inherits_the_small_agent_state_disk(self):
+        table = {'sectorsize': 512, 'partitions': [{'name': 'OOS_STATE', 'size': 2 * 1024**3 // 512}]}
+        uefi.check_state_geometry(table, 'agent')
+        with self.assertRaisesRegex(ValueError, 'undersized'):
+            uefi.check_state_geometry(table, 'inference')
+        table['partitions'][0]['size'] = 8 * 1024**3 // 512
+        uefi.check_state_geometry(table, 'inference')
+        table['partitions'].append(dict(table['partitions'][0]))
+        with self.assertRaises(ValueError):
+            uefi.check_state_geometry(table, 'inference')
+
     def test_requires_the_second_boot_and_all_checks_to_pass(self):
         content = 'OUTERSPACE_SELFTEST_OK\nOUTERSPACE_UEFI_OK\nOUTERSPACE_PERSISTENCE_PREPARE_OK\n'
         uefi.verify_log(content, 0, 'prepare')

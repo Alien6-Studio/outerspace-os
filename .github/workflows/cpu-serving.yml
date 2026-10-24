@@ -1,0 +1,36 @@
+name: CPU model serving lab
+on:
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: Native architecture to qualify
+        type: choice
+        required: true
+        default: arm64
+        options: [arm64, amd64]
+permissions:
+  contents: read
+concurrency:
+  group: cpu-serving-${{ github.ref }}-${{ inputs.architecture }}
+  cancel-in-progress: false
+jobs:
+  serving:
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: make check
+      - run: make PROFILE=inference builder build smoke package cpu-serving
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: cpu-serving-inference-${{ inputs.architecture }}
+          path: |
+            benchmarks/cpu-serving.lock.json
+            build/inference-cpu-${{ inputs.architecture }}/outerspace-*/*.json
+            build/inference-cpu-${{ inputs.architecture }}/*.log
+            build/inference-cpu-${{ inputs.architecture }}/enrollment*.json
+            build/inference-cpu-${{ inputs.architecture }}/cpu-serving.json
+          retention-days: 7

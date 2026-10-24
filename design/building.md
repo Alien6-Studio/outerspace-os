@@ -22,6 +22,13 @@ mandatory; output directories are `build/PROFILE-HARDWARE-ARCH/`, with `cpu` as 
 default hardware profile. Builds and proof files from one profile cannot qualify
 another. Existing unprofiled output is not accepted by this contract.
 
+Writable state has a 2 GiB minimum on Agent and an 8 GiB minimum on Inference.
+The larger Inference partition accommodates Cilium, OCI image extraction and the
+small CPU serving model; it adds no packages to the immutable root. These are
+development image capacities, not storage budgets for arbitrary models. Provision
+space for the selected workloads and caches. Existing images are not resized by
+this change; rebuild and qualify a fresh Inference image for the CPU serving lab.
+
 ## Firmware and kernel
 
 For hardware discovery with the complete Ubuntu firmware set (larger image):

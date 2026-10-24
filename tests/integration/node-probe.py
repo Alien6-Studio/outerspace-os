@@ -3,11 +3,13 @@
 """Read-only lab probe. Never output a token or a private key."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import ssl
 
 root = Path('/host')
+state = os.statvfs(root / 'var')
 pki = root / 'var/lib/kubelet/pki'
 current = pki / 'kubelet-client-current.pem'
 target = current.readlink()
@@ -28,4 +30,6 @@ print(json.dumps({
     'client_certificate_sha256': fingerprint,
     'bootstrap_present': (root / 'var/lib/kubelet/bootstrap-kubeconfig').exists(),
     'accounts_locked': True,
+    'state_capacity_bytes': state.f_blocks * state.f_frsize,
+    'state_available_bytes': state.f_bavail * state.f_frsize,
 }))

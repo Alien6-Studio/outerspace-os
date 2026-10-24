@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
 import base64
+import copy
 import importlib.util
 import json
 from pathlib import Path
@@ -15,6 +16,41 @@ spec.loader.exec_module(enrollment)
 
 
 class EnrollmentEvidenceTests(unittest.TestCase):
+    def test_resource_pressure_requires_actual_limits_and_kernel_events(self):
+        pod = {'path': 'kubepods.slice/test', 'files': {
+            'cpu.max': '50000 100000', 'memory.max': '134217728', 'pids.max': '256',
+            'cpu.stat': 'usage_usec 0\nnr_throttled 0', 'pids.events': 'max 0',
+            'pids.current': '1', 'memory.events': 'oom_kill 0'},
+            'result': None, 'log_files': {}}
+        for mode in ['cpu', 'fork', 'oom', 'scratch', 'logs']:
+            with self.subTest(mode=mode):
+                self.assertFalse(enrollment.agent_pressure_observed(mode, pod, pod))
+        observed = copy.deepcopy(pod)
+        observed['files']['cpu.stat'] = 'usage_usec 500000\nnr_throttled 5'
+        self.assertTrue(enrollment.agent_pressure_observed('cpu', pod, observed))
+        observed['files']['pids.events'] = 'max 1'
+        observed['files']['pids.current'] = '256'
+        self.assertTrue(enrollment.agent_pressure_observed('fork', pod, observed))
+        observed['files']['memory.events'] = 'oom_kill 1'
+        self.assertFalse(enrollment.agent_pressure_observed('oom', pod, observed))
+        observed['result'] = 'oom-killed'
+        self.assertTrue(enrollment.agent_pressure_observed('oom', pod, observed))
+        observed['scratch'] = {'capacity_bytes': 16 * 1024**2, 'used_bytes': 16 * 1024**2}
+        observed['result'] = 'scratch-full'
+        self.assertTrue(enrollment.agent_pressure_observed('scratch', pod, observed))
+        observed['result'] = 'logs-written'
+        observed['log_files'] = {'0.log': 20 * 1024**2}
+        self.assertFalse(enrollment.agent_pressure_observed('logs', pod, observed))
+        observed['log_files'] = {'0.log': 0, '0.log.rotated': 20 * 1024**2}
+        self.assertTrue(enrollment.agent_pressure_observed('logs', pod, observed))
+        observed['log_files']['0.log.rotated'] = 25 * 1024**2
+        self.assertFalse(enrollment.agent_pressure_observed('logs', pod, observed))
+        for file in ['cpu.max', 'memory.max', 'pids.max']:
+            changed = copy.deepcopy(observed)
+            changed['files'][file] = 'max'
+            with self.subTest(file=file), self.assertRaises(ValueError):
+                enrollment.agent_pressure_observed('cpu', pod, changed)
+
     def setUp(self):
         self.before = {'identity': {'profile': 'agent'}, 'hostname': 'oos-test', 'machine_id': 'machine',
                        'boot_id': 'first', 'client_certificate_sha256': 'initial',

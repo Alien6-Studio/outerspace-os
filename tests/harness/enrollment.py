@@ -32,6 +32,8 @@ HARNESS_INPUTS = ['tests/harness/enrollment.py', 'tests/harness/enrollment-vm.py
                   'tests/harness/cpu-serving.py', 'tests/integration/serving-client.py',
                   'tests/integration/model-stage.py', 'tests/benchmarks/cpu-serving.lock.json',
                   'tests/integration/agent-isolation.sh', 'src/cluster/agent/profile-v1.json',
+                  'tests/integration/agent-resources.sh',
+                  'src/image/mkosi.extra/etc/outerspace/kubelet.yaml',
                   'src/cluster/agent/workload-v1.json',
                   'src/image/mkosi.extra/usr/share/outerspace/apparmor/agent-v1',
                   'src/image/mkosi.extra/usr/lib/systemd/system/outerspace-agent-profile.service']
@@ -81,6 +83,37 @@ def verify_agent_probe(observation):
     if any(type(observation.get(key)) is not type(value) or observation.get(key) != value
            for key, value in required.items()):
         raise ValueError('Agent did not prove every required runtime boundary')
+
+
+def verify_agent_resource_limits(pod):
+    expected = {'cpu.max': '50000 100000', 'memory.max': '134217728', 'pids.max': '256'}
+    if not pod.get('path') or any(pod.get('files', {}).get(key) != value for key, value in expected.items()):
+        raise ValueError('Actual Agent cgroup CPU, memory or PID limit differs from the budget')
+
+
+def agent_pressure_observed(mode, before, after):
+    verify_agent_resource_limits(before)
+    verify_agent_resource_limits(after)
+    def counter(pod, file, key):
+        values = dict(line.split() for line in pod['files'][file].splitlines())
+        return int(values[key])
+    def increase(file, key):
+        return counter(after, file, key) - counter(before, file, key)
+    if mode == 'cpu':
+        return increase('cpu.stat', 'nr_throttled') > 0 and increase('cpu.stat', 'usage_usec') > 100000
+    if mode == 'fork':
+        return increase('pids.events', 'max') > 0 and int(after['files']['pids.current']) >= 250
+    if mode == 'oom':
+        return increase('memory.events', 'oom_kill') > 0 and after['result'] == 'oom-killed'
+    if mode == 'scratch':
+        fs = after.get('scratch', {})
+        return (after['result'] == 'scratch-full' and fs.get('capacity_bytes') == 16 * 1024**2
+                and fs.get('used_bytes', 0) >= 15 * 1024**2)
+    if mode == 'logs':
+        files = after['log_files']
+        return (after['result'] == 'logs-written' and any('.log.' in name for name in files)
+                and len(files) <= 2 and sum(files.values()) <= 24 * 1024**2)
+    raise ValueError('Unknown Agent pressure mode: ' + mode)
 
 
 def verify_recovery(before, rotated, after, before_node, after_node, bootstrap_certificate_sha256=None):
@@ -410,6 +443,11 @@ nodes:
             ('over-cpu', ['spec', 'containers', 0, 'resources', 'limits', 'cpu'], '2'),
             ('over-memory', ['spec', 'containers', 0, 'resources', 'limits', 'memory'], '512Mi'),
             ('over-storage', ['spec', 'containers', 0, 'resources', 'limits', 'ephemeral-storage'], '128Mi'),
+            ('under-reserved-cpu', ['spec', 'containers', 0, 'resources', 'requests', 'cpu'], '50m'),
+            ('under-reserved-memory', ['spec', 'containers', 0, 'resources', 'requests', 'memory'], '32Mi'),
+            ('under-reserved-storage', ['spec', 'containers', 0, 'resources', 'requests', 'ephemeral-storage'], '8Mi'),
+            ('pod-resources', ['spec', 'resources'], {'requests': {'cpu': '1', 'memory': '256Mi'},
+                                                     'limits': {'cpu': '1', 'memory': '256Mi'}}),
             ('gpu', ['spec', 'containers', 0, 'resources', 'limits', 'nvidia.com/gpu'], '1'),
             ('unbounded-workspace', ['spec', 'volumes', 0, 'emptyDir', 'sizeLimit'], '1Gi'),
             ('host-files', ['spec', 'volumes', 0], {'name': 'workspace', 'hostPath': {'path': '/'}}),
@@ -431,6 +469,9 @@ nodes:
             for key in path[:-1]:
                 target = target[key]
             target[path[-1]] = value
+            if name in ['over-cpu', 'over-memory', 'over-storage']:
+                # Isolate the ceiling check from the full-reservation check.
+                obj['spec']['containers'][0]['resources']['requests'][path[-1]] = value
             if name == 'privileged':
                 # Kubernetes rejects privileged + no-new-privileges before the
                 # profile can evaluate it; exercise a valid privileged request.
@@ -443,6 +484,27 @@ nodes:
                 raise ValueError(f'Agent admission refusal not proven for {name}: {result.stderr[-1500:]}')
             refusals[name] = result.stderr.strip()
         self.agent_checks['admission_refusals'] = refusals
+        # Scheduling gates hold real admitted pods without starting containers.
+        # Pending launches consume the same four-slot quota as running agents.
+        queued = []
+        try:
+            for index in range(4):
+                obj = copy.deepcopy(template)
+                obj['metadata']['name'] = 'quota-slot-' + str(index)
+                obj['spec']['schedulingGates'] = [{'name': 'outerspace.sh/qualification'}]
+                self.kube('create', '-f', '-', data=json.dumps(obj))
+                queued.append(obj['metadata']['name'])
+            obj['metadata']['name'] = 'quota-slot-refused'
+            refused = self.kube('create', '--dry-run=server', '-f', '-', data=json.dumps(obj), check=False)
+            if refused.returncode == 0 or 'exceeded quota' not in refused.stderr or 'pods' not in refused.stderr:
+                raise ValueError('Agent launch concurrency/queue quota was not enforced: ' + refused.stderr)
+            self.agent_checks['queue_quota'] = {'admitted_slots': 4, 'fifth_refused': refused.stderr.strip()}
+        finally:
+            if queued:
+                self.kube('-n', AGENT_NAMESPACE, 'delete', 'pod', *queued, '--wait=true', '--timeout=60s')
+                wait_for('Waiting for deleted launch slots to leave the quota', lambda:
+                    self.api('-n', AGENT_NAMESPACE, 'resourcequota', 'outerspace-agent-v1')
+                        .get('status', {}).get('used', {}).get('pods') == '0', timeout=60)
 
     def agent_install(self):
         self.apply(*json.loads((ROOT / 'src/cluster/agent/profile-v1.json').read_text())['items'])
@@ -487,8 +549,10 @@ nodes:
         workload['spec']['tolerations'] = [
             {'key': key, 'operator': 'Exists', 'effect': 'NoExecute', 'tolerationSeconds': 1800}
             for key in ['node.kubernetes.io/not-ready', 'node.kubernetes.io/unreachable']]
+        launched = time.monotonic()
         self.apply(workload)
         self.kube('-n', AGENT_NAMESPACE, 'wait', '--for=condition=Ready', 'pod/agent', '--timeout=1200s', timeout=1230)
+        self.agent_checks['first_create_to_ready_wall_seconds'] = time.monotonic() - launched
         # Check UPDATE and the ephemeral-container subresource, not only CREATE.
         self.kube('-n', AGENT_NAMESPACE, 'label', 'pod', 'agent', 'checked=update', '--dry-run=server')
         changed = self.kube('-n', AGENT_NAMESPACE, 'patch', 'pod', 'agent', '--dry-run=server', '--type=json',
@@ -504,6 +568,20 @@ nodes:
         if changed.returncode == 0 or 'OuterSpace Agent v1' not in changed.stderr:
             raise ValueError('Agent ephemeral container injection was not refused: ' + changed.stderr)
         self.agent_checks['update_and_ephemeral_refused'] = True
+        def resize(cpu):
+            resources = copy.deepcopy(workload['spec']['containers'][0]['resources'])
+            for kind in ['requests', 'limits']:
+                resources[kind]['cpu'] = cpu
+            return self.kube('-n', AGENT_NAMESPACE, 'patch', 'pod', 'agent', '--subresource=resize',
+                '--dry-run=server', '--type=strategic', '-p', json.dumps({'spec': {'containers': [
+                    {'name': 'agent', 'resources': resources}]}}), check=False)
+        accepted = resize('600m')
+        if accepted.returncode:
+            raise ValueError('Bounded Agent resize was not admitted: ' + accepted.stderr)
+        refused = resize('2')
+        if refused.returncode == 0 or 'OuterSpace Agent v1' not in refused.stderr:
+            raise ValueError('Over-budget Agent resize was not refused: ' + refused.stderr)
+        self.agent_checks['resize'] = {'bounded_admitted': True, 'over_budget_refused': refused.stderr.strip()}
         # A missing required LSM must fail on the real OS, outside the policy's
         # namespace so admission does not mask the runtime refusal.
         missing = copy.deepcopy(workload)
@@ -585,6 +663,100 @@ nodes:
         self.agent_checks['phases'][phase] = observation
         (self.output / ('agent-isolation-' + phase + '.json')).write_text(json.dumps(pod, indent=2) + '\n')
 
+    def agent_resource_snapshot(self, uids):
+        result = self.kube('-n', LAB, 'exec', 'probe', '--', 'python3', '-c',
+                           (ROOT / 'tests/integration/node-probe.py').read_text(), json.dumps(uids))
+        return json.loads(result.stdout)['resources']
+
+    def agent_resource_pulse(self):
+        started = time.monotonic()
+        node = self.api('node', self.agent_node)
+        conditions = {item['type']: item['status'] for item in node['status']['conditions']}
+        if conditions.get('Ready') != 'True' or any(conditions.get(key) != 'False' for key in
+                                                   ['MemoryPressure', 'DiskPressure', 'PIDPressure']):
+            raise ValueError('Node became unhealthy under Agent resource pressure: ' + json.dumps(conditions))
+        api_seconds = time.monotonic() - started
+        started = time.monotonic()
+        self.kube('-n', AGENT_NAMESPACE, 'exec', 'agent', '--', '/bin/sh', '-ec',
+                  'wget -T 3 -qO- http://127.0.0.1:8081 | grep -qx outerspace-agent-ok', timeout=45)
+        return {'api_wall_seconds': api_seconds, 'neighbor_wall_seconds': time.monotonic() - started,
+                'conditions': conditions}
+
+    def agent_resources(self):
+        # No stress tools or benchmark daemon enter the host. The existing
+        # privileged lab probe only observes; admitted BusyBox pods create load.
+        pods = self.api('pods', '-A', '--field-selector', 'spec.nodeName=' + self.agent_node)['items']
+        uids = [pod['metadata']['uid'] for pod in pods]
+        initial = self.agent_resource_snapshot(uids)
+        time.sleep(5)
+        quiet = self.agent_resource_snapshot(uids)
+        cases = {}
+        previous_uids = []
+        for mode in ['cpu', 'scratch', 'oom', 'fork', 'logs']:
+            print('Qualifying Agent resource pressure: ' + mode, flush=True)
+            workload = json.loads((ROOT / 'src/cluster/agent/workload-v1.json').read_text())
+            workload['metadata']['name'] = 'pressure'
+            workload['spec']['restartPolicy'] = 'Never'
+            workload['spec']['containers'][0]['command'] = ['/bin/sh', '-euc',
+                (ROOT / 'tests/integration/agent-resources.sh').read_text(), 'agent-resources', mode]
+            started = time.monotonic()
+            self.apply(workload)
+            uid = self.api('-n', AGENT_NAMESPACE, 'pod', 'pressure')['metadata']['uid']
+            if uid in previous_uids:
+                raise ValueError('Pressure pod identity was reused')
+            previous_uids.append(uid)
+            try:
+                self.kube('-n', AGENT_NAMESPACE, 'wait', '--for=condition=Ready', 'pod/pressure',
+                          '--timeout=600s', timeout=630)
+                launch_seconds = time.monotonic() - started
+                wait_for('Checking fresh private workspace before pressure', lambda: self.kube(
+                    '-n', AGENT_NAMESPACE, 'exec', 'pressure', '--', '/bin/sh', '-ec',
+                    'test "$(cat /workspace/ready)" = fresh; test ! -e /workspace/previous-workspace; '
+                    'test ! -e /scratch/previous-workspace', check=False).returncode == 0, timeout=60)
+                before = self.agent_resource_snapshot([uid])
+                verify_agent_resource_limits(before['pods'][uid])
+                self.kube('-n', AGENT_NAMESPACE, 'exec', 'pressure', '--', 'touch', '/workspace/go')
+                pulses = []
+                def exercised():
+                    pulses.append(self.agent_resource_pulse())
+                    sample = self.agent_resource_snapshot([uid])
+                    if agent_pressure_observed(mode, before['pods'][uid], sample['pods'][uid]):
+                        return sample
+                after = wait_for('Observing enforced ' + mode + ' boundary and a responsive neighbor', exercised, timeout=180)
+                # Require responsiveness after the boundary has been hit, too.
+                pulses.append(self.agent_resource_pulse())
+                pod = self.api('-n', AGENT_NAMESPACE, 'pod', 'pressure')
+                if pod['spec']['nodeName'] != self.agent_node:
+                    raise ValueError('Resource pressure ran on another worker')
+                cases[mode] = {'pod_uid': uid, 'warm_create_to_ready_wall_seconds': launch_seconds,
+                               'before': before, 'after': after, 'responsiveness': pulses, 'pod': pod}
+            finally:
+                self.kube('-n', AGENT_NAMESPACE, 'delete', 'pod', 'pressure', '--wait=true', '--timeout=120s', timeout=150)
+            def removed():
+                snapshot = self.agent_resource_snapshot([uid])
+                item = snapshot['pods'][uid]
+                return snapshot if (item['path'] is None and not item['processes'] and not item['mounts']
+                                    and not item['workspace_present']) else None
+            cases[mode]['teardown'] = wait_for('Checking removal of processes, cgroups, mounts and workspace', removed, timeout=120)
+        image = json.loads((self.output / 'build-identity.json').read_text())
+        compressed = list(self.output.glob('outerspace-*/*.raw.zst'))
+        self.agent_resource_checks = {
+            'status': 'passed', 'reference': {'vcpus': 4, 'memory_mib': 4096, 'virtualization': 'QEMU UEFI',
+                'architecture': image['architecture'], 'disk_compressed_bytes': compressed[0].stat().st_size,
+                'disk_apparent_bytes': (self.output / 'outerspace.raw').stat().st_size},
+            'quiescent_enrolled': {'before': initial, 'after': quiet, 'pods': [
+                {'namespace': pod['metadata']['namespace'], 'name': pod['metadata']['name'],
+                 'uid': pod['metadata']['uid'], 'images': [c['image'] for c in pod['spec']['containers']]}
+                for pod in pods]},
+            'first_agent_create_to_ready_wall_seconds': self.agent_checks['first_create_to_ready_wall_seconds'],
+            'cases': cases, 'tested_concurrent_agents': 2,
+            'limits': ['Quiescent enrolled node includes Cilium and qualification workloads; not bare idle host',
+                       'No matched standard-worker comparison or physical-hardware performance claim',
+                       'Density 10/100 and aggregate block-I/O throttling are not qualified',
+                       'Log rotation is asynchronous; no hard 2 MiB per-write quota',
+                       'No agent dependencies, framework or model loaded by the pressure workload'],
+        }
+
     def cleanup(self):
         failures = []
         volumes = set()
@@ -629,8 +801,10 @@ def main():
     parser.add_argument('--profile', choices=['agent', 'inference'], required=True)
     parser.add_argument('--cpu-serving', action='store_true', help='Also qualify the locked real CPU model on Inference')
     parser.add_argument('--agent-isolation', action='store_true', help='Also qualify the native OCI Agent v1 boundary')
+    parser.add_argument('--agent-resources', action='store_true', help='Also exercise Agent resource exhaustion and teardown')
     parser.add_argument('--agent-admission-only', action='store_true', help='Preflight admission on a disposable kind API; no OS qualification')
     args = parser.parse_args()
+    args.agent_isolation = args.agent_isolation or args.agent_resources
     if args.cpu_serving and args.profile != 'inference':
         parser.error('--cpu-serving requires the inference profile')
     if (args.agent_isolation or args.agent_admission_only) and args.profile != 'agent':
@@ -679,6 +853,8 @@ def main():
         (output / 'cpu-serving.json').unlink(missing_ok=True)
     if args.agent_isolation:
         (output / 'agent-isolation.json').unlink(missing_ok=True)
+    if args.agent_resources:
+        (output / 'agent-resources.json').unlink(missing_ok=True)
     os.umask(0o077)
     with tempfile.TemporaryDirectory(prefix='outerspace-enrollment-') as temporary:
         lab = Lab(Path(temporary), output)
@@ -705,6 +881,8 @@ def main():
             if args.agent_isolation:
                 lab.agent_start(node_name)
                 lab.agent_sample('initial')
+                if args.agent_resources:
+                    lab.agent_resources()
             if args.cpu_serving:
                 serving = serving_module.Serving(lab, node_name, run, wait_for)
                 serving.prepare()
@@ -758,6 +936,8 @@ def main():
                 evidence['cpu_serving'] = serving.evidence()
             if args.agent_isolation:
                 evidence['agent_isolation'] = lab.agent_checks
+            if args.agent_resources:
+                evidence['agent_resources'] = lab.agent_resource_checks
         finally:
             try:
                 if lab.kind_created and lab.kubeconfig.exists():
@@ -814,6 +994,10 @@ def main():
         (output / 'agent-isolation.json').write_text(json.dumps({
             'subject': metadata, 'harness_commit': harness_commit, 'harness_sha256': harness_hashes,
             'enrollment_report_sha256': digest(report), 'status': 'passed', **evidence['agent_isolation']}, indent=2) + '\n')
+    if args.agent_resources:
+        (output / 'agent-resources.json').write_text(json.dumps({
+            'subject': metadata, 'harness_commit': harness_commit, 'harness_sha256': harness_hashes,
+            'enrollment_report_sha256': digest(report), **evidence['agent_resources']}, indent=2) + '\n')
     print('OUTERSPACE_ENROLLMENT_OK: ' + str(report), flush=True)
 
 

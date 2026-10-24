@@ -53,7 +53,7 @@ jobs:
       - name: Qualify the packaged worker on its own kernel
         run: |
           if [ '${{ matrix.profile }}' = agent ]; then
-            make PROFILE=agent HARDWARE=cpu agent-isolation
+            make PROFILE=agent HARDWARE=cpu agent-resources
           else
             make PROFILE=inference HARDWARE=cpu enrollment
           fi
@@ -68,6 +68,7 @@ jobs:
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment-*.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-isolation*.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-resources.json
           retention-days: 7
   ci:
     name: ci

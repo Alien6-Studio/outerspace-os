@@ -34,6 +34,7 @@ make PROFILE=inference enrollment
 make PROFILE=inference cpu-serving
 make agent-admission
 make PROFILE=agent agent-isolation
+make PROFILE=agent agent-resources
 ```
 
 `smoke` loads the on-disk UKI through UEFI and checks root integrity, CRI and
@@ -66,5 +67,16 @@ and initrd, so its output is not accepted as UEFI qualification evidence.
 without Cilium or an OS worker. `agent-isolation` runs that policy on the real
 Agent image, checks process/filesystem/LSM controls and missing-profile refusal,
 then repeats execution and ingress/egress checks after cold-node recovery.
+`agent-resources` adds five resource-pressure cases with kernel cgroup evidence,
+neighbor/API responsiveness and post-deletion process/cgroup/mount/workspace
+checks. Its `agent-resources.json` also records quiescent enrolled-node memory,
+CPU counters, platform/per-pod cgroups, image bytes and first/warm Pod launch
+times on the fixed four-vCPU/4-GiB VM. This includes qualification workloads;
+it is not a bare-host or matched hardware performance baseline. Ten/hundred
+Agent density and block-I/O throttling remain unqualified. Regression gates
+check the exact 500m CPU/128-MiB/256-PID test budget, actual throttle/OOM/fork
+events, 16-MiB scratch exhaustion and observed log rotation after a 20-MiB burst
+(at most two files and 24 MiB after rotation). Raw observations remain in the
+report; the 24-MiB burst gate is not a continuous per-write storage guarantee.
 The [Agent profile](../src/cluster/README.md#native-oci-agent-v1-profile) describes
 the administrative trust boundary, allowed workspace and static limits.

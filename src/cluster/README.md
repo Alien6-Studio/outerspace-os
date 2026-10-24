@@ -117,18 +117,29 @@ as UID/GID 65534. Replace its immutable image and command with the intended agen
 workload. V1 permits one container, no init/debug containers, all capabilities
 dropped, no privilege escalation, a read-only root and two per-pod memory-backed
 volumes: 64 MiB workspace and 16 MiB scratch. CPU, memory and ephemeral-storage
-requests/limits are mandatory; ceilings are 1 CPU, 256 MiB and 64 MiB respectively.
+requests/limits must be equal; ceilings are 1 CPU, 256 MiB and 64 MiB respectively.
+Pod-level resource overrides are refused. The example reserves 500m CPU,
+128 MiB memory and 64 MiB ephemeral storage. Resize requests must preserve these
+rules; an admitted resize is not permission to bypass the ceilings.
 Host mounts/namespaces/ports, runtime sockets, injected credentials, additional
 devices, accelerator resources and mutable image tags are refused at admission.
 Priority escalation, pod preemption, extra group authority, workload sysctls,
 registry credential references and alternate user namespaces are also refused.
-Container overrides and the ephemeral-container update subresource are checked.
+Container overrides, resize and the ephemeral-container update subresources are checked.
+
+The kubelet limits every Pod to 256 PIDs and the node to 32 Pods. The existing
+system/Kubernetes reservations each retain 100m CPU and 192 MiB memory, with
+1,024 PIDs reserved for each. Four nonterminal Agent Pods, including queued
+launches, share the namespace quota; at most eight Pod objects may be retained.
+Kubelet log rotation uses 1 MiB files, two retained files, one rotation worker
+and a one-second monitor interval. Rotation can overshoot during a burst and
+does not impose a synchronous 2 MiB filesystem quota.
 
 This is a shared-kernel execution profile within one trusted administrative
 domain. It grants no network access by default. Additional permitted flows and
 launcher identities must be controlled by the trusted operator. It provides no
 provider credentials, approval broker, persistent tenant workspace, VM-equivalent
-isolation or measured density/OOM-containment guarantee.
+isolation or a physical-hardware density guarantee.
 
 `make agent-admission` tests API acceptance/refusal in a disposable kind cluster;
 it does not qualify OS enforcement. `make PROFILE=agent agent-isolation` extends
@@ -136,6 +147,23 @@ the real OS enrollment lab with running UID/capability/seccomp/AppArmor checks,
 workspace execution, denied host access/escalation/policy changes, an unloaded-LSM
 refusal and allowed/denied network paths before and after cold node recovery.
 It emits `agent-isolation.json` only after runtime checks and cleanup succeed.
+
+`make PROFILE=agent agent-resources` adds CPU saturation, scratch exhaustion,
+memory OOM, fork exhaustion and a finite log flood. An independent read-only
+probe records the actual pod cgroup limits and kernel events while the API,
+node and neighboring Agent must remain responsive. Each deleted offender must
+leave no processes, cgroup, mounts or workspace; the next Pod with the same name
+must receive a fresh workspace. `agent-resources.json` binds those observations
+to the packaged image and the enrollment report. Native Agent CI runs this gate.
+The current lab has four vCPUs, 4 GiB RAM and two concurrent Agents; it records
+quiescent enrolled-node, platform and per-pod measurements separately. It does
+not establish a bare idle-host baseline, a matched standard-worker comparison,
+10/100-Agent density or aggregate block-I/O throttling.
+
+PID and log configuration use the existing Kubernetes
+[PID limits](https://kubernetes.io/docs/concepts/policy/pid-limiting/) and
+[kubelet configuration](https://v1-36.docs.kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/)
+interfaces. No new host daemon or runtime dependency is introduced.
 
 The admission mechanism and explicit AppArmor selection follow the Kubernetes
 [admission policy](https://v1-36.docs.kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/)

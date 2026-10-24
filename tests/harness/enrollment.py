@@ -317,7 +317,10 @@ nodes:
                             'containers': [container]}}
             if root:
                 obj['spec']['volumes'] = [{'name': 'host', 'hostPath': {'path': '/', 'type': 'Directory'}}]
-                container['volumeMounts'] = [{'name': 'host', 'mountPath': '/host', 'readOnly': True}]
+                # Observe newly created emptyDir tmpfs mounts as well as those
+                # already present when this read-only lab probe was started.
+                container['volumeMounts'] = [{'name': 'host', 'mountPath': '/host', 'readOnly': True,
+                                              'mountPropagation': 'HostToContainer'}]
             return obj
         self.apply(pod('probe', node, ['sleep', '3600'], root=True),
                    pod('cpu', node, ['python3', '-u', '-c', (ROOT / 'tests/integration/cpu-smoke.py').read_text()]),

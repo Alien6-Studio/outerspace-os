@@ -43,7 +43,13 @@ if len(sys.argv) == 2:
     files = ['cpu.max', 'cpu.stat', 'memory.max', 'memory.current', 'memory.peak',
              'memory.events', 'pids.max', 'pids.current', 'pids.events', 'cgroup.procs']
     def read_group(path):
-        return {name: (path / name).read_text().strip() for name in files if (path / name).is_file()}
+        values = {}
+        for name in files:
+            try:
+                values[name] = (path / name).read_text().strip()
+            except FileNotFoundError:
+                pass  # A runtime scope can disappear during OOM or teardown.
+        return values
     groups = {}
     for uid in uids:
         paths = list((cgroup_root / 'kubepods.slice').rglob('*pod' + uid.replace('-', '_') + '.slice'))

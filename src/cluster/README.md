@@ -132,7 +132,7 @@ system/Kubernetes reservations each retain 100m CPU and 192 MiB memory, with
 1,024 PIDs reserved for each. Four nonterminal Agent Pods, including queued
 launches, share the namespace quota; at most eight Pod objects may be retained.
 Kubelet log rotation uses 1 MiB files, two retained files, one rotation worker
-and a one-second monitor interval. Rotation can overshoot during a burst and
+and a three-second monitor interval. Rotation can overshoot during a burst and
 does not impose a synchronous 2 MiB filesystem quota.
 
 This is a shared-kernel execution profile within one trusted administrative

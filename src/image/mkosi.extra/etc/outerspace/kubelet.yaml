@@ -30,7 +30,7 @@
   "containerLogMaxSize": "1Mi",
   "containerLogMaxFiles": 2,
   "containerLogMaxWorkers": 1,
-  "containerLogMonitorInterval": "1s",
+  "containerLogMonitorInterval": "3s",
   "imageGCHighThresholdPercent": 80,
   "imageGCLowThresholdPercent": 65,
   "resolvConf": "/run/systemd/resolve/resolv.conf",

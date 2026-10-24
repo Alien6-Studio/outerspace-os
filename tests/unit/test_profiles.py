@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
+import os
 import subprocess
 import unittest
 from image_fixtures import profiles
@@ -13,12 +14,20 @@ class ProfileSelectionTests(unittest.TestCase):
                 self.assertEqual(profiles.selection('agent', 'cpu', name)['architecture'], expected)
 
     def test_profile_is_required_before_any_docker_operation(self):
+        env = os.environ.copy()
+        for name in ['PROFILE', 'HARDWARE', 'MAKEFLAGS', 'MAKEOVERRIDES', 'MFLAGS']:
+            env.pop(name, None)
         for command in [['make', 'build'], ['make', 'smoke'], ['make', 'package'],
                         ['make', 'PROFILE=unknown', 'build']]:
             with self.subTest(command=command):
-                result = subprocess.run(command, cwd=profiles.ROOT, capture_output=True, text=True)
+                result = subprocess.run(command, cwd=profiles.ROOT, capture_output=True, text=True, env=env)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn('invalid choice', result.stderr)
+
+    def test_mkosi_version_uses_distribution_version_outside_the_repository(self):
+        version = subprocess.check_output([str(profiles.ROOT / 'src/image/mkosi.version')],
+                                          cwd=profiles.ROOT.parent, text=True).strip()
+        self.assertEqual(version, (profiles.ROOT / 'VERSION').read_text().strip())
 
     def test_unknown_architecture_and_hardware_are_refused(self):
         for args in [('agent', 'gpu-nvidia', 'amd64'), ('inference', 'cpu', 'sparc')]:

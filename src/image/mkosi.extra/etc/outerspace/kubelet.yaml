@@ -24,16 +24,25 @@
   "failSwapOn": true,
   "seccompDefault": true,
   "serializeImagePulls": true,
+  "podPidsLimit": 256,
+  "singleProcessOOMKill": false,
+  "maxPods": 32,
+  "containerLogMaxSize": "1Mi",
+  "containerLogMaxFiles": 2,
+  "containerLogMaxWorkers": 1,
+  "containerLogMonitorInterval": "3s",
   "imageGCHighThresholdPercent": 80,
   "imageGCLowThresholdPercent": 65,
   "resolvConf": "/run/systemd/resolve/resolv.conf",
   "systemReserved": {
     "cpu": "100m",
-    "memory": "192Mi"
+    "memory": "192Mi",
+    "pid": "1024"
   },
   "kubeReserved": {
     "cpu": "100m",
-    "memory": "192Mi"
+    "memory": "192Mi",
+    "pid": "1024"
   },
   "evictionHard": {
     "memory.available": "100Mi",

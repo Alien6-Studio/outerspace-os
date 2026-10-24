@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
 import base64
+import copy
 import importlib.util
 import json
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -15,6 +17,66 @@ spec.loader.exec_module(enrollment)
 
 
 class EnrollmentEvidenceTests(unittest.TestCase):
+    def test_lab_renewal_cannot_roll_again_during_the_ci_job(self):
+        timeouts = re.findall(r'^\s+timeout-minutes:\s*(\d+)\s*$',
+            (enrollment.ROOT / '.github/workflows/ci.yml').read_text(), re.MULTILINE)
+        self.assertTrue(timeouts, 'The native job must have an explicit time budget')
+        config = enrollment.load_script('node-config', enrollment.BUILD_TOOLS)
+        # Kubernetes may rotate with 30% of certificate lifetime remaining.
+        earliest_renewal = config.duration_seconds(enrollment.LAB_RENEWAL_DURATION) * 0.7
+        self.assertGreater(earliest_renewal, max(map(int, timeouts)) * 60)
+
+    def test_pressure_events_can_be_recorded_on_the_container_below_the_pod_limit(self):
+        before = {'path': 'pod', 'files': {'cpu.max': '50000 100000', 'memory.max': '134217728',
+                  'pids.max': '256', 'pids.current': '2', 'pids.events': 'max 0',
+                  'cpu.stat': 'usage_usec 0\nnr_throttled 0'},
+                  'descendants': {'container': {'cpu.stat': 'nr_throttled 0', 'pids.events': 'max 0'}}}
+        after = copy.deepcopy(before)
+        after['files']['pids.current'] = '255'
+        after['files']['cpu.stat'] = 'usage_usec 500000\nnr_throttled 0'
+        self.assertFalse(enrollment.agent_pressure_observed('fork', before, after))
+        self.assertFalse(enrollment.agent_pressure_observed('cpu', before, after))
+        after['descendants']['container'] = {'cpu.stat': 'nr_throttled 3', 'pids.events': 'max 1'}
+        self.assertTrue(enrollment.agent_pressure_observed('fork', before, after))
+        self.assertTrue(enrollment.agent_pressure_observed('cpu', before, after))
+        after['files']['pids.current'] = '257'
+        self.assertFalse(enrollment.agent_pressure_observed('fork', before, after))
+
+    def test_resource_pressure_requires_actual_limits_and_kernel_events(self):
+        pod = {'path': 'kubepods.slice/test', 'files': {
+            'cpu.max': '50000 100000', 'memory.max': '134217728', 'pids.max': '256',
+            'cpu.stat': 'usage_usec 0\nnr_throttled 0', 'pids.events': 'max 0',
+            'pids.current': '1', 'memory.events': 'oom_kill 0'},
+            'result': None, 'log_files': {}}
+        for mode in ['cpu', 'fork', 'oom', 'scratch', 'logs']:
+            with self.subTest(mode=mode):
+                self.assertFalse(enrollment.agent_pressure_observed(mode, pod, pod))
+        observed = copy.deepcopy(pod)
+        observed['files']['cpu.stat'] = 'usage_usec 500000\nnr_throttled 5'
+        self.assertTrue(enrollment.agent_pressure_observed('cpu', pod, observed))
+        observed['files']['pids.events'] = 'max 1'
+        observed['files']['pids.current'] = '256'
+        self.assertTrue(enrollment.agent_pressure_observed('fork', pod, observed))
+        observed['files']['memory.events'] = 'oom_kill 1'
+        self.assertFalse(enrollment.agent_pressure_observed('oom', pod, observed))
+        observed['result'] = 'oom-container-restarted'
+        self.assertTrue(enrollment.agent_pressure_observed('oom', pod, observed))
+        observed['scratch'] = {'capacity_bytes': 16 * 1024**2, 'used_bytes': 16 * 1024**2}
+        observed['result'] = 'scratch-full'
+        self.assertTrue(enrollment.agent_pressure_observed('scratch', pod, observed))
+        observed['result'] = 'logs-written'
+        observed['log_files'] = {'0.log': 20 * 1024**2}
+        self.assertFalse(enrollment.agent_pressure_observed('logs', pod, observed))
+        observed['log_files'] = {'0.log': 0, '0.log.rotated': 20 * 1024**2}
+        self.assertTrue(enrollment.agent_pressure_observed('logs', pod, observed))
+        observed['log_files']['0.log.rotated'] = 25 * 1024**2
+        self.assertFalse(enrollment.agent_pressure_observed('logs', pod, observed))
+        for file in ['cpu.max', 'memory.max', 'pids.max']:
+            changed = copy.deepcopy(observed)
+            changed['files'][file] = 'max'
+            with self.subTest(file=file), self.assertRaises(ValueError):
+                enrollment.agent_pressure_observed('cpu', pod, changed)
+
     def setUp(self):
         self.before = {'identity': {'profile': 'agent'}, 'hostname': 'oos-test', 'machine_id': 'machine',
                        'boot_id': 'first', 'client_certificate_sha256': 'initial',

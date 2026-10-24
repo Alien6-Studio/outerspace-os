@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('enrollment', Path(__file__).resolve().parents[1] / 'scripts/test-enrollment.py')
 enrollment = importlib.util.module_from_spec(spec)
@@ -47,6 +48,19 @@ class EnrollmentEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             enrollment.verify_recovery(self.before, self.rotated, self.after, self.node, self.node,
                                        bootstrap_certificate_sha256='rotated')
+
+    def test_revocation_requires_proven_absence_and_never_accepts_an_api_failure(self):
+        lab = enrollment.Lab(Path('/unused'), Path('/unused'))
+        lab.token_id = 'abcdef'
+        empty = subprocess.CompletedProcess([], 0, stdout='', stderr='')
+        present = subprocess.CompletedProcess([], 0, stdout='{"kind":"Secret"}', stderr='')
+        with patch.object(lab, 'kube', side_effect=[empty, empty]):
+            lab.revoke_bootstrap()
+        with patch.object(lab, 'kube', side_effect=[empty, present]), self.assertRaises(ValueError):
+            lab.revoke_bootstrap()
+        for results in [[RuntimeError('API unavailable')], [empty, RuntimeError('API unavailable')]]:
+            with patch.object(lab, 'kube', side_effect=results), self.assertRaises(RuntimeError):
+                lab.revoke_bootstrap()
 
     def test_serving_approval_refuses_wrong_identity_san_signer_and_usage(self):
         with tempfile.TemporaryDirectory() as temporary:

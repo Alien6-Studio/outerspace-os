@@ -2,6 +2,7 @@
 # Copyright (C) 2026 OuterSpace OS contributors
 import base64
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -76,3 +77,52 @@ class EnrollmentEvidenceTests(unittest.TestCase):
                     enrollment.validate_serving_csr(self.csr(directory, san), 'oos-test')
             with self.assertRaises(ValueError):
                 enrollment.validate_serving_csr(self.csr(directory, subject='/O=system:nodes/CN=system:node:other'), 'oos-test')
+
+    def test_cleanup_removes_only_owned_node_volumes_and_continues_after_failure(self):
+        lab = enrollment.Lab(Path('/unused'), Path('/unused'))
+        lab.runner_created = lab.kind_created = lab.network_created = True
+        mounts = [{'Type': 'volume', 'Destination': '/var', 'Name': 'owned'},
+                  {'Type': 'bind', 'Destination': '/var', 'Source': '/host'},
+                  {'Type': 'volume', 'Destination': '/other', 'Name': 'unrelated'}]
+        commands = []
+
+        def run(*args, **kwargs):
+            commands.append(args)
+            if args[:2] == ('docker', 'ps'):
+                self.assertIn('label=io.x-k8s.kind.cluster=' + enrollment.LAB, args)
+                output = 'owned-node\n'
+            elif args[:2] == ('docker', 'inspect'):
+                self.assertEqual(args[2:], ('owned-node',))
+                output = json.dumps([{'Mounts': mounts}])
+            elif args[:3] == ('docker', 'volume', 'ls'):
+                output = 'owned\nunrelated\n'
+            elif args[:2] == ('docker', 'rm'):
+                raise subprocess.TimeoutExpired('docker', 1)
+            else:
+                output = ''
+            return subprocess.CompletedProcess(args, 0, stdout=output, stderr='')
+
+        with patch.object(enrollment, 'run', side_effect=run), self.assertRaisesRegex(RuntimeError, 'VM runner'):
+            lab.cleanup()
+        self.assertIn(('docker', 'volume', 'rm', 'owned'), commands)
+        self.assertNotIn(('docker', 'volume', 'rm', 'unrelated'), commands)
+        self.assertIn(('docker', 'network', 'rm', enrollment.LAB), commands)
+
+    def test_cleanup_accepts_volumes_already_removed_by_kind(self):
+        lab = enrollment.Lab(Path('/unused'), Path('/unused'))
+        lab.kind_created = True
+        outputs = ['node\n', json.dumps([{'Mounts': [
+            {'Type': 'volume', 'Destination': '/var', 'Name': 'owned'}]}]), '', 'unrelated\n']
+        with patch.object(enrollment, 'run', side_effect=[
+                subprocess.CompletedProcess([], 0, stdout=value, stderr='') for value in outputs]) as run:
+            lab.cleanup()
+        self.assertFalse(any(call.args[:3] == ('docker', 'volume', 'rm') for call in run.call_args_list))
+
+    def test_failed_volume_inventory_still_tears_down_the_lab_and_fails_qualification(self):
+        lab = enrollment.Lab(Path('/unused'), Path('/unused'))
+        lab.kind_created = lab.network_created = True
+        with patch.object(enrollment, 'run', side_effect=[RuntimeError('Docker unavailable'),
+                subprocess.CompletedProcess([], 0), subprocess.CompletedProcess([], 0)]) as run:
+            with self.assertRaisesRegex(RuntimeError, 'kind volume inventory'):
+                lab.cleanup()
+        self.assertEqual(run.call_args_list[-1].args, ('docker', 'network', 'rm', enrollment.LAB))

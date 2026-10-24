@@ -1,5 +1,20 @@
 # Local and CI qualification; none of these tools are installed in the OS.
-.PHONY: check smoke smoke-split enrollment cpu-serving
+.PHONY: check smoke smoke-split enrollment cpu-serving clean-test-cache
+PRUNE_TEST_IMAGES = docker image prune --force --filter label=io.outerspace.tooling=true
+
+# Preserve the test's exit status; failed cleanup must also fail a passing test.
+define cleanup_test_images
+cleanup_test_images() { \
+    status=$$?; trap - EXIT; \
+    if ! $(PRUNE_TEST_IMAGES); then \
+        if [[ $$status -eq 0 ]]; then status=1; fi; \
+    fi; \
+    exit "$$status"; \
+}; trap cleanup_test_images EXIT;
+endef
+
+clean-test-cache:
+	$(PRUNE_TEST_IMAGES)
 
 check:
 	$(PYTHON) -m unittest discover -s tests/unit -v
@@ -8,6 +23,7 @@ check:
 smoke smoke-split:
 	@set -euo pipefail; \
 	directory=$$($(PYTHON) build/tools/profiles.py directory --profile "$(PROFILE)" --hardware "$(HARDWARE)"); \
+	$(cleanup_test_images) \
 	script=boot-uefi.py; if [[ "$@" = smoke-split ]]; then script=boot-smoke.py; fi; \
 	docker run --rm --cap-drop=ALL --user "$$(id -u):$$(id -g)" \
 	    --mount "type=bind,src=$(CURDIR),dst=/work,readonly" \
@@ -23,5 +39,6 @@ enrollment cpu-serving:
 	    if [[ "$(PROFILE)" != inference ]]; then echo 'CPU serving requires PROFILE=inference.' >&2; exit 2; fi; \
 	    serving=--cpu-serving; \
 	fi; \
+	$(cleanup_test_images) \
 	docker build --build-arg "BUILDER=$(OUTERSPACE_BUILDER)" -t outerspace-enrollment:dev -f tests/Dockerfile .; \
 	$(PYTHON) tests/harness/enrollment.py --profile "$(PROFILE)" $${serving:+"$$serving"} --output "$(OUT_DIR)/$$directory"

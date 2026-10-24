@@ -357,15 +357,38 @@ nodes:
 
     def cleanup(self):
         failures = []
-        if self.runner_created:
-            if run('docker', 'rm', '-f', RUNNER, check=False).returncode:
-                failures.append('VM runner')
+        volumes = set()
+
+        def remove(description, *command):
+            try:
+                run(*command)
+            except (RuntimeError, subprocess.TimeoutExpired):
+                failures.append(description)
+
         if self.kind_created:
-            if run('kind', 'delete', 'cluster', '--name', LAB, '--kubeconfig', self.kubeconfig, check=False).returncode:
-                failures.append('kind control plane')
+            try:
+                containers = run('docker', 'ps', '-aq', '--filter',
+                                 'label=io.x-k8s.kind.cluster=' + LAB).stdout.split()
+                if containers:
+                    for container in json.loads(run('docker', 'inspect', *containers).stdout):
+                        volumes.update(mount['Name'] for mount in container.get('Mounts', [])
+                                       if mount['Type'] == 'volume' and mount['Destination'] == '/var')
+            except (RuntimeError, subprocess.TimeoutExpired, ValueError, KeyError):
+                failures.append('kind volume inventory')
+        if self.runner_created:
+            remove('VM runner', 'docker', 'rm', '-fv', RUNNER)
+        if self.kind_created:
+            remove('kind control plane', 'kind', 'delete', 'cluster', '--name', LAB,
+                   '--kubeconfig', self.kubeconfig)
+        if volumes:
+            try:
+                remaining = set(run('docker', 'volume', 'ls', '-q').stdout.split())
+                for volume in sorted(volumes & remaining):
+                    remove('kind volume ' + volume, 'docker', 'volume', 'rm', volume)
+            except (RuntimeError, subprocess.TimeoutExpired):
+                failures.append('kind volume cleanup')
         if self.network_created:
-            if run('docker', 'network', 'rm', LAB, check=False).returncode:
-                failures.append('lab network')
+            remove('lab network', 'docker', 'network', 'rm', LAB)
         if failures:
             raise RuntimeError('Lab cleanup failed: ' + ', '.join(failures))
 

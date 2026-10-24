@@ -17,3 +17,4 @@ ENV PYTHONPATH=/opt/mkosi
 RUN apt-get update && apt-get install -y --no-install-recommends systemd-boot \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /repo
+LABEL io.outerspace.tooling=true

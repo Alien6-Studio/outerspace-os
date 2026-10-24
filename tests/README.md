@@ -50,5 +50,12 @@ are written under `out/PROFILE-HARDWARE-ARCH/`. A complete report is emitted onl
 after the scenario and cleanup pass. Measurements from emulated VMs are
 functional observations, not hardware performance claims.
 
+Every Docker-backed test removes obsolete, untagged OuterSpace tooling images,
+including on failure. Current tagged builder/runner images remain reusable.
+Kubernetes teardown removes the runner's anonymous volumes and the dedicated
+kind nodes' `/var` volumes; volume cleanup failure fails qualification. Other
+projects' images and volumes are outside this cleanup. `make clean-test-cache`
+also removes obsolete tooling images independently.
+
 `smoke-split` remains available for boot diagnostics. It passes an external kernel
 and initrd, so its output is not accepted as UEFI qualification evidence.

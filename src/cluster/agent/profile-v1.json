@@ -17,6 +17,15 @@
       "automountServiceAccountToken": false
     },
     {
+      "apiVersion": "scheduling.k8s.io/v1",
+      "kind": "PriorityClass",
+      "metadata": {"name": "outerspace-agent-v1"},
+      "value": 0,
+      "globalDefault": false,
+      "preemptionPolicy": "Never",
+      "description": "Non-preempting native OuterSpace Agent v1 workloads."
+    },
+    {
       "apiVersion": "node.k8s.io/v1",
       "kind": "RuntimeClass",
       "metadata": {"name": "outerspace-agent-v1"},
@@ -60,7 +69,7 @@
             "message": "OuterSpace Agent v1 forbids service account tokens and device claims."
           },
           {
-            "expression": "(!has(object.spec.priorityClassName) || object.spec.priorityClassName == '') && (!has(object.spec.priority) || object.spec.priority == 0) && object.spec.preemptionPolicy == 'Never' && (!has(object.spec.hostUsers) || object.spec.hostUsers) && (!has(object.spec.imagePullSecrets) || size(object.spec.imagePullSecrets) == 0)",
+            "expression": "object.spec.priorityClassName == 'outerspace-agent-v1' && object.spec.priority == 0 && object.spec.preemptionPolicy == 'Never' && (!has(object.spec.hostUsers) || object.spec.hostUsers) && (!has(object.spec.imagePullSecrets) || size(object.spec.imagePullSecrets) == 0)",
             "message": "OuterSpace Agent v1 forbids priority escalation, preemption, alternate user namespaces and registry credential references."
           },
           {

@@ -98,6 +98,7 @@ seccomp. An absent profile prevents execution; Landlock is not selected by v1.
 
 The versioned [cluster profile](agent/profile-v1.json) creates an exclusive
 `outerspace-agents-v1` namespace, an unprivileged service account, a RuntimeClass,
+a priority-zero non-preempting PriorityClass,
 default-deny ingress/egress, a four-pod quota and native validating admission.
 It targets Kubernetes 1.36 with Node authorization and NodeRestriction enabled.
 The operator owns the policies and the protected node label; workloads receive

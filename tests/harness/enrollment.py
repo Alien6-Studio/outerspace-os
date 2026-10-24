@@ -395,7 +395,6 @@ nodes:
             ('service-account', ['spec', 'serviceAccountName'], 'default'),
             ('registry-secret', ['spec', 'imagePullSecrets'], [{'name': 'unapproved-registry-key'}]),
             ('priority', ['spec', 'priorityClassName'], 'system-node-critical'),
-            ('preemption', ['spec', 'preemptionPolicy'], 'PreemptLowerPriority'),
             ('user-namespace', ['spec', 'hostUsers'], False),
             ('extra-group', ['spec', 'securityContext', 'supplementalGroups'], [0]),
             ('sysctl', ['spec', 'securityContext', 'sysctls'], [{'name': 'net.ipv4.ip_unprivileged_port_start', 'value': '0'}]),
@@ -435,6 +434,8 @@ nodes:
                 # Kubernetes rejects privileged + no-new-privileges before the
                 # profile can evaluate it; exercise a valid privileged request.
                 obj['spec']['containers'][0]['securityContext']['allowPrivilegeEscalation'] = True
+            if name == 'priority':
+                obj['spec']['preemptionPolicy'] = 'PreemptLowerPriority'
             result = self.kube('create', '--dry-run=server', '-f', '-', data=json.dumps(obj), check=False)
             if (result.returncode == 0 or not any(marker in result.stderr for marker in
                     ['OuterSpace Agent v1', 'violates PodSecurity', "ValidatingAdmissionPolicy 'outerspace-agent-v1'"])):

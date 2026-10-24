@@ -9,6 +9,7 @@
     "serviceAccountName": "outerspace-agent-v1",
     "restartPolicy": "Always",
     "preemptionPolicy": "Never",
+    "priorityClassName": "outerspace-agent-v1",
     "terminationGracePeriodSeconds": 5,
     "securityContext": {
       "runAsUser": 65534,

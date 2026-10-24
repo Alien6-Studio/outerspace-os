@@ -341,6 +341,15 @@ nodes:
         wait_for('Verifying restored cross-node DNS/service/CPU response',
                  lambda: self.kube(*client, request, check=False).returncode == 0)
 
+    def revoke_bootstrap(self):
+        # Slow emulation can outlive the token TTL. Prove server-side absence
+        # even if the token cleaner already removed it; API errors must fail.
+        name = 'bootstrap-token-' + self.token_id
+        self.kube('-n', 'kube-system', 'delete', 'secret', name, '--ignore-not-found=true')
+        result = self.kube('-n', 'kube-system', 'get', 'secret', name, '--ignore-not-found=true', '-o', 'json')
+        if result.stdout.strip():
+            raise ValueError('Bootstrap token was not revoked')
+
     def cleanup(self):
         failures = []
         if self.runner_created:
@@ -407,9 +416,7 @@ def main():
                 return probe if probe and probe['client_certificate_sha256'] != initial_csr['certificate_sha256'] else None
             rotated = wait_for('Waiting for actual kubelet client certificate rotation', rotation, timeout=900)
             rotated_csr = lab.client_csr(node_name, rotated, rotated=True)
-            lab.kube('-n', 'kube-system', 'delete', 'secret', 'bootstrap-token-' + lab.token_id)
-            if lab.kube('-n', 'kube-system', 'get', 'secret', 'bootstrap-token-' + lab.token_id, check=False).returncode == 0:
-                raise ValueError('Bootstrap token was not revoked')
+            lab.revoke_bootstrap()
             lab.vm('poweroff')
             wait_for('Waiting for clean worker poweroff', lambda: run('docker', 'exec', RUNNER, 'sh', '-c',
                      '! kill -0 "$(cat /state/qemu.pid)" 2>/dev/null', check=False).returncode == 0, timeout=180)

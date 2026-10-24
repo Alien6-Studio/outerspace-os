@@ -77,7 +77,8 @@ checks locked accounts and public certificate fingerprints. Serving CSRs are
 approved only after checking requester, subject, usages and the exact node SANs.
 The lab alone uses ten-minute initial client certificates to observe real rotation,
 then one-hour renewals so the credential stays valid during an emulated cold boot.
-It then revokes the bootstrap token, powers off the VM, detaches the config drive
+It then revokes the bootstrap token (or proves its server-side absence if the TTL
+has already expired), powers off the VM, detaches the config drive
 and checks the same Node UID, hostname, machine ID and rotated certificate on the
 next boot, followed by workload/network recovery. A fresh disk overlay and stable
 VM UUID are used; the packaged raw disk must remain unchanged.

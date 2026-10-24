@@ -32,6 +32,8 @@ make PROFILE=agent smoke
 make PROFILE=agent enrollment
 make PROFILE=inference enrollment
 make PROFILE=inference cpu-serving
+make agent-admission
+make PROFILE=agent agent-isolation
 ```
 
 `smoke` loads the on-disk UKI through UEFI and checks root integrity, CRI and
@@ -59,3 +61,10 @@ also removes obsolete tooling images independently.
 
 `smoke-split` remains available for boot diagnostics. It passes an external kernel
 and initrd, so its output is not accepted as UEFI qualification evidence.
+
+`agent-admission` preflights the native Agent policy against a disposable API
+without Cilium or an OS worker. `agent-isolation` runs that policy on the real
+Agent image, checks process/filesystem/LSM controls and missing-profile refusal,
+then repeats execution and ingress/egress checks after cold-node recovery.
+The [Agent profile](../src/cluster/README.md#native-oci-agent-v1-profile) describes
+the administrative trust boundary, allowed workspace and static limits.

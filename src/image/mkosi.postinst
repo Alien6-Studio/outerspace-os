@@ -18,6 +18,10 @@ for service in systemd-networkd systemd-resolved systemd-timesyncd; do
     ln -sf "/usr/lib/systemd/system/$service.service" "$root/etc/systemd/system/multi-user.target.wants/$service.service"
 done
 ln -sf /usr/lib/systemd/system/apparmor.service "$root/etc/systemd/system/sysinit.target.wants/apparmor.service"
+if [[ "$OUTERSPACE_PROFILE" == agent ]]; then
+    ln -sf /usr/lib/systemd/system/outerspace-agent-profile.service \
+        "$root/etc/systemd/system/multi-user.target.wants/outerspace-agent-profile.service"
+fi
 ln -sf /run/systemd/resolve/stub-resolv.conf "$root/etc/resolv.conf"
 # Named operator identity; no baked password, SSH server, sudo or autologin.
 useradd --uid 1000 --user-group --no-create-home --home-dir /var/home/outerspace --shell /bin/bash outerspace

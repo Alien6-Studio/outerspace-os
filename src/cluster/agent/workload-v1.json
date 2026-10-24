@@ -1,0 +1,44 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {"name": "agent", "namespace": "outerspace-agents-v1", "labels": {"app": "agent"}},
+  "spec": {
+    "runtimeClassName": "outerspace-agent-v1",
+    "nodeSelector": {"outerspace.sh.node-restriction.kubernetes.io/agent-profile": "v1"},
+    "automountServiceAccountToken": false,
+    "serviceAccountName": "outerspace-agent-v1",
+    "restartPolicy": "Always",
+    "preemptionPolicy": "Never",
+    "priorityClassName": "outerspace-agent-v1",
+    "terminationGracePeriodSeconds": 5,
+    "securityContext": {
+      "runAsUser": 65534,
+      "runAsGroup": 65534,
+      "runAsNonRoot": true,
+      "fsGroup": 65534,
+      "seccompProfile": {"type": "RuntimeDefault"},
+      "appArmorProfile": {"type": "Localhost", "localhostProfile": "outerspace-agent-v1"}
+    },
+    "containers": [{
+      "name": "agent",
+      "image": "docker.io/library/busybox:1.37.0@sha256:bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+      "command": ["/bin/sh", "-c", "trap 'exit 0' TERM; while :; do sleep 1; done"],
+      "workingDir": "/workspace",
+      "env": [{"name": "TMPDIR", "value": "/scratch"}],
+      "securityContext": {
+        "allowPrivilegeEscalation": false,
+        "readOnlyRootFilesystem": true,
+        "capabilities": {"drop": ["ALL"]}
+      },
+      "resources": {
+        "requests": {"cpu": "50m", "memory": "32Mi", "ephemeral-storage": "8Mi"},
+        "limits": {"cpu": "500m", "memory": "128Mi", "ephemeral-storage": "64Mi"}
+      },
+      "volumeMounts": [{"name": "workspace", "mountPath": "/workspace"}, {"name": "scratch", "mountPath": "/scratch"}]
+    }],
+    "volumes": [
+      {"name": "workspace", "emptyDir": {"medium": "Memory", "sizeLimit": "64Mi"}},
+      {"name": "scratch", "emptyDir": {"medium": "Memory", "sizeLimit": "16Mi"}}
+    ]
+  }
+}

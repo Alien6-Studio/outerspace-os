@@ -126,3 +126,34 @@ class EnrollmentEvidenceTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'kind volume inventory'):
                 lab.cleanup()
         self.assertEqual(run.call_args_list[-1].args, ('docker', 'network', 'rm', enrollment.LAB))
+
+    def test_agent_admission_never_counts_api_errors_as_a_security_refusal(self):
+        lab = enrollment.Lab(Path('/unused'), Path('/unused'))
+        lab.agent_node = 'oos-test'
+        lab.agent_checks = {}
+        template = (enrollment.ROOT / 'src/cluster/agent/workload-v1.json').read_text()
+        accepted = subprocess.CompletedProcess([], 0, stdout=template, stderr='')
+        for error in ['Unable to connect to the server', 'Error from server (InternalError): unavailable']:
+            refused = subprocess.CompletedProcess([], 1, stdout='', stderr=error)
+            with patch.object(lab, 'kube', side_effect=[accepted, refused]), self.assertRaises(ValueError):
+                lab.agent_admission()
+        with patch.object(lab, 'kube', side_effect=[accepted, accepted]), self.assertRaises(ValueError):
+            lab.agent_admission()
+
+    def test_agent_probe_requires_every_running_boundary_and_rejects_missing_or_forged_values(self):
+        observation = {'status': 'passed', 'uid': 65534, 'gid': 65534,
+            'apparmor': 'outerspace-agent-v1 (enforce)', 'seccomp': 2,
+            'no_new_privileges': True, 'read_only_root': True, 'capabilities': 'none',
+            'workspace': 'passed', 'host_access': 'denied', 'privilege_escalation': 'denied',
+            'mounts': 'denied', 'device_creation': 'denied',
+            'policy_change': 'denied', 'child_confinement': 'passed'}
+        enrollment.verify_agent_probe(observation)
+        for key in observation:
+            missing = dict(observation)
+            del missing[key]
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                enrollment.verify_agent_probe(missing)
+        for key, value in [('uid', 0), ('apparmor', 'unconfined'), ('seccomp', 0),
+                           ('no_new_privileges', 1), ('read_only_root', False), ('capabilities', 'SYS_ADMIN')]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                enrollment.verify_agent_probe({**observation, key: value})

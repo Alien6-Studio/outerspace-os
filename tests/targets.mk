@@ -1,5 +1,5 @@
 # Local and CI qualification; none of these tools are installed in the OS.
-.PHONY: check smoke smoke-split enrollment cpu-serving clean-test-cache
+.PHONY: check smoke smoke-split enrollment cpu-serving agent-isolation agent-admission clean-test-cache
 PRUNE_TEST_IMAGES = docker image prune --force --filter label=io.outerspace.tooling=true
 
 # Preserve the test's exit status; failed cleanup must also fail a passing test.
@@ -30,7 +30,7 @@ smoke smoke-split:
 	    --mount "type=bind,src=$(OUT_DIR)/$$directory,dst=/out" \
 	    "$(OUTERSPACE_BUILDER)" python3 "/work/tests/harness/$$script" /out "$(PROFILE)" "$(HARDWARE)"
 
-enrollment cpu-serving:
+enrollment cpu-serving agent-isolation:
 	@set -euo pipefail; \
 	directory=$$($(PYTHON) build/tools/profiles.py directory --profile "$(PROFILE)" --hardware "$(HARDWARE)"); \
 	if [[ "$(HARDWARE)" != cpu ]]; then echo 'Enrollment requires HARDWARE=cpu.' >&2; exit 2; fi; \
@@ -39,6 +39,15 @@ enrollment cpu-serving:
 	    if [[ "$(PROFILE)" != inference ]]; then echo 'CPU serving requires PROFILE=inference.' >&2; exit 2; fi; \
 	    serving=--cpu-serving; \
 	fi; \
+	if [[ "$@" = agent-isolation ]]; then \
+	    if [[ "$(PROFILE)" != agent ]]; then echo 'Agent isolation requires PROFILE=agent.' >&2; exit 2; fi; \
+	    serving=--agent-isolation; \
+	fi; \
 	$(cleanup_test_images) \
 	docker build --build-arg "BUILDER=$(OUTERSPACE_BUILDER)" -t outerspace-enrollment:dev -f tests/Dockerfile .; \
 	$(PYTHON) tests/harness/enrollment.py --profile "$(PROFILE)" $${serving:+"$$serving"} --output "$(OUT_DIR)/$$directory"
+
+agent-admission:
+	@set -euo pipefail; \
+	$(cleanup_test_images) \
+	$(PYTHON) tests/harness/enrollment.py --profile agent --agent-admission-only --output "$(OUT_DIR)/agent-admission"

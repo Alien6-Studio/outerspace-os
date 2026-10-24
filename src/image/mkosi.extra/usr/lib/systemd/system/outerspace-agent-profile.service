@@ -1,0 +1,13 @@
+[Unit]
+Description=Load the OuterSpace OCI Agent v1 AppArmor profile
+After=apparmor.service
+Before=kubelet.service
+
+[Service]
+Type=oneshot
+# The immutable root and policy require no runtime cache writes.
+ExecStart=/usr/sbin/apparmor_parser --replace --skip-cache /usr/share/outerspace/apparmor/agent-v1
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

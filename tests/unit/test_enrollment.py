@@ -126,3 +126,33 @@ class EnrollmentEvidenceTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'kind volume inventory'):
                 lab.cleanup()
         self.assertEqual(run.call_args_list[-1].args, ('docker', 'network', 'rm', enrollment.LAB))
+
+    def test_agent_admission_never_counts_api_errors_as_a_security_refusal(self):
+        lab = enrollment.Lab(Path('/unused'), Path('/unused'))
+        lab.agent_node = 'oos-test'
+        lab.agent_checks = {}
+        template = (enrollment.ROOT / 'src/cluster/agent/workload-v1.json').read_text()
+        accepted = subprocess.CompletedProcess([], 0, stdout=template, stderr='')
+        for error in ['Unable to connect to the server', 'Error from server (InternalError): unavailable']:
+            refused = subprocess.CompletedProcess([], 1, stdout='', stderr=error)
+            with patch.object(lab, 'kube', side_effect=[accepted, refused]), self.assertRaises(ValueError):
+                lab.agent_admission()
+        with patch.object(lab, 'kube', side_effect=[accepted, accepted]), self.assertRaises(ValueError):
+            lab.agent_admission()
+
+    def test_agent_probe_requires_real_enforcement_and_does_not_accept_network_errors(self):
+        lab = enrollment.Lab(Path('/unused'), Path('/unused'))
+        lab.agent_node = 'oos-test'
+        lab.agent_checks = {'phases': {}}
+        pod = {'spec': {'nodeName': 'oos-test'}}
+        for observation in [{'status': 'failed'}, {'status': 'passed', 'apparmor': 'unconfined'}]:
+            result = subprocess.CompletedProcess([], 0, stdout=json.dumps(observation), stderr='')
+            with patch.object(lab, 'api', return_value=pod), patch.object(lab, 'kube', return_value=result):
+                with self.assertRaises(ValueError):
+                    lab.agent_sample('test')
+        observation = {'status': 'passed', 'apparmor': 'outerspace-agent-v1 (enforce)'}
+        result = subprocess.CompletedProcess([], 0, stdout=json.dumps(observation), stderr='')
+        api_error = subprocess.CompletedProcess([], 1, stdout='', stderr='Unable to connect to the server')
+        with patch.object(lab, 'api', side_effect=[pod, {'spec': {'clusterIP': '10.97.0.2'}}]), \
+                patch.object(lab, 'kube', side_effect=[result, api_error]), self.assertRaises(ValueError):
+            lab.agent_sample('test')

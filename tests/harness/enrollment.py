@@ -4,6 +4,7 @@
 """Qualify one packaged worker in an exclusively owned, disposable local VM lab."""
 import argparse
 import base64
+import copy
 import hashlib
 import importlib.util
 import json
@@ -29,7 +30,11 @@ VM_IP = '172.30.80.10'
 HARNESS_INPUTS = ['tests/harness/enrollment.py', 'tests/harness/enrollment-vm.py',
                   'tests/integration/node-probe.py', 'tests/integration/cpu-smoke.py',
                   'tests/harness/cpu-serving.py', 'tests/integration/serving-client.py',
-                  'tests/integration/model-stage.py', 'tests/benchmarks/cpu-serving.lock.json']
+                  'tests/integration/model-stage.py', 'tests/benchmarks/cpu-serving.lock.json',
+                  'tests/integration/agent-isolation.sh', 'src/cluster/agent/profile-v1.json',
+                  'src/cluster/agent/workload-v1.json']
+AGENT_NAMESPACE = 'outerspace-agents-v1'
+AGENT_NODE_LABEL = 'outerspace.sh.node-restriction.kubernetes.io/agent-profile'
 
 
 def run(*args, data=None, check=True, env=None, timeout=900):
@@ -355,6 +360,136 @@ nodes:
         if result.stdout.strip():
             raise ValueError('Bootstrap token was not revoked')
 
+    def agent_admission(self):
+        template = json.loads((ROOT / 'src/cluster/agent/workload-v1.json').read_text())
+        result = self.kube('create', '--dry-run=server', '-f', '-', '-o', 'json', data=json.dumps(template))
+        if json.loads(result.stdout)['spec']['runtimeClassName'] != 'outerspace-agent-v1':
+            raise ValueError('Agent RuntimeClass missing after admission')
+        changes = [
+            ('runtime', ['spec', 'runtimeClassName'], None),
+            ('scheduler', ['spec', 'schedulerName'], 'untrusted-scheduler'),
+            ('direct-node', ['spec', 'nodeName'], self.agent_node),
+            ('host-network', ['spec', 'hostNetwork'], True),
+            ('host-pid', ['spec', 'hostPID'], True),
+            ('host-ipc', ['spec', 'hostIPC'], True),
+            ('root', ['spec', 'securityContext', 'runAsUser'], 0),
+            ('seccomp', ['spec', 'securityContext', 'seccompProfile'], {'type': 'Unconfined'}),
+            ('apparmor', ['spec', 'securityContext', 'appArmorProfile'], {'type': 'RuntimeDefault'}),
+            ('token', ['spec', 'automountServiceAccountToken'], True),
+            ('service-account', ['spec', 'serviceAccountName'], 'default'),
+            ('privileged', ['spec', 'containers', 0, 'securityContext', 'privileged'], True),
+            ('capability', ['spec', 'containers', 0, 'securityContext', 'capabilities', 'add'], ['SYS_ADMIN']),
+            ('escalation', ['spec', 'containers', 0, 'securityContext', 'allowPrivilegeEscalation'], True),
+            ('writable-root', ['spec', 'containers', 0, 'securityContext', 'readOnlyRootFilesystem'], False),
+            ('container-root', ['spec', 'containers', 0, 'securityContext', 'runAsUser'], 0),
+            ('container-seccomp', ['spec', 'containers', 0, 'securityContext', 'seccompProfile'], {'type': 'Unconfined'}),
+            ('container-apparmor', ['spec', 'containers', 0, 'securityContext', 'appArmorProfile'], {'type': 'Unconfined'}),
+            ('mutable-image', ['spec', 'containers', 0, 'image'], 'busybox:latest'),
+            ('over-cpu', ['spec', 'containers', 0, 'resources', 'limits', 'cpu'], '2'),
+            ('over-memory', ['spec', 'containers', 0, 'resources', 'limits', 'memory'], '512Mi'),
+            ('over-storage', ['spec', 'containers', 0, 'resources', 'limits', 'ephemeral-storage'], '128Mi'),
+            ('gpu', ['spec', 'containers', 0, 'resources', 'limits', 'nvidia.com/gpu'], '1'),
+            ('unbounded-workspace', ['spec', 'volumes', 0, 'emptyDir', 'sizeLimit'], '1Gi'),
+            ('host-files', ['spec', 'volumes', 0], {'name': 'workspace', 'hostPath': {'path': '/'}}),
+            ('runtime-socket', ['spec', 'volumes', 0], {'name': 'workspace', 'hostPath': {'path': '/run/containerd/containerd.sock'}}),
+            ('external-workspace', ['spec', 'volumes', 0], {'name': 'workspace', 'persistentVolumeClaim': {'claimName': 'other-tenant'}}),
+            ('policy-mount', ['spec', 'containers', 0, 'volumeMounts', 0, 'mountPath'], '/etc/apparmor.d'),
+            ('mount-propagation', ['spec', 'containers', 0, 'volumeMounts', 0, 'mountPropagation'], 'HostToContainer'),
+            ('subpath', ['spec', 'containers', 0, 'volumeMounts', 0, 'subPath'], 'policy'),
+            ('init-container', ['spec', 'initContainers'], copy.deepcopy(template['spec']['containers'])),
+        ]
+        refusals = {}
+        for name, path, value in changes:
+            obj = copy.deepcopy(template)
+            obj['metadata']['name'] = 'refuse-' + name
+            # Spoofed application labels never exempt a pod from admission.
+            obj['metadata']['labels'] = {'app': 'trusted-system', 'outerspace-agent-profile': 'disabled'}
+            target = obj
+            for key in path[:-1]:
+                target = target[key]
+            target[path[-1]] = value
+            result = self.kube('create', '--dry-run=server', '-f', '-', data=json.dumps(obj), check=False)
+            if (result.returncode == 0 or not any(marker in result.stderr for marker in
+                    ['OuterSpace Agent v1', 'violates PodSecurity', "ValidatingAdmissionPolicy 'outerspace-agent-v1'"])):
+                raise ValueError(f'Agent admission refusal not proven for {name}: {result.stderr[-1500:]}')
+            refusals[name] = result.stderr.strip()
+        self.agent_checks['admission_refusals'] = refusals
+
+    def agent_install(self):
+        self.apply(*json.loads((ROOT / 'src/cluster/agent/profile-v1.json').read_text())['items'])
+        def policy_ready():
+            policy = self.api('validatingadmissionpolicy', 'outerspace-agent-v1')
+            status = policy.get('status', {})
+            if status.get('typeChecking', {}).get('expressionWarnings'):
+                raise ValueError('Agent admission policy has type errors: ' + json.dumps(status))
+            return policy if 'typeChecking' in status and status.get('observedGeneration') == policy['metadata']['generation'] else None
+        policy = wait_for('Checking native Agent admission expressions', policy_ready, timeout=60)
+        self.agent_checks['admission_policy_uid'] = policy['metadata']['uid']
+
+    def agent_start(self, node):
+        self.agent_node = node
+        self.agent_checks = {'profile': 'outerspace-agent-v1', 'phases': {}}
+        self.agent_install()
+        self.kube('label', 'node', node, AGENT_NODE_LABEL + '=v1')
+        self.agent_admission()
+        identity = 'system:serviceaccount:' + AGENT_NAMESPACE + ':outerspace-agent-v1'
+        result = self.kube('--as=' + identity, 'patch', 'validatingadmissionpolicy', 'outerspace-agent-v1',
+                           '--type=merge', '-p', '{"spec":{"failurePolicy":"Ignore"}}', check=False)
+        if result.returncode == 0 or 'Forbidden' not in result.stderr:
+            raise ValueError('Agent identity can change admission policy or refusal is unproven')
+        self.agent_checks['policy_authority_refused'] = True
+        result = self.kube('--as=system:node:' + node, '--as-group=system:nodes', '--as-group=system:authenticated',
+                           'label', 'node', node, AGENT_NODE_LABEL + '=spoofed', '--overwrite', check=False)
+        if result.returncode == 0 or 'Forbidden' not in result.stderr or 'label' not in result.stderr:
+            raise ValueError('NodeRestriction did not protect the Agent profile label')
+        self.agent_checks['node_label_spoofing_refused'] = True
+        workload = json.loads((ROOT / 'src/cluster/agent/workload-v1.json').read_text())
+        workload['spec']['tolerations'] = [
+            {'key': key, 'operator': 'Exists', 'effect': 'NoExecute', 'tolerationSeconds': 1800}
+            for key in ['node.kubernetes.io/not-ready', 'node.kubernetes.io/unreachable']]
+        self.apply(workload)
+        self.kube('-n', AGENT_NAMESPACE, 'wait', '--for=condition=Ready', 'pod/agent', '--timeout=1200s', timeout=1230)
+        # A missing required LSM must fail on the real OS, outside the policy's
+        # namespace so admission does not mask the runtime refusal.
+        missing = copy.deepcopy(workload)
+        missing['metadata'] = {'name': 'missing-agent-lsm', 'namespace': LAB}
+        missing['spec'].pop('runtimeClassName')
+        missing['spec'].pop('nodeSelector')
+        missing['spec']['nodeName'] = node
+        missing['spec']['serviceAccountName'] = 'default'
+        missing['spec']['securityContext']['appArmorProfile']['localhostProfile'] = 'outerspace-agent-v1-absent'
+        self.apply(missing)
+        def missing_refused():
+            pod = self.api('-n', LAB, 'pod', 'missing-agent-lsm')
+            status = pod.get('status', {})
+            diagnostics = json.dumps(status)
+            return pod if ('AppArmor' in diagnostics or 'apparmor' in diagnostics) and not any(
+                state.get('state', {}).get('running') for state in status.get('containerStatuses', [])) else None
+        refused = wait_for('Checking runtime refusal of an unloaded Agent AppArmor profile', missing_refused, timeout=120)
+        self.agent_checks['missing_lsm_refusal'] = refused['status']
+        self.kube('-n', LAB, 'delete', 'pod', 'missing-agent-lsm', '--wait=true', '--timeout=60s')
+
+    def agent_sample(self, phase):
+        pod = self.api('-n', AGENT_NAMESPACE, 'pod', 'agent')
+        if pod['spec']['nodeName'] != self.agent_node:
+            raise ValueError('Agent was not placed on the actual OuterSpace worker')
+        result = self.kube('-n', AGENT_NAMESPACE, 'exec', 'agent', '--', '/bin/sh', '-euc',
+                           (ROOT / 'tests/integration/agent-isolation.sh').read_text())
+        observation = json.loads(result.stdout)
+        if observation.get('status') != 'passed' or observation.get('apparmor') != 'outerspace-agent-v1 (enforce)':
+            raise ValueError('Agent did not prove the running execution boundary')
+        # The enrollment client has already proved this same service healthy.
+        service = self.api('-n', LAB, 'service', 'cpu')['spec']['clusterIP']
+        deny = self.kube('-n', AGENT_NAMESPACE, 'exec', 'agent', '--', '/bin/sh', '-c',
+                         'wget -T 3 -O /scratch/egress http://' + service + ':8080', check=False)
+        if deny.returncode == 0 or 'timed out' not in deny.stderr:
+            raise ValueError('Agent egress denial was not a bounded network timeout: ' + deny.stderr)
+        observation.update({'egress_denied': True, 'pod_uid': pod['metadata']['uid'],
+                            'container_image_id': pod['status']['containerStatuses'][0]['imageID'],
+                            'node_name': self.agent_node})
+        self.agent_checks['phases'][phase] = observation
+        (self.output / ('agent-isolation-' + phase + '.json')).write_text(json.dumps(pod, indent=2) + '\n')
+
     def cleanup(self):
         failures = []
         volumes = set()
@@ -398,9 +533,13 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--profile', choices=['agent', 'inference'], required=True)
     parser.add_argument('--cpu-serving', action='store_true', help='Also qualify the locked real CPU model on Inference')
+    parser.add_argument('--agent-isolation', action='store_true', help='Also qualify the native OCI Agent v1 boundary')
+    parser.add_argument('--agent-admission-only', action='store_true', help='Preflight admission on a disposable kind API; no OS qualification')
     args = parser.parse_args()
     if args.cpu_serving and args.profile != 'inference':
         parser.error('--cpu-serving requires the inference profile')
+    if (args.agent_isolation or args.agent_admission_only) and args.profile != 'agent':
+        parser.error('Agent checks require the agent profile')
     if args.cpu_serving:
         serving_module = load_script('cpu-serving')
         serving_module.validate_lock(json.loads((ROOT / 'tests/benchmarks/cpu-serving.lock.json').read_text()))
@@ -409,6 +548,26 @@ def main():
         raise ValueError('Commit the qualification harness before running the lab')
     harness_commit = run('git', '-C', ROOT, 'rev-parse', 'HEAD').stdout.strip()
     harness_hashes = {name: digest(ROOT / name) for name in HARNESS_INPUTS}
+    if args.agent_admission_only:
+        output.mkdir(parents=True, exist_ok=True)
+        preflight = output / 'agent-admission.json'
+        preflight.unlink(missing_ok=True)
+        with tempfile.TemporaryDirectory(prefix='outerspace-agent-admission-') as temporary:
+            lab = Lab(Path(temporary), output)
+            try:
+                lab.setup()
+                lab.agent_node = lab.control_plane
+                lab.agent_checks = {'profile': 'outerspace-agent-v1', 'phases': {}}
+                lab.agent_install()
+                lab.agent_admission()
+                checks = lab.agent_checks
+            finally:
+                lab.cleanup()
+        preflight.write_text(json.dumps({'status': 'passed', 'harness_commit': harness_commit,
+            'harness_sha256': harness_hashes, 'scope': 'kind API admission only; no OS runtime qualification',
+            **checks}, indent=2) + '\n')
+        print('OUTERSPACE_AGENT_ADMISSION_OK: ' + str(preflight), flush=True)
+        return
     # Verify every packaged byte before using its read-only raw disk as the VM backing file.
     metadata = json.loads((output / 'build-identity.json').read_text())
     bundle = output / f'outerspace-{metadata["version"]}-{args.profile}-cpu-{metadata["architecture"]}'
@@ -423,6 +582,8 @@ def main():
     report.unlink(missing_ok=True)
     if args.cpu_serving:
         (output / 'cpu-serving.json').unlink(missing_ok=True)
+    if args.agent_isolation:
+        (output / 'agent-isolation.json').unlink(missing_ok=True)
     os.umask(0o077)
     with tempfile.TemporaryDirectory(prefix='outerspace-enrollment-') as temporary:
         lab = Lab(Path(temporary), output)
@@ -446,6 +607,9 @@ def main():
             if before['identity'] != expected_identity:
                 raise ValueError('Guest identity differs from the packaged source/profile')
             lab.network()
+            if args.agent_isolation:
+                lab.agent_start(node_name)
+                lab.agent_sample('initial')
             if args.cpu_serving:
                 serving = serving_module.Serving(lab, node_name, run, wait_for)
                 serving.prepare()
@@ -476,6 +640,9 @@ def main():
             after = wait_for('Reading persisted rotated credentials', lab.probe)
             verify_recovery(before, rotated, after, node, after_node, initial_csr['certificate_sha256'])
             lab.network()
+            if args.agent_isolation:
+                lab.kube('-n', AGENT_NAMESPACE, 'wait', '--for=condition=Ready', 'pod/agent', '--timeout=1200s', timeout=1230)
+                lab.agent_sample('node_recovery')
             if args.cpu_serving:
                 serving.sample('node_recovery')
             if digest(output / 'outerspace.raw') != metadata['raw_image_sha256']:
@@ -494,6 +661,8 @@ def main():
                                    'No Secure Boot or CIS compliance claim']}
             if args.cpu_serving:
                 evidence['cpu_serving'] = serving.evidence()
+            if args.agent_isolation:
+                evidence['agent_isolation'] = lab.agent_checks
         finally:
             try:
                 if lab.kind_created and lab.kubeconfig.exists():
@@ -508,6 +677,11 @@ def main():
                             result = lab.kube('-n', LAB, 'logs', 'deployment/inference', '-c', container,
                                               '--tail=500', '--timestamps', check=False)
                             (output / ('cpu-serving-final-' + container + '.log')).write_text(result.stdout + result.stderr)
+                    if args.agent_isolation:
+                        for name, command in [('pods', ['get', 'pods', '-o', 'json']),
+                                              ('events', ['get', 'events', '-o', 'json'])]:
+                            result = lab.kube('-n', AGENT_NAMESPACE, *command, check=False)
+                            (output / ('agent-isolation-' + name + '.json')).write_text(result.stdout)
                     # Preserve the system agent's explanation of slow/failed
                     # endpoint creation; serial logs only contain the CNI client.
                     if 'node_name' in locals():
@@ -541,6 +715,10 @@ def main():
         (output / 'cpu-serving.json').write_text(json.dumps({
             'subject': metadata, 'harness_commit': harness_commit, 'harness_sha256': harness_hashes,
             'enrollment_report_sha256': digest(report), **evidence['cpu_serving']}, indent=2) + '\n')
+    if args.agent_isolation:
+        (output / 'agent-isolation.json').write_text(json.dumps({
+            'subject': metadata, 'harness_commit': harness_commit, 'harness_sha256': harness_hashes,
+            'enrollment_report_sha256': digest(report), 'status': 'passed', **evidence['agent_isolation']}, indent=2) + '\n')
     print('OUTERSPACE_ENROLLMENT_OK: ' + str(report), flush=True)
 
 

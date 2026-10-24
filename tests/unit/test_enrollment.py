@@ -140,19 +140,19 @@ class EnrollmentEvidenceTests(unittest.TestCase):
         with patch.object(lab, 'kube', side_effect=[accepted, accepted]), self.assertRaises(ValueError):
             lab.agent_admission()
 
-    def test_agent_probe_requires_real_enforcement_and_does_not_accept_network_errors(self):
-        lab = enrollment.Lab(Path('/unused'), Path('/unused'))
-        lab.agent_node = 'oos-test'
-        lab.agent_checks = {'phases': {}}
-        pod = {'spec': {'nodeName': 'oos-test'}}
-        for observation in [{'status': 'failed'}, {'status': 'passed', 'apparmor': 'unconfined'}]:
-            result = subprocess.CompletedProcess([], 0, stdout=json.dumps(observation), stderr='')
-            with patch.object(lab, 'api', return_value=pod), patch.object(lab, 'kube', return_value=result):
-                with self.assertRaises(ValueError):
-                    lab.agent_sample('test')
-        observation = {'status': 'passed', 'apparmor': 'outerspace-agent-v1 (enforce)'}
-        result = subprocess.CompletedProcess([], 0, stdout=json.dumps(observation), stderr='')
-        api_error = subprocess.CompletedProcess([], 1, stdout='', stderr='Unable to connect to the server')
-        with patch.object(lab, 'api', side_effect=[pod, {'spec': {'clusterIP': '10.97.0.2'}}]), \
-                patch.object(lab, 'kube', side_effect=[result, api_error]), self.assertRaises(ValueError):
-            lab.agent_sample('test')
+    def test_agent_probe_requires_every_running_boundary_and_rejects_missing_or_forged_values(self):
+        observation = {'status': 'passed', 'uid': 65534, 'gid': 65534,
+            'apparmor': 'outerspace-agent-v1 (enforce)', 'seccomp': 2,
+            'no_new_privileges': True, 'read_only_root': True, 'capabilities': 'none',
+            'workspace': 'passed', 'host_access': 'denied', 'privilege_escalation': 'denied',
+            'policy_change': 'denied', 'child_confinement': 'passed'}
+        enrollment.verify_agent_probe(observation)
+        for key in observation:
+            missing = dict(observation)
+            del missing[key]
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                enrollment.verify_agent_probe(missing)
+        for key, value in [('uid', 0), ('apparmor', 'unconfined'), ('seccomp', 0),
+                           ('no_new_privileges', 1), ('read_only_root', False), ('capabilities', 'SYS_ADMIN')]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                enrollment.verify_agent_probe({**observation, key: value})

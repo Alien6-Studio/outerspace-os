@@ -1,7 +1,9 @@
 # Lightweight agent execution: OS boundary
 
-Status: accepted product direction; runtime profiles and integrations are not yet
-implemented or qualified. The current image is still `0.1.0-dev.0`.
+Status: the native OCI Agent v1 profile is implemented for development qualification.
+Its image-bound `agent-isolation.json` defines the tested runtime scope; density,
+action governance and optional integrations remain separate work. The current
+image is still `0.1.0-dev.0`.
 
 ## Decision
 
@@ -48,6 +50,11 @@ Kubernetes workers remain the first deployment target. A standalone agent mode
 without kubelet would be a separately qualified profile, not an existing feature.
 
 ## Agent execution contract to qualify
+
+The [native v1 profile](../cluster/README.md#native-oci-agent-v1-profile) implements
+the initial ephemeral OCI boundary with Kubernetes admission and AppArmor. The
+remaining contract below also covers later identity, governance and stronger
+isolation profiles; it is not a claim that all of those capabilities exist.
 
 Each agent gets a distinct workload identity and execution environment. The
 `outerspace` host operator account is not an agent identity. Workloads should

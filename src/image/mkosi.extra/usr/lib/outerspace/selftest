@@ -23,6 +23,11 @@ touch /var/lib/outerspace/state-write-test
 if [[ "$OUTERSPACE_PROFILE" == agent ]]; then
     systemctl is-active --quiet outerspace-agent-profile || fail 'Agent AppArmor policy not loaded'
     grep -qx 'outerspace-agent-v1 (enforce)' /sys/kernel/security/apparmor/profiles || fail 'Agent AppArmor policy not enforcing'
+    abi=/sys/kernel/security/apparmor/features/policy/versions
+    grep -qx yes "$abi/v7" || fail 'AppArmor policy ABI v7 unavailable'
+    for version in "$abi"/*; do
+        printf 'OUTERSPACE_APPARMOR_ABI %s=%s\n' "${version##*/}" "$(cat "$version")"
+    done
 fi
 [[ $(id -u outerspace) == 1000 ]] || fail 'operator account missing'
 [[ $(stat -c %a /var/home/outerspace) == 700 ]] || fail 'operator home permissions'

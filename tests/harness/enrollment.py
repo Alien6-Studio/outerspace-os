@@ -69,6 +69,17 @@ def wait_for(description, function, timeout=600):
     raise RuntimeError(f'Timed out: {description}')
 
 
+def verify_agent_probe(observation):
+    required = {'status': 'passed', 'uid': 65534, 'gid': 65534,
+                'apparmor': 'outerspace-agent-v1 (enforce)', 'seccomp': 2,
+                'no_new_privileges': True, 'read_only_root': True, 'capabilities': 'none',
+                'workspace': 'passed', 'host_access': 'denied', 'privilege_escalation': 'denied',
+                'policy_change': 'denied', 'child_confinement': 'passed'}
+    if any(type(observation.get(key)) is not type(value) or observation.get(key) != value
+           for key, value in required.items()):
+        raise ValueError('Agent did not prove every required runtime boundary')
+
+
 def verify_recovery(before, rotated, after, before_node, after_node, bootstrap_certificate_sha256=None):
     for key in ['identity', 'hostname', 'machine_id']:
         if not before.get(key) or before[key] != rotated.get(key) or before[key] != after.get(key):
@@ -122,7 +133,7 @@ class Lab:
     def vm(self, *args, check=True):
         return run('docker', 'exec', RUNNER, 'python3', '/work/tests/harness/enrollment-vm.py', *args, check=check)
 
-    def setup(self):
+    def setup(self, api_only=False):
         # No default kubecontext, caller-supplied cluster or existing lab is accepted.
         if run('docker', 'network', 'inspect', LAB, check=False).returncode == 0:
             raise ValueError('Lab network already exists; refusing to reuse or clean an unowned lab')
@@ -161,6 +172,9 @@ nodes:
         self.control_plane = LAB + '-control-plane'
         self.api_ip = run('docker', 'inspect', '-f', '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}',
                           self.control_plane).stdout.strip()
+        if api_only:
+            return
+        print('Installing Cilium in the dedicated cluster', flush=True)
         run('helm', '--kubeconfig', self.kubeconfig, 'install', 'cilium',
             'oci://quay.io/cilium/charts/cilium', '--version', '1.20.3', '-n', 'kube-system',
             '-f', ROOT / 'src/cluster/cilium/values.yaml', '--set', 'k8sServiceHost=' + self.api_ip,
@@ -444,11 +458,28 @@ nodes:
             raise ValueError('NodeRestriction did not protect the Agent profile label')
         self.agent_checks['node_label_spoofing_refused'] = True
         workload = json.loads((ROOT / 'src/cluster/agent/workload-v1.json').read_text())
+        workload['spec']['containers'][0]['command'] = ['/bin/sh', '-euc',
+            "printf 'outerspace-agent-ok\\n' > /workspace/index.html; exec httpd -f -p 8081 -h /workspace"]
         workload['spec']['tolerations'] = [
             {'key': key, 'operator': 'Exists', 'effect': 'NoExecute', 'tolerationSeconds': 1800}
             for key in ['node.kubernetes.io/not-ready', 'node.kubernetes.io/unreachable']]
         self.apply(workload)
         self.kube('-n', AGENT_NAMESPACE, 'wait', '--for=condition=Ready', 'pod/agent', '--timeout=1200s', timeout=1230)
+        # Check UPDATE and the ephemeral-container subresource, not only CREATE.
+        self.kube('-n', AGENT_NAMESPACE, 'label', 'pod', 'agent', 'checked=update', '--dry-run=server')
+        changed = self.kube('-n', AGENT_NAMESPACE, 'patch', 'pod', 'agent', '--dry-run=server', '--type=json',
+            '-p', '[{"op":"replace","path":"/spec/containers/0/image","value":"busybox:latest"}]', check=False)
+        if changed.returncode == 0 or 'OuterSpace Agent v1' not in changed.stderr:
+            raise ValueError('Agent image UPDATE did not preserve admission enforcement: ' + changed.stderr)
+        ephemeral = self.api('-n', AGENT_NAMESPACE, 'pod', 'agent')
+        ephemeral['spec']['ephemeralContainers'] = [{'name': 'unapproved-child',
+            'image': workload['spec']['containers'][0]['image'], 'command': ['sleep', '10'],
+            'securityContext': copy.deepcopy(workload['spec']['containers'][0]['securityContext'])}]
+        changed = self.kube('replace', '--raw', '/api/v1/namespaces/' + AGENT_NAMESPACE +
+            '/pods/agent/ephemeralcontainers', '-f', '-', data=json.dumps(ephemeral), check=False)
+        if changed.returncode == 0 or 'OuterSpace Agent v1' not in changed.stderr:
+            raise ValueError('Agent ephemeral container injection was not refused: ' + changed.stderr)
+        self.agent_checks['update_and_ephemeral_refused'] = True
         # A missing required LSM must fail on the real OS, outside the policy's
         # namespace so admission does not mask the runtime refusal.
         missing = copy.deepcopy(workload)
@@ -476,15 +507,45 @@ nodes:
         result = self.kube('-n', AGENT_NAMESPACE, 'exec', 'agent', '--', '/bin/sh', '-euc',
                            (ROOT / 'tests/integration/agent-isolation.sh').read_text())
         observation = json.loads(result.stdout)
-        if observation.get('status') != 'passed' or observation.get('apparmor') != 'outerspace-agent-v1 (enforce)':
-            raise ValueError('Agent did not prove the running execution boundary')
-        # The enrollment client has already proved this same service healthy.
+        verify_agent_probe(observation)
+        # Prove the HTTP endpoints and explicit allow paths before checking a
+        # bounded timeout after the temporary policies are removed.
         service = self.api('-n', LAB, 'service', 'cpu')['spec']['clusterIP']
-        deny = self.kube('-n', AGENT_NAMESPACE, 'exec', 'agent', '--', '/bin/sh', '-c',
-                         'wget -T 3 -O /scratch/egress http://' + service + ':8080', check=False)
-        if deny.returncode == 0 or 'timed out' not in deny.stderr:
-            raise ValueError('Agent egress denial was not a bounded network timeout: ' + deny.stderr)
-        observation.update({'egress_denied': True, 'pod_uid': pod['metadata']['uid'],
+        self.kube('-n', AGENT_NAMESPACE, 'exec', 'agent', '--', '/bin/sh', '-c',
+                  'wget -T 3 -qO- http://127.0.0.1:8081 | grep -qx outerspace-agent-ok')
+        allow = {'apiVersion': 'networking.k8s.io/v1', 'kind': 'NetworkPolicy',
+            'metadata': {'name': 'qualification-allow', 'namespace': AGENT_NAMESPACE},
+            'spec': {'podSelector': {}, 'policyTypes': ['Ingress', 'Egress'],
+                'ingress': [{'from': [{'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': LAB}},
+                                      'podSelector': {'matchLabels': {'app': 'client'}}}],
+                             'ports': [{'protocol': 'TCP', 'port': 8081}]}],
+                'egress': [{'to': [{'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': LAB}},
+                                    'podSelector': {'matchLabels': {'app': 'cpu'}}}],
+                            'ports': [{'protocol': 'TCP', 'port': 8080}]}]}}
+        self.apply(allow)
+        egress = ['-n', AGENT_NAMESPACE, 'exec', 'agent', '--', 'wget', '-T', '3', '-qO-', 'http://' + service + ':8080']
+        ingress = ['-n', LAB, 'exec', 'client', '--', 'python3', '-c',
+            'import urllib.request; assert urllib.request.urlopen("http://' + pod['status']['podIP'] +
+            ':8081",timeout=3).read() == b"outerspace-agent-ok\\n"']
+        wait_for('Checking explicit Agent egress allow', lambda: self.kube(*egress, check=False).returncode == 0)
+        wait_for('Checking explicit Agent ingress allow', lambda: self.kube(*ingress, check=False).returncode == 0)
+        self.kube('-n', AGENT_NAMESPACE, 'delete', 'networkpolicy', 'qualification-allow')
+        denied_egress = ['-n', AGENT_NAMESPACE, 'exec', 'agent', '--', '/bin/sh', '-ec',
+            'if wget -T 3 -O /scratch/egress http://' + service + ':8080 2>/scratch/egress-error; '
+            'then exit 1; fi; grep -q "download timed out" /scratch/egress-error; echo OUTERSPACE_AGENT_EGRESS_DENIED']
+        denied_ingress = ['-n', LAB, 'exec', 'client', '--', 'python3', '-c',
+            'import socket; s=socket.socket(); s.settimeout(3); result=s.connect_ex(("' +
+            pod['status']['podIP'] + '",8081)); assert result in (11,110),result; print("OUTERSPACE_AGENT_INGRESS_DENIED")']
+        def egress_denied():
+            denied = self.kube(*denied_egress, check=False)
+            return denied.returncode == 0 and denied.stdout.strip() == 'OUTERSPACE_AGENT_EGRESS_DENIED'
+        def ingress_denied():
+            denied = self.kube(*denied_ingress, check=False)
+            return denied.returncode == 0 and denied.stdout.strip() == 'OUTERSPACE_AGENT_INGRESS_DENIED'
+        wait_for('Checking default-deny Agent egress', egress_denied, timeout=60)
+        wait_for('Checking default-deny Agent ingress', ingress_denied, timeout=60)
+        observation.update({'egress_denied': True, 'ingress_denied': True, 'explicit_allow': 'passed',
+                            'pod_uid': pod['metadata']['uid'],
                             'container_image_id': pod['status']['containerStatuses'][0]['imageID'],
                             'node_name': self.agent_node})
         self.agent_checks['phases'][phase] = observation
@@ -555,7 +616,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix='outerspace-agent-admission-') as temporary:
             lab = Lab(Path(temporary), output)
             try:
-                lab.setup()
+                lab.setup(api_only=True)
                 lab.agent_node = lab.control_plane
                 lab.agent_checks = {'profile': 'outerspace-agent-v1', 'phases': {}}
                 lab.agent_install()

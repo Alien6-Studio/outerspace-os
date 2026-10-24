@@ -18,7 +18,7 @@ clean-test-cache:
 
 check:
 	$(PYTHON) -m unittest discover -s tests/unit -v
-	@set -euo pipefail; for script in build/*.sh tests/harness/*.sh src/image/mkosi.postinst src/image/mkosi.version src/image/mkosi.extra/usr/lib/outerspace/*; do bash -n "$$script"; done
+	@set -euo pipefail; for script in build/*.sh tests/harness/*.sh tests/integration/*.sh src/image/mkosi.postinst src/image/mkosi.version src/image/mkosi.extra/usr/lib/outerspace/*; do bash -n "$$script"; done
 
 smoke smoke-split:
 	@set -euo pipefail; \

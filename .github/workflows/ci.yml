@@ -51,7 +51,12 @@ jobs:
           persist-credentials: false
       - run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu builder build smoke package
       - name: Qualify the packaged worker on its own kernel
-        run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu enrollment
+        run: |
+          if [ '${{ matrix.profile }}' = agent ]; then
+            make PROFILE=agent HARDWARE=cpu agent-isolation
+          else
+            make PROFILE=inference HARDWARE=cpu enrollment
+          fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -62,6 +67,7 @@ jobs:
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment-*.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-isolation*.json
           retention-days: 7
   ci:
     name: ci

@@ -89,6 +89,56 @@ remain in a temporary directory removed during cleanup. This is VM enrollment
 evidence, not physical-server, production model-serving, CIS or Secure Boot
 qualification. Existing UEFI smoke and enrollment reports remain distinct gates.
 
+## Native OCI Agent v1 profile
+
+Agent images load `outerspace-agent-v1` AppArmor policy at boot without writing
+to the immutable root. The boot check requires an enforcing profile and AppArmor
+policy ABI v7. A workload requests that exact Localhost profile and RuntimeDefault
+seccomp. An absent profile prevents execution; Landlock is not selected by v1.
+
+The versioned [cluster profile](agent/profile-v1.json) creates an exclusive
+`outerspace-agents-v1` namespace, an unprivileged service account, a RuntimeClass,
+default-deny ingress/egress, a four-pod quota and native validating admission.
+It targets Kubernetes 1.36 with Node authorization and NodeRestriction enabled.
+The operator owns the policies and the protected node label; workloads receive
+no API token or RBAC grant and cannot change their own enforcement.
+
+After qualifying the Agent node and its loaded policy:
+
+```sh
+kubectl apply -f src/cluster/agent/profile-v1.json
+kubectl label node AGENT_NODE outerspace.sh.node-restriction.kubernetes.io/agent-profile=v1
+kubectl apply -f src/cluster/agent/workload-v1.json
+```
+
+The [example workload](agent/workload-v1.json) runs a digest-pinned BusyBox image
+as UID/GID 65534. Replace its immutable image and command with the intended agent
+workload. V1 permits one container, no init/debug containers, all capabilities
+dropped, no privilege escalation, a read-only root and two per-pod memory-backed
+volumes: 64 MiB workspace and 16 MiB scratch. CPU, memory and ephemeral-storage
+requests/limits are mandatory; ceilings are 1 CPU, 256 MiB and 64 MiB respectively.
+Host mounts/namespaces/ports, runtime sockets, injected credentials, additional
+devices, accelerator resources and mutable image tags are refused at admission.
+Container overrides and the ephemeral-container update subresource are checked.
+
+This is a shared-kernel execution profile within one trusted administrative
+domain. It grants no network access by default. Additional permitted flows and
+launcher identities must be controlled by the trusted operator. It provides no
+provider credentials, approval broker, persistent tenant workspace, VM-equivalent
+isolation or measured density/OOM-containment guarantee.
+
+`make agent-admission` tests API acceptance/refusal in a disposable kind cluster;
+it does not qualify OS enforcement. `make PROFILE=agent agent-isolation` extends
+the real OS enrollment lab with running UID/capability/seccomp/AppArmor checks,
+workspace execution, denied host access/escalation/policy changes, an unloaded-LSM
+refusal and allowed/denied network paths before and after cold node recovery.
+It emits `agent-isolation.json` only after runtime checks and cleanup succeed.
+
+The admission mechanism and explicit AppArmor selection follow the Kubernetes
+[admission policy](https://v1-36.docs.kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/)
+and [AppArmor](https://v1-36.docs.kubernetes.io/docs/tutorials/security/apparmor/)
+interfaces. Qualification is bound to the actual image/runtime and test report.
+
 ## eBPF network profile
 
 The initial Cilium Helm profile is pinned to chart **1.20.3**. The image checks
@@ -181,7 +231,7 @@ kind create cluster --name outerspace-lab --config tests/integration/kind.yaml \
 api_host=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' outerspace-lab-control-plane)
 helm --kubeconfig /private/tmp/outerspace-lab.kubeconfig install cilium \
   oci://quay.io/cilium/charts/cilium --version 1.20.3 -n kube-system \
-  -f cluster/cilium/values.yaml --set k8sServiceHost="$api_host" \
+  -f src/cluster/cilium/values.yaml --set k8sServiceHost="$api_host" \
   --set k8sServicePort=6443 --set bpf.autoMount.enabled=true \
   --set cgroup.autoMount.enabled=true --wait --timeout=10m
 ./tests/harness/kind-network.sh /private/tmp/outerspace-lab.kubeconfig

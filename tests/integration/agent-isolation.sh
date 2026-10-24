@@ -8,6 +8,7 @@ test "$(id -g)" = 65534 || fail 'wrong gid'
 test "$(cat /proc/self/attr/current)" = 'outerspace-agent-v1 (enforce)' || fail 'AppArmor not enforcing'
 grep -Eq '^NoNewPrivs:[[:space:]]+1$' /proc/self/status || fail 'privilege escalation permitted'
 grep -Eq '^Seccomp:[[:space:]]+2$' /proc/self/status || fail 'seccomp filter absent'
+awk '$2 == "/" && ("," $4 ",") ~ /,ro,/ {found=1} END {exit !found}' /proc/mounts || fail 'root mount not read-only'
 for field in CapInh CapPrm CapEff CapBnd CapAmb; do
     grep -Eq "^$field:[[:space:]]+0+$" /proc/self/status || fail "capability present: $field"
 done
@@ -36,4 +37,4 @@ fi
 grep -Eq 'Operation not permitted|Permission denied' /scratch/setuid-error || fail 'uid refusal was not a permission failure'
 # The child must inherit the same LSM boundary.
 sh -c 'test "$(cat /proc/self/attr/current)" = "outerspace-agent-v1 (enforce)"' || fail 'child escaped AppArmor'
-echo '{"status":"passed","uid":65534,"apparmor":"outerspace-agent-v1 (enforce)","seccomp":2,"no_new_privileges":true,"capabilities":"none","workspace":"passed","host_access":"denied","privilege_escalation":"denied","policy_change":"denied","child_confinement":"passed"}'
+echo '{"status":"passed","uid":65534,"gid":65534,"apparmor":"outerspace-agent-v1 (enforce)","seccomp":2,"no_new_privileges":true,"read_only_root":true,"capabilities":"none","workspace":"passed","host_access":"denied","privilege_escalation":"denied","policy_change":"denied","child_confinement":"passed"}'

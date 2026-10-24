@@ -545,7 +545,16 @@ nodes:
                 'egress': [{'to': [{'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': LAB}},
                                     'podSelector': {'matchLabels': {'app': 'cpu'}}}],
                             'ports': [{'protocol': 'TCP', 'port': 8080}]}]}}
-        self.apply(allow)
+        # The CPU server already has default-deny ingress from the Core test.
+        # Keep its narrowly scoped allow throughout the Agent denial probes so
+        # a refusal cannot be attributed to the remote server's ingress policy.
+        peer_allow = {'apiVersion': 'networking.k8s.io/v1', 'kind': 'NetworkPolicy',
+            'metadata': {'name': 'agent-qualification-allow', 'namespace': LAB},
+            'spec': {'podSelector': {'matchLabels': {'app': 'cpu'}}, 'policyTypes': ['Ingress'],
+                'ingress': [{'from': [{'namespaceSelector': {'matchLabels': {'kubernetes.io/metadata.name': AGENT_NAMESPACE}},
+                                      'podSelector': {'matchLabels': {'app': 'agent'}}}],
+                             'ports': [{'protocol': 'TCP', 'port': 8080}]}]}}
+        self.apply(allow, peer_allow)
         egress = ['-n', AGENT_NAMESPACE, 'exec', 'agent', '--', 'wget', '-T', '3', '-qO-', 'http://' + service + ':8080']
         ingress = ['-n', LAB, 'exec', 'client', '--', 'python3', '-c',
             'import urllib.request; assert urllib.request.urlopen("http://' + pod['status']['podIP'] +
@@ -567,6 +576,7 @@ nodes:
             return denied.returncode == 0 and denied.stdout.strip() == 'OUTERSPACE_AGENT_INGRESS_DENIED'
         wait_for('Checking default-deny Agent egress', egress_denied, timeout=60)
         wait_for('Checking default-deny Agent ingress', ingress_denied, timeout=60)
+        self.kube('-n', LAB, 'delete', 'networkpolicy', 'agent-qualification-allow')
         observation.update({'egress_denied': True, 'ingress_denied': True, 'explicit_allow': 'passed',
                             'pod_uid': pod['metadata']['uid'],
                             'container_image_id': pod['status']['containerStatuses'][0]['imageID'],

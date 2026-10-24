@@ -8,6 +8,7 @@
     "automountServiceAccountToken": false,
     "serviceAccountName": "outerspace-agent-v1",
     "restartPolicy": "Always",
+    "preemptionPolicy": "Never",
     "terminationGracePeriodSeconds": 5,
     "securityContext": {
       "runAsUser": 65534,

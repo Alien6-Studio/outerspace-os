@@ -119,6 +119,8 @@ volumes: 64 MiB workspace and 16 MiB scratch. CPU, memory and ephemeral-storage
 requests/limits are mandatory; ceilings are 1 CPU, 256 MiB and 64 MiB respectively.
 Host mounts/namespaces/ports, runtime sockets, injected credentials, additional
 devices, accelerator resources and mutable image tags are refused at admission.
+Priority escalation, pod preemption, extra group authority, workload sysctls,
+registry credential references and alternate user namespaces are also refused.
 Container overrides and the ephemeral-container update subresource are checked.
 
 This is a shared-kernel execution profile within one trusted administrative

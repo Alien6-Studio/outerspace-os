@@ -32,7 +32,9 @@ HARNESS_INPUTS = ['tests/harness/enrollment.py', 'tests/harness/enrollment-vm.py
                   'tests/harness/cpu-serving.py', 'tests/integration/serving-client.py',
                   'tests/integration/model-stage.py', 'tests/benchmarks/cpu-serving.lock.json',
                   'tests/integration/agent-isolation.sh', 'src/cluster/agent/profile-v1.json',
-                  'src/cluster/agent/workload-v1.json']
+                  'src/cluster/agent/workload-v1.json',
+                  'src/image/mkosi.extra/usr/share/outerspace/apparmor/agent-v1',
+                  'src/image/mkosi.extra/usr/lib/systemd/system/outerspace-agent-profile.service']
 AGENT_NAMESPACE = 'outerspace-agents-v1'
 AGENT_NODE_LABEL = 'outerspace.sh.node-restriction.kubernetes.io/agent-profile'
 
@@ -391,8 +393,14 @@ nodes:
             ('apparmor', ['spec', 'securityContext', 'appArmorProfile'], {'type': 'RuntimeDefault'}),
             ('token', ['spec', 'automountServiceAccountToken'], True),
             ('service-account', ['spec', 'serviceAccountName'], 'default'),
+            ('registry-secret', ['spec', 'imagePullSecrets'], [{'name': 'unapproved-registry-key'}]),
+            ('priority', ['spec', 'priorityClassName'], 'system-node-critical'),
+            ('preemption', ['spec', 'preemptionPolicy'], 'PreemptLowerPriority'),
+            ('user-namespace', ['spec', 'hostUsers'], False),
+            ('extra-group', ['spec', 'securityContext', 'supplementalGroups'], [0]),
+            ('sysctl', ['spec', 'securityContext', 'sysctls'], [{'name': 'net.ipv4.ip_unprivileged_port_start', 'value': '0'}]),
             ('privileged', ['spec', 'containers', 0, 'securityContext', 'privileged'], True),
-            ('capability', ['spec', 'containers', 0, 'securityContext', 'capabilities', 'add'], ['SYS_ADMIN']),
+            ('capability', ['spec', 'containers', 0, 'securityContext', 'capabilities', 'add'], ['NET_ADMIN']),
             ('escalation', ['spec', 'containers', 0, 'securityContext', 'allowPrivilegeEscalation'], True),
             ('writable-root', ['spec', 'containers', 0, 'securityContext', 'readOnlyRootFilesystem'], False),
             ('container-root', ['spec', 'containers', 0, 'securityContext', 'runAsUser'], 0),
@@ -410,7 +418,8 @@ nodes:
             ('policy-mount', ['spec', 'containers', 0, 'volumeMounts', 0, 'mountPath'], '/etc/apparmor.d'),
             ('mount-propagation', ['spec', 'containers', 0, 'volumeMounts', 0, 'mountPropagation'], 'HostToContainer'),
             ('subpath', ['spec', 'containers', 0, 'volumeMounts', 0, 'subPath'], 'policy'),
-            ('init-container', ['spec', 'initContainers'], copy.deepcopy(template['spec']['containers'])),
+            ('init-container', ['spec', 'initContainers'], [{**copy.deepcopy(template['spec']['containers'][0]),
+                                                          'name': 'unapproved-init'}]),
         ]
         refusals = {}
         for name, path, value in changes:
@@ -422,6 +431,10 @@ nodes:
             for key in path[:-1]:
                 target = target[key]
             target[path[-1]] = value
+            if name == 'privileged':
+                # Kubernetes rejects privileged + no-new-privileges before the
+                # profile can evaluate it; exercise a valid privileged request.
+                obj['spec']['containers'][0]['securityContext']['allowPrivilegeEscalation'] = True
             result = self.kube('create', '--dry-run=server', '-f', '-', data=json.dumps(obj), check=False)
             if (result.returncode == 0 or not any(marker in result.stderr for marker in
                     ['OuterSpace Agent v1', 'violates PodSecurity', "ValidatingAdmissionPolicy 'outerspace-agent-v1'"])):

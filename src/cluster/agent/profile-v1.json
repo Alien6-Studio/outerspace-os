@@ -72,7 +72,7 @@
             "message": "OuterSpace Agent v1 container security controls cannot be removed or overridden."
           },
           {
-            "expression": "has(object.spec.volumes) && size(object.spec.volumes) == 2 && object.spec.volumes.all(v, has(v.emptyDir) && v.emptyDir.medium == 'Memory' && has(v.emptyDir.sizeLimit) && ((v.name == 'workspace' && quantity(v.emptyDir.sizeLimit).compareTo(quantity('64Mi')) == 0) || (v.name == 'scratch' && quantity(v.emptyDir.sizeLimit).compareTo(quantity('16Mi')) == 0)))",
+            "expression": "has(object.spec.volumes) && size(object.spec.volumes) == 2 && object.spec.volumes.all(v, has(v.emptyDir) && v.emptyDir.medium == 'Memory' && has(dyn(v.emptyDir).sizeLimit) && ((v.name == 'workspace' && quantity(dyn(v.emptyDir).sizeLimit).compareTo(quantity('64Mi')) == 0) || (v.name == 'scratch' && quantity(dyn(v.emptyDir).sizeLimit).compareTo(quantity('16Mi')) == 0)))",
             "message": "OuterSpace Agent v1 permits only its bounded per-pod memory workspace and scratch volumes."
           },
           {

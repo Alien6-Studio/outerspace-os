@@ -439,6 +439,15 @@ nodes:
             return policy if 'typeChecking' in status and status.get('observedGeneration') == policy['metadata']['generation'] else None
         policy = wait_for('Checking native Agent admission expressions', policy_ready, timeout=60)
         self.agent_checks['admission_policy_uid'] = policy['metadata']['uid']
+        # Type checking and admission binding propagation are independent.
+        # A dry-run sentinel must be denied before any workload is created.
+        sentinel = json.loads((ROOT / 'src/cluster/agent/workload-v1.json').read_text())
+        sentinel['metadata']['name'] = 'admission-sentinel'
+        sentinel['spec'].pop('runtimeClassName')
+        def binding_active():
+            result = self.kube('create', '--dry-run=server', '-f', '-', data=json.dumps(sentinel), check=False)
+            return result.returncode != 0 and 'OuterSpace Agent v1' in result.stderr
+        wait_for('Waiting for the Agent admission binding to enforce refusals', binding_active, timeout=60)
 
     def agent_start(self, node):
         self.agent_node = node

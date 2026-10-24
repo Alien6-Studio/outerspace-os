@@ -5,6 +5,7 @@ import copy
 import importlib.util
 import json
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import unittest
@@ -16,6 +17,15 @@ spec.loader.exec_module(enrollment)
 
 
 class EnrollmentEvidenceTests(unittest.TestCase):
+    def test_lab_renewal_cannot_roll_again_during_the_ci_job(self):
+        timeouts = re.findall(r'^\s+timeout-minutes:\s*(\d+)\s*$',
+            (enrollment.ROOT / '.github/workflows/ci.yml').read_text(), re.MULTILINE)
+        self.assertTrue(timeouts, 'The native job must have an explicit time budget')
+        config = enrollment.load_script('node-config', enrollment.BUILD_TOOLS)
+        # Kubernetes may rotate with 30% of certificate lifetime remaining.
+        earliest_renewal = config.duration_seconds(enrollment.LAB_RENEWAL_DURATION) * 0.7
+        self.assertGreater(earliest_renewal, max(map(int, timeouts)) * 60)
+
     def test_pressure_events_can_be_recorded_on_the_container_below_the_pod_limit(self):
         before = {'path': 'pod', 'files': {'cpu.max': '50000 100000', 'memory.max': '134217728',
                   'pids.max': '256', 'pids.current': '2', 'pids.events': 'max 0',

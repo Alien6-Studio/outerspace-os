@@ -39,6 +39,7 @@ HARNESS_INPUTS = ['tests/harness/enrollment.py', 'tests/harness/enrollment-vm.py
                   'src/image/mkosi.extra/usr/lib/systemd/system/outerspace-agent-profile.service']
 AGENT_NAMESPACE = 'outerspace-agents-v1'
 AGENT_NODE_LABEL = 'outerspace.sh.node-restriction.kubernetes.io/agent-profile'
+LAB_RENEWAL_DURATION = '4h'
 
 
 def run(*args, data=None, check=True, env=None, timeout=900):
@@ -275,11 +276,13 @@ nodes:
 
     def extend_renewal_lifetime(self):
         # Short initial certificates trigger a real renewal promptly; renewed
-        # certificates must remain valid throughout a slow emulated cold boot.
+        # certificates must outlast the entire 120-minute CI job, including
+        # their earliest 70%-lifetime renewal point. A second natural renewal
+        # must not race the strict byte-for-byte cold-boot persistence check.
         name = 'kube-controller-manager-' + self.control_plane
         previous = self.api('-n', 'kube-system', 'pod', name)['status']['containerStatuses'][0]['containerID']
         run('docker', 'exec', self.control_plane, 'sed', '-i',
-            's/cluster-signing-duration=10m/cluster-signing-duration=1h/',
+            f's/cluster-signing-duration=10m/cluster-signing-duration={LAB_RENEWAL_DURATION}/',
             '/etc/kubernetes/manifests/kube-controller-manager.yaml')
         def restarted():
             result = self.kube('-n', 'kube-system', 'get', 'pod', name, '-o', 'json', check=False)
@@ -382,8 +385,13 @@ nodes:
                 raise ValueError('Rotation did not authenticate with the enrolled node identity')
             if not rotated and user != 'system:bootstrap:' + self.token_id:
                 raise ValueError('Initial certificate did not use this lab bootstrap token')
+            dates = dict(line.split('=', 1) for line in run('openssl', 'x509', '-noout',
+                         '-startdate', '-enddate', data=certificate).stdout.splitlines())
+            validity = ssl.cert_time_to_seconds(dates['notAfter']) - ssl.cert_time_to_seconds(dates['notBefore'])
+            if rotated and validity < load_script('node-config', BUILD_TOOLS).duration_seconds(LAB_RENEWAL_DURATION):
+                raise ValueError('The lab did not issue the configured long-lived renewal certificate')
             return {'name': csr['metadata']['name'], 'uid': csr['metadata']['uid'],
-                    'requester': user, 'certificate_sha256': fingerprint}
+                    'requester': user, 'certificate_sha256': fingerprint, 'validity_seconds': validity}
         if probe is None:
             return None
         raise ValueError('The active client certificate does not match an issued CSR')
@@ -889,13 +897,14 @@ def main():
             node_name = node['metadata']['name']
             initial_csr = wait_for('Recording the initial bootstrap certificate', lambda: lab.client_csr(node_name))
             lab.extend_renewal_lifetime()
-            config['client_signing_duration'] = '10m initial bootstrap; 1h renewals (test lab only)'
+            config['client_signing_duration'] = f'10m initial bootstrap; {LAB_RENEWAL_DURATION} renewals (test lab only)'
             lab.kube('wait', '--for=condition=Ready', 'node/' + node_name, '--timeout=900s')
             wait_for('Validating the exact node serving CSR', lambda: lab.approve_serving(node))
             wait_for('Waiting for Cilium and Envoy Ready before workloads',
                      lambda: lab.cilium_ready(node_name), timeout=900)
             lab.workloads(node_name)
             before = wait_for('Reading immutable image and client identity', lab.probe)
+            (output / 'enrollment-identity-before.json').write_text(json.dumps(before, indent=2) + '\n')
             expected_identity = {key: metadata[key] for key in ['schema', 'profile', 'hardware_profile', 'architecture',
                                                                'version', 'commit', 'components_lock_sha256', 'host_features']}
             if before['identity'] != expected_identity:
@@ -918,6 +927,7 @@ def main():
                 return probe if probe and probe['client_certificate_sha256'] != initial_csr['certificate_sha256'] else None
             rotated = wait_for('Waiting for actual kubelet client certificate rotation', rotation, timeout=900)
             rotated_csr = lab.client_csr(node_name, rotated, rotated=True)
+            (output / 'enrollment-identity-rotated.json').write_text(json.dumps(rotated, indent=2) + '\n')
             lab.revoke_bootstrap()
             lab.vm('poweroff')
             wait_for('Waiting for clean worker poweroff', lambda: run('docker', 'exec', RUNNER, 'sh', '-c',
@@ -934,6 +944,7 @@ def main():
                      lambda: lab.cilium_ready(node_name), timeout=900)
             lab.wait_workloads()
             after = wait_for('Reading persisted rotated credentials', lab.probe)
+            (output / 'enrollment-identity-recovered.json').write_text(json.dumps(after, indent=2) + '\n')
             verify_recovery(before, rotated, after, node, after_node, initial_csr['certificate_sha256'])
             lab.network()
             if args.agent_isolation:
@@ -967,7 +978,8 @@ def main():
                     for name, command in [('nodes', ['get', 'nodes', '-o', 'json']),
                                           ('system-pods', ['-n', 'kube-system', 'get', 'pods', '-o', 'json']),
                                           ('workload-pods', ['-n', LAB, 'get', 'pods', '-o', 'json']),
-                                          ('events', ['get', 'events', '-A', '-o', 'json'])]:
+                                          ('events', ['get', 'events', '-A', '-o', 'json']),
+                                          ('csrs', ['get', 'csr', '-o', 'json'])]:
                         result = lab.kube(*command, check=False)
                         (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
                     if args.cpu_serving:

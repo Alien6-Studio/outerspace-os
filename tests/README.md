@@ -53,6 +53,13 @@ are written under `out/PROFILE-HARDWARE-ARCH/`. A complete report is emitted onl
 after the scenario and cleanup pass. Measurements from emulated VMs are
 functional observations, not hardware performance claims.
 
+The disposable lab initially signs ten-minute client certificates to exercise
+a real rotation, then gives renewals four hours. Their earliest automatic
+renewal point exceeds the complete 120-minute native CI budget. The recovered
+certificate must still match byte for byte; a second routine rotation must not
+confound that persistence gate on slow emulated workers. Filtered identity
+snapshots and public CSRs remain available for failure diagnosis.
+
 Every Docker-backed test removes obsolete, untagged OuterSpace tooling images,
 including on failure. Current tagged builder/runner images remain reusable.
 Kubernetes teardown removes the runner's anonymous volumes and the dedicated

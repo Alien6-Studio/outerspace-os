@@ -17,10 +17,12 @@
 - Passed in an arm64 QEMU VM: real pinned CPU model serving, pod replacement,
   drain recovery and cold-node recovery. These are functional results, not
   comparative performance or physical-machine qualification.
-- Native OCI Agent v1 admission and AppArmor policy now have an executable
-  [qualification path](../cluster/README.md#native-oci-agent-v1-profile).
+- Passed in an arm64 QEMU VM: native OCI Agent v1 admission, AppArmor/seccomp,
+  private workspace, denied escalation/mounts/devices, network policy and cold-node
+  recovery. Image-bound reports from the [qualification path](../cluster/README.md#native-oci-agent-v1-profile)
+  define the tested scope.
   Physical-host identity and hardware qualification remain separate gates.
-- Still required: AppArmor/seccomp enforcement tests, privilege boundaries,
+- Still required: broader host-hardening and security coverage,
   dependency/vulnerability inventory and redistribution/corresponding-source review.
 
 ## 0.2 — Faster and smaller delivery, measured

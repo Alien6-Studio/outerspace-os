@@ -1,11 +1,14 @@
+# Build recipes are versioned; generated artifacts belong in out/.
+!/build/
+!/build/**
 **/.DS_Store
 .cache/
 .venv/
-build/
-node-config/
+out/
+/node-config/
 __pycache__/
 *.pyc
 mkosi.local.conf
 mkosi.key
 mkosi.crt
-release-assets/
+/release-assets/

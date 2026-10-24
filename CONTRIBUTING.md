@@ -1,8 +1,12 @@
 # Contributing to OuterSpace OS
 
-Start with the [README](README.md), [architecture](design/architecture.md) and
-[release gates](design/roadmap.md). The current channel is development; use
+Start with the [README](README.md), [architecture](src/docs/architecture.md) and
+[release gates](src/docs/roadmap.md). The current channel is development; use
 disposable infrastructure and describe what you actually tested.
+
+Distribution sources live in `src/`, build and release tooling in `build/`, and
+qualification code in `tests/`. The root Makefile exposes their commands;
+generated artifacts belong in the ignored `out/` directory.
 
 ## Choose the right branch
 
@@ -23,7 +27,7 @@ Run the fast checks with Python 3.11+ and Make:
 make check
 ```
 
-For image, runtime, bootstrap or build changes, also use the [build guide](design/building.md):
+For image, runtime, bootstrap or build changes, also use the [build guide](build/README.md):
 
 ```sh
 make PROFILE=agent builder build smoke package

@@ -1,0 +1,117 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Namespace",
+      "metadata": {
+        "name": "outerspace-agents-v1",
+        "labels": {"pod-security.kubernetes.io/enforce": "restricted", "pod-security.kubernetes.io/enforce-version": "v1.36"}
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ServiceAccount",
+      "metadata": {"name": "outerspace-agent-v1", "namespace": "outerspace-agents-v1"},
+      "automountServiceAccountToken": false
+    },
+    {
+      "apiVersion": "scheduling.k8s.io/v1",
+      "kind": "PriorityClass",
+      "metadata": {"name": "outerspace-agent-v1"},
+      "value": 0,
+      "globalDefault": false,
+      "preemptionPolicy": "Never",
+      "description": "Non-preempting native OuterSpace Agent v1 workloads."
+    },
+    {
+      "apiVersion": "node.k8s.io/v1",
+      "kind": "RuntimeClass",
+      "metadata": {"name": "outerspace-agent-v1"},
+      "handler": "runc",
+      "scheduling": {"nodeSelector": {"kubernetes.io/os": "linux", "outerspace.sh.node-restriction.kubernetes.io/agent-profile": "v1"}}
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {"name": "outerspace-agent-v1-deny", "namespace": "outerspace-agents-v1"},
+      "spec": {"podSelector": {}, "policyTypes": ["Ingress", "Egress"], "ingress": [], "egress": []}
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "ResourceQuota",
+      "metadata": {"name": "outerspace-agent-v1", "namespace": "outerspace-agents-v1"},
+      "spec": {"hard": {"pods": "4", "limits.cpu": "4", "limits.memory": "1Gi", "limits.ephemeral-storage": "256Mi"}}
+    },
+    {
+      "apiVersion": "admissionregistration.k8s.io/v1",
+      "kind": "ValidatingAdmissionPolicy",
+      "metadata": {"name": "outerspace-agent-v1"},
+      "spec": {
+        "failurePolicy": "Fail",
+        "matchConstraints": {
+          "resourceRules": [{"apiGroups": [""], "apiVersions": ["v1"], "operations": ["CREATE", "UPDATE"], "resources": ["pods", "pods/ephemeralcontainers"]}]
+        },
+        "matchConditions": [{"name": "agent-namespace", "expression": "request.namespace == 'outerspace-agents-v1'"}],
+        "variables": [{"name": "containers", "expression": "object.spec.containers"}],
+        "validations": [
+          {
+            "expression": "has(object.spec.runtimeClassName) && object.spec.runtimeClassName == 'outerspace-agent-v1' && object.spec.schedulerName == 'default-scheduler' && has(object.spec.nodeSelector) && 'outerspace.sh.node-restriction.kubernetes.io/agent-profile' in object.spec.nodeSelector && object.spec.nodeSelector['outerspace.sh.node-restriction.kubernetes.io/agent-profile'] == 'v1' && (!has(object.spec.nodeName) || object.spec.nodeName == '' || (request.operation == 'UPDATE' && object.spec.nodeName == oldObject.spec.nodeName))",
+            "message": "OuterSpace Agent v1 requires the approved RuntimeClass and trusted node selection; direct node placement is forbidden."
+          },
+          {
+            "expression": "(!has(object.spec.hostNetwork) || !object.spec.hostNetwork) && (!has(object.spec.hostPID) || !object.spec.hostPID) && (!has(object.spec.hostIPC) || !object.spec.hostIPC) && (!has(object.spec.shareProcessNamespace) || !object.spec.shareProcessNamespace) && (!has(object.spec.os) || object.spec.os.name == 'linux')",
+            "message": "OuterSpace Agent v1 forbids host and shared process namespaces."
+          },
+          {
+            "expression": "object.spec.automountServiceAccountToken == false && object.spec.serviceAccountName == 'outerspace-agent-v1' && (!has(object.spec.resourceClaims) || size(object.spec.resourceClaims) == 0)",
+            "message": "OuterSpace Agent v1 forbids service account tokens and device claims."
+          },
+          {
+            "expression": "object.spec.priorityClassName == 'outerspace-agent-v1' && object.spec.priority == 0 && object.spec.preemptionPolicy == 'Never' && (!has(object.spec.hostUsers) || object.spec.hostUsers) && (!has(object.spec.imagePullSecrets) || size(object.spec.imagePullSecrets) == 0)",
+            "message": "OuterSpace Agent v1 forbids priority escalation, preemption, alternate user namespaces and registry credential references."
+          },
+          {
+            "expression": "(!has(object.spec.securityContext.supplementalGroups) || object.spec.securityContext.supplementalGroups.all(g, g == 65534)) && (!has(object.spec.securityContext.sysctls) || size(object.spec.securityContext.sysctls) == 0) && variables.containers.all(c, !has(c.securityContext.procMount) || c.securityContext.procMount == 'Default')",
+            "message": "OuterSpace Agent v1 forbids extra group authority, workload sysctls and unmasked proc mounts."
+          },
+          {
+            "expression": "size(variables.containers) == 1 && (!has(object.spec.initContainers) || size(object.spec.initContainers) == 0) && (!has(object.spec.ephemeralContainers) || size(object.spec.ephemeralContainers) == 0)",
+            "message": "OuterSpace Agent v1 permits one container and no init or ephemeral containers."
+          },
+          {
+            "expression": "object.spec.securityContext.runAsNonRoot == true && object.spec.securityContext.runAsUser == 65534 && object.spec.securityContext.runAsGroup == 65534 && object.spec.securityContext.fsGroup == 65534 && object.spec.securityContext.seccompProfile.type == 'RuntimeDefault' && object.spec.securityContext.appArmorProfile.type == 'Localhost' && object.spec.securityContext.appArmorProfile.localhostProfile == 'outerspace-agent-v1'",
+            "message": "OuterSpace Agent v1 requires UID/GID 65534, RuntimeDefault seccomp and the loaded Agent v1 AppArmor profile."
+          },
+          {
+            "expression": "variables.containers.all(c, has(c.securityContext) && c.securityContext.allowPrivilegeEscalation == false && c.securityContext.readOnlyRootFilesystem == true && (!has(c.securityContext.privileged) || !c.securityContext.privileged) && c.securityContext.capabilities.drop == ['ALL'] && (!has(c.securityContext.capabilities.add) || size(c.securityContext.capabilities.add) == 0) && (!has(c.securityContext.runAsUser) || c.securityContext.runAsUser == 65534) && (!has(c.securityContext.runAsGroup) || c.securityContext.runAsGroup == 65534) && (!has(c.securityContext.runAsNonRoot) || c.securityContext.runAsNonRoot) && (!has(c.securityContext.seccompProfile) || c.securityContext.seccompProfile.type == 'RuntimeDefault') && (!has(c.securityContext.appArmorProfile) || (c.securityContext.appArmorProfile.type == 'Localhost' && c.securityContext.appArmorProfile.localhostProfile == 'outerspace-agent-v1')))",
+            "message": "OuterSpace Agent v1 container security controls cannot be removed or overridden."
+          },
+          {
+            "expression": "has(object.spec.volumes) && size(object.spec.volumes) == 2 && object.spec.volumes.all(v, has(v.emptyDir) && v.emptyDir.medium == 'Memory' && has(dyn(v.emptyDir).sizeLimit) && ((v.name == 'workspace' && quantity(dyn(v.emptyDir).sizeLimit).compareTo(quantity('64Mi')) == 0) || (v.name == 'scratch' && quantity(dyn(v.emptyDir).sizeLimit).compareTo(quantity('16Mi')) == 0)))",
+            "message": "OuterSpace Agent v1 permits only its bounded per-pod memory workspace and scratch volumes."
+          },
+          {
+            "expression": "variables.containers.all(c, has(c.volumeMounts) && size(c.volumeMounts) == 2 && c.volumeMounts.all(m, ((m.name == 'workspace' && m.mountPath == '/workspace') || (m.name == 'scratch' && m.mountPath == '/scratch')) && (!has(m.subPath) || m.subPath == '') && (!has(m.subPathExpr) || m.subPathExpr == '') && (!has(m.mountPropagation) || m.mountPropagation == 'None') && (!has(m.readOnly) || !m.readOnly)) && (!has(c.volumeDevices) || size(c.volumeDevices) == 0))",
+            "message": "OuterSpace Agent v1 forbids additional mounts, subpaths, mount propagation and block devices."
+          },
+          {
+            "expression": "variables.containers.all(c, c.image.matches('^[A-Za-z0-9./:_-]+@sha256:[a-f0-9]{64}$') && has(c.resources.limits) && has(c.resources.requests) && ['cpu', 'memory', 'ephemeral-storage'].all(k, k in c.resources.limits && k in c.resources.requests && quantity(c.resources.requests[k]).compareTo(quantity('0')) > 0 && quantity(c.resources.limits[k]).compareTo(quantity('0')) > 0) && c.resources.limits.all(k, k in ['cpu', 'memory', 'ephemeral-storage']) && c.resources.requests.all(k, k in ['cpu', 'memory', 'ephemeral-storage']) && quantity(c.resources.limits['cpu']).compareTo(quantity('1')) <= 0 && quantity(c.resources.limits['memory']).compareTo(quantity('256Mi')) <= 0 && quantity(c.resources.limits['ephemeral-storage']).compareTo(quantity('64Mi')) <= 0 && (!has(c.resources.claims) || size(c.resources.claims) == 0))",
+            "message": "OuterSpace Agent v1 requires immutable image references and bounded CPU, memory and storage; accelerator resources are forbidden."
+          },
+          {
+            "expression": "variables.containers.all(c, (!has(c.ports) || c.ports.all(p, !has(p.hostPort) || p.hostPort == 0)) && (!has(c.envFrom) || size(c.envFrom) == 0) && (!has(c.env) || c.env.all(e, !has(e.valueFrom)))) && (!has(object.metadata.annotations) || object.metadata.annotations.all(k, !k.contains('apparmor') && !k.contains('seccomp')))",
+            "message": "OuterSpace Agent v1 forbids host ports, injected credentials and legacy security overrides."
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "admissionregistration.k8s.io/v1",
+      "kind": "ValidatingAdmissionPolicyBinding",
+      "metadata": {"name": "outerspace-agent-v1"},
+      "spec": {"policyName": "outerspace-agent-v1", "validationActions": ["Deny", "Audit"]}
+    }
+  ]
+}

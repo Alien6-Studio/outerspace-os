@@ -1,7 +1,9 @@
 .git
-.trunk
 .cache
 .venv
-build
+.trunk
+out
 node-config
+release-assets
 **/__pycache__
+**/*.pyc

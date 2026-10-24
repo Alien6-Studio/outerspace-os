@@ -1,0 +1,50 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
+set -euo pipefail
+# mkosi mounts BuildSources at /work/src; no tooling enters the OS image.
+python3 /work/src/build/tools/install-components.py "$BUILDROOT" "$ARCHITECTURE" /work/src/src/components.lock.json /work/src/.cache/components
+python3 /work/src/build/tools/prepare-kernel.py "$BUILDROOT" "$ARCHITECTURE"
+root="$BUILDROOT"
+install -D -m 0644 /work/src/LICENSE "$root/usr/share/licenses/outerspace/LICENSE"
+install -D -m 0644 /work/src/NOTICE "$root/usr/share/licenses/outerspace/NOTICE"
+cp -a /work/src/src/third_party "$root/usr/share/licenses/outerspace/upstream"
+install -D -m 0644 /work/src/src/branding/outerspace-mark.svg "$root/usr/share/icons/hicolor/scalable/apps/outerspace.svg"
+install -d "$root/etc/systemd/system/multi-user.target.wants" "$root/etc/systemd/system/sysinit.target.wants"
+for service in containerd kubelet dfdaemon auditd outerspace-banner outerspace-provision outerspace-prefetch outerspace-selftest; do
+    ln -sf "/usr/lib/systemd/system/$service.service" "$root/etc/systemd/system/multi-user.target.wants/$service.service"
+done
+for service in systemd-networkd systemd-resolved systemd-timesyncd; do
+    ln -sf "/usr/lib/systemd/system/$service.service" "$root/etc/systemd/system/multi-user.target.wants/$service.service"
+done
+ln -sf /usr/lib/systemd/system/apparmor.service "$root/etc/systemd/system/sysinit.target.wants/apparmor.service"
+if [[ "$OUTERSPACE_PROFILE" == agent ]]; then
+    ln -sf /usr/lib/systemd/system/outerspace-agent-profile.service \
+        "$root/etc/systemd/system/multi-user.target.wants/outerspace-agent-profile.service"
+fi
+ln -sf /run/systemd/resolve/stub-resolv.conf "$root/etc/resolv.conf"
+# Named operator identity; no baked password, SSH server, sudo or autologin.
+useradd --uid 1000 --user-group --no-create-home --home-dir /var/home/outerspace --shell /bin/bash outerspace
+install -d -m 0700 -o 1000 -g 1000 "$root/var/home/outerspace"
+install -d "$root/home"
+ln -sf /var/home/outerspace "$root/home/outerspace"
+# Root and interactive consoles stay locked. No SSH daemon is installed.
+sed -i 's/^root:[^:]*:/root:!:/' "$root/etc/shadow"
+for unit in apt-daily.service apt-daily.timer apt-daily-upgrade.service apt-daily-upgrade.timer motd-news.service motd-news.timer dpkg-db-backup.timer systemd-sysupdate.service systemd-sysupdate.timer systemd-sysupdate-reboot.service systemd-sysupdate-reboot.timer getty@tty1.service serial-getty@ttyS0.service serial-getty@ttyAMA0.service; do
+    ln -sf /dev/null "$root/etc/systemd/system/$unit"
+done
+ln -sf /usr/lib/systemd/system/multi-user.target "$root/etc/systemd/system/default.target"
+sed -i '/^IMAGE_ID=/d; /^IMAGE_VERSION=/d; /^PRETTY_NAME=/d' "$root/usr/lib/os-release"
+printf 'IMAGE_ID=outerspace\nIMAGE_VERSION=%s\nPRETTY_NAME="OuterSpace OS %s (Ubuntu 24.04 LTS)"\n' "$IMAGE_VERSION" "$IMAGE_VERSION" >> "$root/usr/lib/os-release"
+python3 /work/src/build/tools/profiles.py install --root "$root" --profile "${OUTERSPACE_PROFILE:?Missing profile}" \
+    --hardware "${OUTERSPACE_HARDWARE_PROFILE:?Missing hardware profile}" --architecture "$ARCHITECTURE" \
+    --commit "${OUTERSPACE_SOURCE_COMMIT:?Missing source identity}"
+chmod 0755 "$root/usr/lib/outerspace/"*
+chmod 0600 "$root/etc/audit/rules.d/99-outerspace.rules"
+install -d -m 0700 "$root/var/lib/outerspace" "$root/var/lib/kubelet"
+install -d -m 0700 "$root/var/lib/outerspace/certs.d"
+install -d "$root/opt" "$root/etc/cni" "$root/var/lib/cni/bin" "$root/var/lib/outerspace/cni/net.d"
+ln -sf /var/lib/cni "$root/opt/cni"
+ln -sf /var/lib/outerspace/cni/net.d "$root/etc/cni/net.d"
+rm -f "$root/etc/machine-id" "$root/var/lib/dbus/machine-id"
+touch "$root/etc/machine-id"

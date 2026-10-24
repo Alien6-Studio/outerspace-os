@@ -46,12 +46,20 @@ def check_fat_geometry(sector, logical_sector):
         raise ValueError('EFI FAT32 filesystem has too few clusters for firmware')
 
 
-def check_disk_geometry(disk):
+def check_state_geometry(table, profile):
+    state = [p for p in table['partitions'] if p.get('name') == 'OOS_STATE']
+    minimum = {'agent': 2, 'inference': 8}[profile] * 1024**3
+    if len(state) != 1 or state[0]['size'] * table['sectorsize'] < minimum:
+        raise ValueError(f'{profile} image has an undersized or missing state partition')
+
+
+def check_disk_geometry(disk, profile):
     result = subprocess.run(['sfdisk', '--json', str(disk)], check=True, capture_output=True, text=True)
     table = json.loads(result.stdout)['partitiontable']
     partitions = [p for p in table['partitions'] if p['type'].lower() == ESP]
     if table['label'] != 'gpt' or len(partitions) != 1:
         raise ValueError('Expected a GPT disk with exactly one EFI System Partition')
+    check_state_geometry(table, profile)
     logical_sector = table['sectorsize']
     offset = partitions[0]['start'] * logical_sector
     with disk.open('rb') as stream:
@@ -93,7 +101,7 @@ def boot(output, profile, hardware):
     if arch not in FIRMWARE:
         raise ValueError(f'Unsupported host: {arch}')
     _, _, _, code, template = FIRMWARE[arch]
-    check_disk_geometry(disk)
+    check_disk_geometry(disk, profile)
     image_hash = sha256(disk)
     nonce = uuid.uuid4().hex
     machine_uuid = str(uuid.uuid4())

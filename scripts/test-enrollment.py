@@ -27,9 +27,9 @@ HARNESS_INPUTS = ['scripts/test-enrollment.py', 'scripts/enrollment-vm.py',
                   'tests/integration/node-probe.py', 'tests/integration/cpu-smoke.py']
 
 
-def run(*args, data=None, check=True, env=None):
+def run(*args, data=None, check=True, env=None, timeout=900):
     result = subprocess.run(list(map(str, args)), input=data, capture_output=True, text=True,
-                            check=False, env=env, timeout=900)
+                            check=False, env=env, timeout=timeout)
     if check and result.returncode:
         # No command input is included: it may contain the bootstrap token.
         raise RuntimeError(f'{args[0]} failed: {result.stderr[-3000:]}')
@@ -266,11 +266,12 @@ nodes:
 
     def wait_workloads(self):
         # Agent readiness precedes endpoint compilation, especially under TCG.
-        # Use the same bounded pod-start budget on first boot and recovery.
+        # Under arm64 TCG, endpoint compilation can consume thirteen minutes
+        # before image extraction starts. Allow both phases a bounded budget.
         # Named pods also prevent an empty namespace from satisfying this gate.
         print('Waiting for the probe, CPU server and client pods to be Ready', flush=True)
         self.kube('-n', LAB, 'wait', '--for=condition=Ready',
-                  'pod/probe', 'pod/cpu', 'pod/client', '--timeout=900s')
+                  'pod/probe', 'pod/cpu', 'pod/client', '--timeout=1200s', timeout=1230)
 
     def cilium_ready(self, node):
         pods = self.api('-n', 'kube-system', 'pods', '--field-selector', 'spec.nodeName=' + node)['items']

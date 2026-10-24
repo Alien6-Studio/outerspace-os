@@ -76,6 +76,7 @@ def verify_agent_probe(observation):
                 'apparmor': 'outerspace-agent-v1 (enforce)', 'seccomp': 2,
                 'no_new_privileges': True, 'read_only_root': True, 'capabilities': 'none',
                 'workspace': 'passed', 'host_access': 'denied', 'privilege_escalation': 'denied',
+                'mounts': 'denied', 'device_creation': 'denied',
                 'policy_change': 'denied', 'child_confinement': 'passed'}
     if any(type(observation.get(key)) is not type(value) or observation.get(key) != value
            for key, value in required.items()):

@@ -35,6 +35,11 @@ if setuidgid 0 id -u >/scratch/setuid-output 2>/scratch/setuid-error; then
     fail 'uid escalation succeeded'
 fi
 grep -Eq 'Operation not permitted|Permission denied' /scratch/setuid-error || fail 'uid refusal was not a permission failure'
+mkdir -p /scratch/mount-refusal
+if mount -t tmpfs tmpfs /scratch/mount-refusal 2>/scratch/mount-error; then fail 'mount succeeded'; fi
+grep -Eq '[Pp]ermission denied|Operation not permitted|must be root|must be superuser' /scratch/mount-error || fail 'mount refusal was not a permission failure'
+if mknod /workspace/forbidden-device c 1 3 2>/scratch/device-error; then fail 'device creation succeeded'; fi
+grep -Eq '[Pp]ermission denied|Operation not permitted' /scratch/device-error || fail 'device refusal was not a permission failure'
 # The child must inherit the same LSM boundary.
 sh -c 'test "$(cat /proc/self/attr/current)" = "outerspace-agent-v1 (enforce)"' || fail 'child escaped AppArmor'
-echo '{"status":"passed","uid":65534,"gid":65534,"apparmor":"outerspace-agent-v1 (enforce)","seccomp":2,"no_new_privileges":true,"read_only_root":true,"capabilities":"none","workspace":"passed","host_access":"denied","privilege_escalation":"denied","policy_change":"denied","child_confinement":"passed"}'
+echo '{"status":"passed","uid":65534,"gid":65534,"apparmor":"outerspace-agent-v1 (enforce)","seccomp":2,"no_new_privileges":true,"read_only_root":true,"capabilities":"none","workspace":"passed","host_access":"denied","privilege_escalation":"denied","mounts":"denied","device_creation":"denied","policy_change":"denied","child_confinement":"passed"}'

@@ -1,34 +1,21 @@
 SHELL := /bin/bash
+.DEFAULT_GOAL := help
+
 PROFILE ?=
 HARDWARE ?= cpu
-.PHONY: check builder build smoke smoke-split package enrollment cpu-serving
+PYTHON ?= python3
+OUTERSPACE_BUILDER ?= outerspace-builder:dev
+OUT_DIR := $(CURDIR)/out
+CONFIG_DIR ?= $(OUT_DIR)/node-config
 
-check:
-	python3 -m unittest discover -s tests -v
-	for script in scripts/*.sh image/mkosi.postinst image/mkosi.extra/usr/lib/outerspace/*; do bash -n "$$script" || exit; done
+include build/targets.mk
+include tests/targets.mk
 
-builder:
-	docker build -t outerspace-builder:dev -f build-support/Dockerfile .
-
-build:
-	./scripts/build.sh "$(PROFILE)" "$(HARDWARE)"
-
-smoke:
-	./scripts/smoke.sh "$(PROFILE)" "$(HARDWARE)" uefi
-
-smoke-split:
-	./scripts/smoke.sh "$(PROFILE)" "$(HARDWARE)" split
-
-package:
-	./scripts/package.sh "$(PROFILE)" "$(HARDWARE)"
-
-enrollment:
-	@test "$(HARDWARE)" = cpu
-	docker build -t outerspace-enrollment:dev -f build-support/enrollment.Dockerfile .
-	python3 scripts/test-enrollment.py --profile "$(PROFILE)" --output "build/$$(python3 scripts/profiles.py directory --profile '$(PROFILE)' --hardware cpu)"
-
-cpu-serving:
-	@test "$(PROFILE)" = inference
-	@test "$(HARDWARE)" = cpu
-	docker build -t outerspace-enrollment:dev -f build-support/enrollment.Dockerfile .
-	python3 scripts/test-enrollment.py --profile inference --cpu-serving --output "build/$$(python3 scripts/profiles.py directory --profile inference --hardware cpu)"
+.PHONY: help
+help:
+	@echo 'make check                                      Run unit and syntax checks'
+	@echo 'make PROFILE=agent builder build smoke package   Build and qualify an image'
+	@echo 'make PROFILE=inference enrollment                Qualify Kubernetes enrollment'
+	@echo 'make PROFILE=inference cpu-serving               Qualify real CPU model serving'
+	@echo 'make config-drive CONFIG_DIR=out/node-config      Package worker configuration'
+	@echo 'Generated images, reports and release assets: out/'

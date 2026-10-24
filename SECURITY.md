@@ -20,7 +20,7 @@ disposable test environments. Before stable, the project must publish a tested
 hardware/version matrix, update and rollback procedure, and support dates.
 
 Scope includes the image recipe, host services, bootstrap/config-drive handling,
-component installation, build/release tooling and the website. Upstream Linux,
+component installation, build and release tooling and the website. Upstream Linux,
 Ubuntu and runtime components retain their upstream security processes; report
 an integration impact here so the distribution can be assessed and rebuilt.
 
@@ -31,10 +31,10 @@ seccomp defaults and conservative host configuration. Development UKIs are
 unsigned. Secure Boot, authenticated A/B updates, complete SBOM/vulnerability
 review and independent hardening evidence remain release gates.
 
-The [CIS security target](security/README.md) describes intended controls and
+The [CIS security target](src/docs/security.md) describes intended controls and
 exceptions. It is not a certification or a completed compliance audit. Likewise,
 checksums verify file integrity; they do not authenticate a publisher.
 
 Repository protections, private reporting, secret push protection, Dependabot and
 native GitHub CodeQL complement review. They do not replace image-level auditing,
-runtime tests or the [release qualification policy](release/README.md).
+runtime tests or the [release qualification policy](build/release/README.md).

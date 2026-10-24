@@ -29,7 +29,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: python3 scripts/ci-scope.py --event "$EVENT" --base "$BASE" --head "$HEAD" >> "$GITHUB_OUTPUT"
+        run: python3 build/tools/ci-scope.py --event "$EVENT" --base "$BASE" --head "$HEAD" >> "$GITHUB_OUTPUT"
   image:
     if: needs.contracts.outputs.images == 'true'
     strategy:
@@ -57,11 +57,11 @@ jobs:
         with:
           name: outerspace-${{ matrix.profile }}-cpu-${{ matrix.arch }}-development
           path: |
-            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/outerspace-*/*.json
-            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.manifest
-            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
-            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment.json
-            build/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment-*.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/outerspace-*/*.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.manifest
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/enrollment-*.json
           retention-days: 7
   ci:
     name: ci

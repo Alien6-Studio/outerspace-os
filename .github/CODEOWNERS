@@ -1,13 +1,2 @@
-# One owner today: request reviews without requiring an impossible self-approval.
+# Default ownership.
 * @Coopyrightdmin
-
-# Revisit ownership and approval requirements when a second maintainer joins.
-/.github/ @Coopyrightdmin
-/build-support/ @Coopyrightdmin
-/image/ @Coopyrightdmin
-/scripts/ @Coopyrightdmin
-/release/ @Coopyrightdmin
-/components.lock.json @Coopyrightdmin
-/SECURITY.md @Coopyrightdmin
-/LICENSE @Coopyrightdmin
-/NOTICE @Coopyrightdmin

@@ -8,7 +8,7 @@ See LICENSE for the complete terms, permissions and limitations.
 The license of original OuterSpace build tooling, configuration and source does
 not replace the licenses of Ubuntu packages, the Linux kernel, upstream runtime
 binaries, firmware or third-party assets. Their notices and corresponding-source
-obligations remain applicable. Upstream notices in third_party retain their
+obligations remain applicable. Upstream notices in src/third_party retain their
 original terms.
 
 The image retains Ubuntu package copyright files in /usr/share/doc and copies

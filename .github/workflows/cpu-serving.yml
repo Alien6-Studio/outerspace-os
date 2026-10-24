@@ -28,9 +28,9 @@ jobs:
         with:
           name: cpu-serving-inference-${{ inputs.architecture }}
           path: |
-            benchmarks/cpu-serving.lock.json
-            build/inference-cpu-${{ inputs.architecture }}/outerspace-*/*.json
-            build/inference-cpu-${{ inputs.architecture }}/*.log
-            build/inference-cpu-${{ inputs.architecture }}/enrollment*.json
-            build/inference-cpu-${{ inputs.architecture }}/cpu-serving.json
+            tests/benchmarks/cpu-serving.lock.json
+            out/inference-cpu-${{ inputs.architecture }}/outerspace-*/*.json
+            out/inference-cpu-${{ inputs.architecture }}/*.log
+            out/inference-cpu-${{ inputs.architecture }}/enrollment*.json
+            out/inference-cpu-${{ inputs.architecture }}/cpu-serving.json
           retention-days: 7

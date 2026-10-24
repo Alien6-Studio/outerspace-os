@@ -1,5 +1,8 @@
 # Local development validation — 2026-10-23
 
+Paths and commands below describe the layout used for this run. Current entry
+points are documented in the [test guide](../README.md).
+
 Status: `0.1.0-dev.0`, local working-tree validation. This is not a release gate
 attestation or production qualification. CI must bind future results to its exact
 source commit and candidate inventory.
@@ -46,6 +49,6 @@ OuterSpace. The QEMU test calls CRI info; it does not run an inference container
 ## Reproduce
 
 Use `make check builder build smoke` for the image. For the isolated kind network
-lab, see [cluster integration](../../cluster/README.md). Local build output and
+lab, see [cluster integration](../../src/cluster/README.md). Local build output and
 logs are in ignored `build/`; bootstrap credentials and cloud resources are not
 committed. No Scaleway or Azure resource was provisioned.

@@ -14,6 +14,7 @@ import tempfile
 import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'build/tools'))
 from profiles import marker, verify_identity
+from package import idle_host_report
 
 ESP = 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
 FIRMWARE = {
@@ -71,14 +72,14 @@ def check_disk_geometry(disk, profile):
 def qemu_command(arch, overlay, variables, machine_uuid, phase, nonce):
     binary, machine, cpu, code, _ = FIRMWARE[arch]
     return [binary, '-machine', machine, '-cpu', cpu, '-accel', 'tcg',
-            '-m', '1536', '-smp', '2', '-nographic', '-no-reboot',
+            '-m', '4096', '-smp', '4', '-nographic', '-no-reboot',
             '-uuid', machine_uuid, '-boot', 'order=c,strict=on',
             '-drive', f'if=pflash,format=raw,readonly=on,file={code}',
             '-drive', f'if=pflash,format=raw,file={variables}',
             '-drive', f'if=virtio,format=qcow2,file={overlay}',
             '-nic', 'user,model=virtio-net-pci',
             '-smbios', 'type=11,value=io.systemd.stub.kernel-cmdline-extra='
-            f'outerspace.selftest=1 outerspace.selftest.phase={phase} outerspace.selftest.nonce={nonce}']
+            f'outerspace.selftest=1 outerspace.selftest.phase={phase} outerspace.selftest.nonce={nonce} outerspace.selftest.baseline=1']
 
 
 def verify_log(content, returncode, phase):
@@ -132,6 +133,8 @@ def boot(output, profile, hardware):
     if sha256(disk) != image_hash:
         raise RuntimeError('The source disk changed during qualification')
     report = {'schema': 2, 'status': 'passed', 'identity': identity,
+              'idle_host': idle_host_report({phase: (output / f'boot-uefi-{phase}.log').read_text(errors='replace')
+                                             for phase in ['prepare', 'verify']}, identity),
               'architecture': {'aarch64': 'arm64', 'x86_64': 'amd64'}[arch],
               'image_sha256': image_hash, 'firmware_sha256': sha256(Path(code)),
               'boot': 'UEFI firmware → systemd-boot → on-disk UKI → dm-verity root',

@@ -52,6 +52,9 @@ They verify committed source and exact packaged image bytes. Reports and logs
 are written under `out/PROFILE-HARDWARE-ARCH/`. A complete report is emitted only
 after the scenario and cleanup pass. Measurements from emulated VMs are
 functional observations, not hardware performance claims.
+The two UEFI boots also record a source-bound idle-host baseline on the same
+four-vCPU/4-GiB reference. This uses the existing opt-in selftest, with CRI empty
+and kubelet/P2P inactive. See the [measurement protocol](benchmarks/README.md).
 
 The disposable lab initially signs ten-minute client certificates to exercise
 a real rotation, then gives renewals four hours. Their earliest automatic

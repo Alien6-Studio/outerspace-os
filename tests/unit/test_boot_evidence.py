@@ -7,7 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from image_fixtures import profiles
+from image_fixtures import profiles, idle_log
 
 spec = importlib.util.spec_from_file_location('package_image', Path(__file__).resolve().parents[2] / 'build/tools/package.py')
 package = importlib.util.module_from_spec(spec)
@@ -25,13 +25,13 @@ class BootEvidenceTests(unittest.TestCase):
         self.hash_patch.start()
         self.addCleanup(self.hash_patch.stop)
         self.identity = profiles.stamp(self.output, profiles.image_identity('agent', 'cpu', profiles.architecture(), 'a' * 40))
-        content = profiles.marker(self.identity) + '\n' + (
-            'OUTERSPACE_SELFTEST_OK\nOUTERSPACE_UEFI_OK\n'
-            'OUTERSPACE_PERSISTENCE_PREPARE_OK\nOUTERSPACE_PERSISTENCE_VERIFY_OK\n')
+        content = ''.join(idle_log(self.identity, phase) for phase in ['prepare', 'verify'])
         logs = ['boot-smoke.log', 'boot-uefi-prepare.log', 'boot-uefi-verify.log']
-        for name in logs: (self.output / name).write_text(content)
+        for name in logs:
+            (self.output / name).write_text(content if name == 'boot-smoke.log' else idle_log(self.identity, name.removeprefix('boot-uefi-').removesuffix('.log')))
         self.report = {'schema': 2, 'identity': self.identity, 'status': 'passed', 'power_cycles': 2,
                        'image_sha256': profiles.sha256(self.output / 'outerspace.raw'),
+                       'idle_host': package.idle_host_report({phase: idle_log(self.identity, phase) for phase in ['prepare', 'verify']}, self.identity),
                        'logs': {name: profiles.sha256(self.output / name) for name in logs}}
         self.save_report()
 
@@ -68,3 +68,9 @@ class BootEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'log integrity'): self.verify()
         (self.output / 'outerspace.efi').write_bytes(b'changed UKI')
         with self.assertRaisesRegex(ValueError, 'integrity'): self.verify()
+
+    def test_rejects_a_forged_idle_summary_even_when_boot_log_hashes_are_intact(self):
+        self.report['idle_host']['boots']['prepare']['guest_busy_cpu_percent']['median'] = 0
+        self.save_report()
+        with self.assertRaisesRegex(ValueError, 'differs from'):
+            self.verify()

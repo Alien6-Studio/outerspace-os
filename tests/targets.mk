@@ -1,5 +1,7 @@
 # Local and CI qualification; none of these tools are installed in the OS.
-.PHONY: check smoke smoke-split enrollment cpu-serving agent-isolation agent-resources agent-admission clean-test-cache
+.PHONY: check smoke smoke-split enrollment cpu-serving agent-isolation agent-resources agent-admission worker-comparison clean-test-cache
+IMAGE_OUTPUT ?= $(OUT_DIR)/agent-cpu-arm64
+REFERENCE_CACHE ?= $(CURDIR)/.cache/ubuntu-reference
 PRUNE_TEST_IMAGES = docker image prune --force --filter label=io.outerspace.tooling=true
 
 # Preserve the test's exit status; failed cleanup must also fail a passing test.
@@ -55,3 +57,12 @@ agent-admission:
 	@set -euo pipefail; \
 	$(cleanup_test_images) \
 	$(PYTHON) tests/harness/enrollment.py --profile agent --agent-admission-only --output "$(OUT_DIR)/agent-admission"
+
+# Compare an immutable, already packaged Agent candidate; results bind its commit
+# separately from the comparison harness commit. No extra shipping OS profile.
+worker-comparison:
+	@set -euo pipefail; \
+	$(cleanup_test_images) \
+	docker build --build-arg "BUILDER=$(OUTERSPACE_BUILDER)" -t outerspace-enrollment:dev -f tests/Dockerfile .; \
+	$(PYTHON) tests/harness/worker-comparison.py --image-output "$(IMAGE_OUTPUT)" \
+	    --output "$(OUT_DIR)/worker-comparison" --cache "$(REFERENCE_CACHE)"

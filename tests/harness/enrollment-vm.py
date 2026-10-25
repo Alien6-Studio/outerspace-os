@@ -42,6 +42,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['start', 'poweroff'])
     parser.add_argument('--config-drive', action='store_true')
+    parser.add_argument('--ubuntu-reference', action='store_true', help='Benchmark fixture only; signed Ubuntu qcow2 and NoCloud seed')
     args = parser.parse_args()
     if args.action == 'poweroff':
         qmp('system_powerdown')
@@ -79,7 +80,10 @@ def main():
         if dhcp.poll() is not None:
             raise RuntimeError('Lab DHCP failed: ' + (state / 'dnsmasq.log').read_text())
         shutil.copyfile(uefi.FIRMWARE[platform.machine()][4], state / 'vars.fd')
-        run('qemu-img', 'create', '-q', '-f', 'qcow2', '-F', 'raw', '-b', '/state/packaged.raw', '/state/disk.qcow2')
+        backing, disk_format = ('/state/ubuntu.img', 'qcow2') if args.ubuntu_reference else ('/state/packaged.raw', 'raw')
+        run('qemu-img', 'create', '-q', '-f', 'qcow2', '-F', disk_format, '-b', backing, '/state/disk.qcow2')
+        if args.ubuntu_reference:
+            run('qemu-img', 'resize', '/state/disk.qcow2', '12G')
         (state / 'uuid').write_text(str(uuid.uuid4()))
     args_qemu = uefi.qemu_command(platform.machine(), '/state/disk.qcow2', '/state/vars.fd',
                                  (state / 'uuid').read_text(), 'unused', 'unused')
@@ -95,6 +99,8 @@ def main():
     args_qemu[args_qemu.index('-smp') + 1] = '4'
     args_qemu += ['-qmp', 'unix:/state/qmp.sock,server=on,wait=off',
                   '-pidfile', '/state/qemu.pid']
+    if args.ubuntu_reference:
+        args_qemu += ['-drive', 'if=virtio,format=raw,readonly=on,file=/state/reference-seed.raw']
     if args.config_drive:
         args_qemu += ['-drive', 'if=virtio,format=raw,readonly=on,file=/state/node-config.raw']
     (state / ('qemu-command-enroll.json' if args.config_drive else 'qemu-command-recover.json')).write_text(json.dumps(args_qemu, indent=2) + '\n')

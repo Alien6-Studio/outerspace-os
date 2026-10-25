@@ -1,6 +1,6 @@
 # Local and CI qualification; none of these tools are installed in the OS.
 .PHONY: check smoke smoke-split enrollment cpu-serving agent-isolation agent-resources agent-admission worker-comparison clean-test-cache
-IMAGE_OUTPUT ?= $(OUT_DIR)/agent-cpu-arm64
+IMAGE_OUTPUT ?= $(OUT_DIR)/$(shell $(PYTHON) build/tools/profiles.py directory --profile agent --hardware cpu)
 REFERENCE_CACHE ?= $(CURDIR)/.cache/ubuntu-reference
 PRUNE_TEST_IMAGES = docker image prune --force --filter label=io.outerspace.tooling=true
 

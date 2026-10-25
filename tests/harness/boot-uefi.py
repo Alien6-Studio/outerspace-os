@@ -14,7 +14,7 @@ import tempfile
 import uuid
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'build/tools'))
 from profiles import marker, verify_identity
-from package import idle_host_report
+from package import idle_host_report, idle_host_budget
 
 ESP = 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
 FIRMWARE = {
@@ -145,6 +145,7 @@ def boot(output, profile, hardware):
                          'No Kubernetes enrollment or workload qualification'],
               'logs': {name: sha256(output / name) for name in
                        ['boot-smoke.log', 'boot-uefi-prepare.log', 'boot-uefi-verify.log']}}
+    report['host_regression'] = idle_host_budget(report['idle_host'], identity)
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     print('OUTERSPACE_UEFI_PERSISTENCE_OK')
 

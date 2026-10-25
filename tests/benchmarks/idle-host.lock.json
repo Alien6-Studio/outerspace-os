@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "reference": {
+    "vcpus": 4,
+    "memory_mib": 4096,
+    "acceleration": "QEMU TCG"
+  },
+  "baseline": {
+    "run": 40185732988,
+    "commit": "a3c386f07a754c1d75524b365a69b033fe16abd9",
+    "tree": "a8fb058c30055d09a85cef91979013b3c9f610fd"
+  },
+  "derivation": {
+    "memory_factor": 1.25,
+    "memory_round_up_bytes": 1048576,
+    "cpu_factor": 2,
+    "cpu_round_up_percent": 1,
+    "purpose": "Reviewed regression headroom over the maximum of both cold boots; not a confidence interval or physical performance guarantee"
+  },
+  "budgets": {
+    "agent-cpu-amd64": {
+      "profile": "agent",
+      "architecture": "amd64",
+      "artifact_id": 12599319030,
+      "artifact_sha256": "sha256:e51cfe733f938eee206928fdc94f0095f05678ed88c6387f11744826cb10980d",
+      "idle_report_sha256": "1b361242825c10df78c2a062be1d448869b055c0bd0ff6e3f1dd53c955c8b372",
+      "memory_max_bytes": 378007552,
+      "cpu_max_percent": 0.6604696673189825,
+      "memory_limit_bytes": 472907776,
+      "cpu_limit_percent": 2
+    },
+    "agent-cpu-arm64": {
+      "profile": "agent",
+      "architecture": "arm64",
+      "artifact_id": 12598577339,
+      "artifact_sha256": "sha256:9b19aebf19759d308f63f12edb77331cc16eb3a5ce3e44c21c28d58fa84d7f4a",
+      "idle_report_sha256": "41b56916656002e8b54491415a944e89d686de1ed1c15fd4e4eae0548b53d60e",
+      "memory_max_bytes": 240353280,
+      "cpu_max_percent": 6.008968609865483,
+      "memory_limit_bytes": 300941312,
+      "cpu_limit_percent": 13
+    },
+    "inference-cpu-arm64": {
+      "profile": "inference",
+      "architecture": "arm64",
+      "artifact_id": 12597484980,
+      "artifact_sha256": "sha256:306378262b6433aa4956212ada919c12cd8d62830105ffa305e404400cab3bf5",
+      "idle_report_sha256": "d41d1921e657b3024e98f314e521aaa751eaa6730e7854e689b6ebd14e79cccc",
+      "memory_max_bytes": 244858880,
+      "cpu_max_percent": 5.845323741007192,
+      "memory_limit_bytes": 306184192,
+      "cpu_limit_percent": 12
+    },
+    "inference-cpu-amd64": {
+      "profile": "inference",
+      "architecture": "amd64",
+      "artifact_id": 12596840306,
+      "artifact_sha256": "sha256:63e701dd57a98460cd450a48d691c445b210c6bd52f6d6bc489493e5c5b23679",
+      "idle_report_sha256": "7270c224d5bb919ba5271930fb3b399623c1be769112829490f899a1e995c7da",
+      "memory_max_bytes": 375508992,
+      "cpu_max_percent": 0.565944881889764,
+      "memory_limit_bytes": 469762048,
+      "cpu_limit_percent": 2
+    }
+  }
+}

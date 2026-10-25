@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
 import importlib.util
+import copy
+import json
 from pathlib import Path
 import struct
 import unittest
-from image_fixtures import profiles
+from image_fixtures import profiles, identity, idle_log, idle_record
 
 spec = importlib.util.spec_from_file_location('boot_uefi', Path(__file__).resolve().parents[2] / 'tests/harness/boot-uefi.py')
 uefi = importlib.util.module_from_spec(spec)
@@ -37,6 +39,64 @@ class UEFIBootTests(unittest.TestCase):
                 self.assertNotIn(bypass, args)
             self.assertIn('if=virtio,format=qcow2,file=/tmp/shared.qcow2', args)
             self.assertIn('if=pflash,format=raw,file=/tmp/shared-vars.fd', args)
+            self.assertEqual(args[args.index('-m') + 1], '4096')
+            self.assertEqual(args[args.index('-smp') + 1], '4')
+            self.assertIn('outerspace.selftest.baseline=1', args[-1])
+
+    def test_idle_host_uses_actual_clock_units_and_excludes_wait_steal_and_duplicate_guest_time(self):
+        subject = identity()
+        logs = {phase: idle_log(subject, phase) for phase in ['prepare', 'verify']}
+        report = uefi.idle_host_report(logs, subject)
+        for boot in report['boots'].values():
+            self.assertEqual(boot['guest_busy_cpu_percent']['median'], 0.375)
+            self.assertEqual(boot['memory_unavailable_bytes']['samples'], 4)
+            self.assertEqual(len(boot['intervals']), 3)
+            self.assertEqual(boot['intervals'][0]['service_cpu_seconds']['outerspace-selftest'], 0.001)
+        records = {phase: idle_record(subject, phase) for phase in logs}
+        for record in records.values():
+            record['clock_ticks_per_second'] = 1000
+            for sample in record['samples']:
+                sample['cpu_ticks'] = [value * 10 for value in sample['cpu_ticks']]
+        self.assertEqual(self.idle_report(subject, records)['boots']['prepare']['guest_busy_cpu_percent']['median'], 0.375)
+
+    def idle_report(self, subject, records):
+        return uefi.idle_host_report({phase: 'OUTERSPACE_IDLE_HOST ' + json.dumps(record) for phase, record in records.items()}, subject)
+
+    def test_idle_host_refuses_cross_source_loaded_forged_or_reused_boot_records(self):
+        subject = identity()
+        records = {phase: idle_record(subject, phase) for phase in ['prepare', 'verify']}
+        for key, value in [('commit', 'b' * 40), ('nonce', 'f' * 32), ('boot_id', records['prepare']['boot_id']),
+                           ('sandboxes', 1), ('containers', False), ('kubelet_active', True), ('p2p_active', True),
+                           ('vcpus', 2), ('clock_ticks_per_second', 0)]:
+            changed = copy.deepcopy(records)
+            changed['verify'][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.idle_report(subject, changed)
+        for bad_logs in [{'prepare': idle_log(subject, 'prepare'), 'verify': ''},
+                         {'prepare': idle_log(subject, 'prepare') * 2, 'verify': idle_log(subject, 'verify')}]:
+            with self.assertRaises(ValueError):
+                uefi.idle_host_report(bad_logs, subject)
+
+    def test_idle_host_refuses_shortened_windows_nonfinite_or_incomplete_counters_and_service_restart(self):
+        subject = identity()
+        records = {phase: idle_record(subject, phase) for phase in ['prepare', 'verify']}
+        changes = [('settle_started_uptime_seconds', 61), ('samples', records['prepare']['samples'][:3])]
+        for key, value in changes:
+            changed = copy.deepcopy(records)
+            changed['prepare'][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.idle_report(subject, changed)
+        for change in [lambda s: s.update(uptime_seconds=float('nan')),
+                       lambda s: s.update(uptime_seconds=125),
+                       lambda s: s['cpu_ticks'].__setitem__(0, 0),
+                       lambda s: s['memory_bytes'].pop('Slab'),
+                       lambda s: s['memory_bytes'].update(MemAvailable=float('inf')),
+                       lambda s: s['services'].update(containerd=None),
+                       lambda s: s['services']['outerspace-selftest'].update(cpu_usage_usec=0)]:
+            changed = copy.deepcopy(records)
+            change(changed['prepare']['samples'][1])
+            with self.assertRaises(ValueError):
+                self.idle_report(subject, changed)
 
     def test_rejects_an_inference_image_that_inherits_the_small_agent_state_disk(self):
         table = {'sectorsize': 512, 'partitions': [{'name': 'OOS_STATE', 'size': 2 * 1024**3 // 512}]}

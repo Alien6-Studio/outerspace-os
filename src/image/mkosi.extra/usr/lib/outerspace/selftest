@@ -48,10 +48,12 @@ free -m
 df -h / /var
 phase=
 nonce=
+idle_host=false
 for option in $(cat /proc/cmdline); do
     case "$option" in
         outerspace.selftest.phase=*) phase=${option#*=} ;;
         outerspace.selftest.nonce=*) nonce=${option#*=} ;;
+        outerspace.selftest.baseline=1) idle_host=true ;;
     esac
 done
 if [[ -n "$phase" ]]; then
@@ -84,5 +86,85 @@ if [[ -n "$phase" ]]; then
             ;;
         *) fail 'invalid persistence test phase' ;;
     esac
+fi
+if "$idle_host"; then
+    # Only this opt-in, short-lived observer runs; no enrollment or workload.
+    idle_state() {
+        [[ ! -e /dev/disk/by-label/OOS_CONFIG && ! -e /var/lib/kubelet/kubeconfig ]] || fail 'idle host is configured'
+        ! systemctl is-active --quiet kubelet || fail 'idle kubelet is running'
+        ! systemctl is-active --quiet dfdaemon || fail 'idle P2P peer is running'
+        local pods containers
+        pods=$(/usr/bin/crictl pods -q) || fail 'cannot inspect idle sandboxes'
+        containers=$(/usr/bin/crictl ps -a -q) || fail 'cannot inspect idle containers'
+        [[ -z "$pods" && -z "$containers" ]] || fail 'idle host contains workloads'
+    }
+    idle_sample() {
+        local uptime unused key value unit separator= service group usage memory anon file kernel
+        local -a ticks filesystem
+        read -r uptime unused </proc/uptime
+        read -ra ticks </proc/stat
+        printf '{"uptime_seconds":%s,"cpu_ticks":[' "$uptime"
+        for value in "${ticks[@]:1}"; do printf '%s%s' "$separator" "$value"; separator=,; done
+        printf '],"memory_bytes":{'
+        separator=
+        while read -r key value unit; do
+            case "$key" in
+                MemTotal:|MemAvailable:|Buffers:|Cached:|AnonPages:|Slab:|SReclaimable:|KernelStack:|PageTables:|Unevictable:)
+                    [[ "$unit" == kB && "$value" =~ ^[0-9]+$ ]] || fail 'invalid memory observation'
+                    printf '%s"%s":%s' "$separator" "${key%:}" "$((value * 1024))"; separator=, ;;
+            esac
+        done </proc/meminfo
+        printf '},"filesystems":{'
+        separator=
+        for group in / /var; do
+            read -ra filesystem <<<"$(stat -f -c '%S %b %f %a' "$group")"
+            [[ ${#filesystem[@]} == 4 ]] || fail 'missing filesystem observation'
+            printf '%s"%s":{"capacity_bytes":%s,"used_bytes":%s,"available_bytes":%s}' \
+                "$separator" "$group" "$((filesystem[0] * filesystem[1]))" \
+                "$((filesystem[0] * (filesystem[1] - filesystem[2])))" "$((filesystem[0] * filesystem[3]))"
+            separator=,
+        done
+        printf '},"services":{'
+        separator=
+        for service in containerd systemd-journald systemd-networkd systemd-resolved outerspace-selftest; do
+            group=/sys/fs/cgroup/system.slice/$service.service
+            printf '%s"%s":' "$separator" "$service"
+            if [[ -d "$group" ]]; then
+                memory=$(<"$group/memory.current")
+                usage=
+                while read -r key value; do [[ "$key" != usage_usec ]] || usage=$value; done <"$group/cpu.stat"
+                anon= file= kernel=
+                while read -r key value; do
+                    case "$key" in anon) anon=$value ;; file) file=$value ;; kernel) kernel=$value ;; esac
+                done <"$group/memory.stat"
+                for value in "$memory" "$usage" "$anon" "$file" "$kernel"; do
+                    [[ "$value" =~ ^[0-9]+$ ]] || fail 'missing service accounting'
+                done
+                printf '{"memory_current_bytes":%s,"memory_anon_bytes":%s,"memory_file_bytes":%s,"memory_kernel_bytes":%s,"cpu_usage_usec":%s}' \
+                    "$memory" "$anon" "$file" "$kernel" "$usage"
+            else
+                printf null
+            fi
+            separator=,
+        done
+        printf '}}'
+    }
+    [[ "$phase" == prepare || "$phase" == verify ]] || fail 'idle baseline requires UEFI persistence phase'
+    idle_state
+    read -r settle_started unused </proc/uptime
+    sleep 60
+    samples=("$(idle_sample)")
+    for interval in 1 2 3; do sleep 10; samples+=("$(idle_sample)"); done
+    idle_state
+    host=$(hostname)
+    machine_id=$(cat /etc/machine-id)
+    boot_id=$(cat /proc/sys/kernel/random/boot_id)
+    [[ "$host" =~ ^[A-Za-z0-9.-]+$ && "$machine_id" =~ ^[a-f0-9]{32}$ && "$boot_id" =~ ^[a-f0-9-]{36}$ ]] || fail 'invalid idle identity'
+    printf 'OUTERSPACE_IDLE_HOST {"schema":1,"phase":"%s","nonce":"%s","profile":"%s","hardware_profile":"%s","architecture":"%s","commit":"%s","hostname":"%s","machine_id":"%s","boot_id":"%s","vcpus":%s,"clock_ticks_per_second":%s,"settle_started_uptime_seconds":%s,"settle_seconds":60,"interval_seconds":10,"sandboxes":0,"containers":0,"kubelet_active":false,"p2p_active":false,"samples":[' \
+        "$phase" "$nonce" "$OUTERSPACE_PROFILE" "$OUTERSPACE_HARDWARE_PROFILE" "$OUTERSPACE_ARCHITECTURE" "$OUTERSPACE_SOURCE_COMMIT" \
+        "$host" "$machine_id" "$boot_id" "$(getconf _NPROCESSORS_ONLN)" "$(getconf CLK_TCK)" "$settle_started"
+    separator=
+    for sample in "${samples[@]}"; do printf '%s%s' "$separator" "$sample"; separator=,; done
+    printf ']}\n'
 fi
 echo OUTERSPACE_SELFTEST_OK

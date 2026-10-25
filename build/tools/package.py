@@ -98,7 +98,7 @@ def idle_host_report(logs, identity):
                 raise ValueError('Idle host runtime or observer accounting is missing')
             for service in services.values():
                 if service is not None:
-                    if set(service) != {'memory_current_bytes', 'cpu_usage_usec'}:
+                    if set(service) != {'memory_current_bytes', 'memory_anon_bytes', 'memory_file_bytes', 'memory_kernel_bytes', 'cpu_usage_usec'}:
                         raise ValueError('Idle host service accounting is incomplete')
                     for value in service.values():
                         integer(value)

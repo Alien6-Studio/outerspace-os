@@ -15,7 +15,8 @@ def idle_record(subject, phase):
     memory = {'MemTotal': 3900 * 1024**2, 'MemAvailable': 3600 * 1024**2,
               'Buffers': 1024, 'Cached': 2048, 'AnonPages': 4096, 'Slab': 8192,
               'SReclaimable': 4096, 'KernelStack': 1024, 'PageTables': 2048, 'Unevictable': 0}
-    services = {name: {'memory_current_bytes': 1024**2, 'cpu_usage_usec': 10000}
+    services = {name: {'memory_current_bytes': 1024**2, 'memory_anon_bytes': 512*1024,
+                      'memory_file_bytes': 256*1024, 'memory_kernel_bytes': 256*1024, 'cpu_usage_usec': 10000}
                 for name in ['containerd', 'systemd-journald', 'systemd-networkd', 'systemd-resolved', 'outerspace-selftest']}
     return {'schema': 1, **{key: subject[key] for key in ['profile', 'hardware_profile', 'architecture', 'commit']},
             'phase': phase, 'nonce': 'd' * 32, 'hostname': 'oos-idle', 'machine_id': 'e' * 32,

@@ -1,6 +1,6 @@
 # Inference worker benchmark protocol
 
-No performance numbers have been established yet. Capture raw results before
+No hardware performance comparison has been established yet. Capture raw results before
 choosing a snapshotter or advertising a reduction.
 
 The opt-in [real CPU model serving lab](cpu-serving.md) adds fixed-model HTTP
@@ -15,6 +15,9 @@ at least ten seconds. CRI must respond with no sandboxes or containers; kubelet
 and the optional P2P peer must remain inactive. No CNI, probe pod, Agent or model
 is loaded. The native Bash observer is part of the reported footprint and its
 cgroup counters are retained separately, without subtracting shared memory.
+Service memory records distinguish anonymous, file-cache and kernel charges;
+their total is cgroup accounting, not private resident memory. The counters are
+sampled separately and are not forced to sum to a synchronized total.
 
 Raw observations retain `/proc/meminfo`, `/proc/stat`, guest uptime, `CLK_TCK`,
 root/state filesystem usage and selected service cgroups. CPU work uses the
@@ -22,7 +25,7 @@ user/nice/system/irq/softirq tick deltas divided by the actual clock frequency
 and observed guest interval; idle, iowait and steal are separate from this work.
 Guest time is already included in user time. See the kernel's
 [/proc/stat manual](https://www.kernel.org/pub/linux/docs/man-pages/book/man-pages-6.17.pdf)
-and [cgroup v2 accounting](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html).
+and [cgroup v2 accounting](https://www.kernel.org/doc/html/v6.8/admin-guide/cgroup-v2.html).
 Memory summaries use `MemTotal - MemAvailable`, rather than process RSS.
 Min/median/max and all samples remain bound to source identity and boot logs;
 packaging recomputes the summaries and rejects altered evidence. These short

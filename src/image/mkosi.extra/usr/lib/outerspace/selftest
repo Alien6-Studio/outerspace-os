@@ -99,7 +99,7 @@ if "$idle_host"; then
         [[ -z "$pods" && -z "$containers" ]] || fail 'idle host contains workloads'
     }
     idle_sample() {
-        local uptime unused key value unit separator= service group usage memory
+        local uptime unused key value unit separator= service group usage memory anon file kernel
         local -a ticks filesystem
         read -r uptime unused </proc/uptime
         read -ra ticks </proc/stat
@@ -133,8 +133,15 @@ if "$idle_host"; then
                 memory=$(<"$group/memory.current")
                 usage=
                 while read -r key value; do [[ "$key" != usage_usec ]] || usage=$value; done <"$group/cpu.stat"
-                [[ "$memory" =~ ^[0-9]+$ && "$usage" =~ ^[0-9]+$ ]] || fail 'missing service accounting'
-                printf '{"memory_current_bytes":%s,"cpu_usage_usec":%s}' "$memory" "$usage"
+                anon= file= kernel=
+                while read -r key value; do
+                    case "$key" in anon) anon=$value ;; file) file=$value ;; kernel) kernel=$value ;; esac
+                done <"$group/memory.stat"
+                for value in "$memory" "$usage" "$anon" "$file" "$kernel"; do
+                    [[ "$value" =~ ^[0-9]+$ ]] || fail 'missing service accounting'
+                done
+                printf '{"memory_current_bytes":%s,"memory_anon_bytes":%s,"memory_file_bytes":%s,"memory_kernel_bytes":%s,"cpu_usage_usec":%s}' \
+                    "$memory" "$anon" "$file" "$kernel" "$usage"
             else
                 printf null
             fi

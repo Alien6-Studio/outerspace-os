@@ -244,6 +244,7 @@ def main():
     for subject in ['outerspace', 'ubuntu']:
         result_dir = output / subject
         result_dir.mkdir(exist_ok=True)
+        (result_dir / 'observations.json').unlink(missing_ok=True)
         with tempfile.TemporaryDirectory(prefix='outerspace-comparison-') as temporary:
             os.chmod(temporary, 0o700)
             lab = ComparisonLab(Path(temporary), image_output, result_dir, subject == 'ubuntu')
@@ -266,14 +267,20 @@ def main():
                             result = lab.kube('get', resource, '-A', '-o', 'json', check=False)
                             (result_dir / (resource + '.json')).write_text(result.stdout)
                 finally:
-                    lab.cleanup()
-                    run('docker', 'image', 'prune', '--force', '--filter', 'label=io.outerspace.tooling=true')
+                    try:
+                        lab.cleanup()
+                    finally:
+                        run('docker', 'image', 'prune', '--force', '--filter', 'label=io.outerspace.tooling=true')
     matched(observations['outerspace']['worker'], observations['ubuntu']['worker'])
     if commit != run('git', '-C', ROOT, 'rev-parse', 'HEAD').stdout.strip() or run('git', '-C', ROOT, 'status', '--porcelain', '--untracked-files=normal').stdout or hashes != {name: digest(ROOT / name) for name in INPUTS}:
         raise ValueError('Comparison source changed during observation')
     report.write_text(json.dumps({'schema': 1, 'status': 'observed', 'harness_commit': commit,
         'harness_sha256': hashes, 'outerspace_image': metadata, 'ubuntu_provenance': provenance,
-        'observations': observations, 'reference': {'vcpus': 4, 'memory_mib': 4096, 'acceleration': 'QEMU TCG'},
+        'observations': observations, 'logs_sha256': {
+            str(path.relative_to(output)): digest(path) for subject in observations
+            for name in ['observations.json', 'boot-enroll.log', 'qemu-command-enroll.json', 'dnsmasq.log']
+            for path in [output / subject / name]},
+        'reference': {'vcpus': 4, 'memory_mib': 4096, 'acceleration': 'QEMU TCG'},
         'limits': ['Serial local emulated VMs; not physical-hardware throughput or a statistical capacity claim',
                    'Four samples per stage after 60s settling, three guest intervals >=10s; observer included',
                    'Same CNI and qualification pods on both workers, no model or agent framework',

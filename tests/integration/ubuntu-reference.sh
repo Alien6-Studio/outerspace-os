@@ -16,29 +16,21 @@ architecture=$(dpkg --print-architecture)
 [[ "$architecture" != amd64 ]] || architecture=x86-64
 python3 "$seed/install-components.py" / "$architecture" "$seed/components.lock.json" "$seed/cache"
 install -d /var/lib/outerspace /var/lib/kubelet /etc/containerd /usr/lib/outerspace \
-    /usr/share/outerspace/apparmor /etc/systemd/system/containerd.service.d
+    /usr/share/outerspace/apparmor
 cp "$seed/containerd.toml" /etc/containerd/config.toml
 cp "$seed/agent-v1" /usr/share/outerspace/apparmor/agent-v1
 install -m 0755 "$seed/agent-io" /usr/lib/outerspace/agent-io
 # Same I/O class, on the reference's unstacked root disk (which contains /var).
 # Retain Ubuntu's writable root and stock OS identity; record the layout difference.
 e2label "$(findmnt -nro SOURCE --target /var)" OOS_STATE
-cp "$seed/containerd.service" /etc/systemd/system/
-cat > /etc/systemd/system/containerd.service.d/reference.conf <<'EOF'
-[Unit]
-Wants=
-After=network.target local-fs.target
-[Service]
-Environment=OUTERSPACE_PROFILE=agent
-EOF
-cp "$seed/kubelet.service" /etc/systemd/system/
-mkdir -p /etc/systemd/system/kubelet.service.d
-cat > /etc/systemd/system/kubelet.service.d/reference.conf <<'EOF'
-[Unit]
-Requires=
-Requires=containerd.service
-After=network-online.target containerd.service
-EOF
+# Dependency lists cannot be reset in systemd drop-ins. Materialize fixture
+# units without the product's provisioning/P2P dependencies; keep ExecStart,
+# delegation, limits and runtime configuration identical.
+for service in containerd kubelet; do
+    sed 's/ outerspace-provision.service//g; s/ dfdaemon.service//g' \
+        "$seed/$service.service" > "/etc/systemd/system/$service.service"
+done
+sed -i '/^\[Service\]/a Environment=OUTERSPACE_PROFILE=agent' /etc/systemd/system/containerd.service
 cp "$seed/outerspace-agent-profile.service" /etc/systemd/system/
 cp "$seed/90-outerspace.conf" /etc/sysctl.d/
 cp "$seed/modules.conf" /etc/modules-load.d/reference.conf

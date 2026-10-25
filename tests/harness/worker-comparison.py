@@ -3,6 +3,8 @@
 # Copyright (C) 2026 OuterSpace OS contributors
 """Compare a qualified Agent image and a signed Ubuntu worker in serial QEMU labs."""
 import argparse
+import ast
+import hashlib
 import json
 import math
 import os
@@ -87,6 +89,65 @@ def summarize(samples, ticks_per_second, vcpus):
         raise ValueError('Guest RAM differs from the four-GiB reference')
     return {'memory_unavailable_bytes': summary([s['memory_bytes']['MemTotal'] - s['memory_bytes']['MemAvailable']
                                                 for s in samples]), 'guest_busy_cpu_percent': summary(cpu)}
+
+
+def measurement_protocol(source):
+    """Bind reuse to the same observer, workload loop and calculations, excluding boot preparation."""
+    tree = ast.parse(source)
+    functions = {node.name: node for node in tree.body if isinstance(node, ast.FunctionDef)}
+    lab = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'ComparisonLab')
+    methods = {node.name: node for node in lab.body if isinstance(node, ast.FunctionDef)}
+    body = methods['measure'].body
+    starts = [i for i, node in enumerate(body) if isinstance(node, ast.Assign)
+              and any(isinstance(target, ast.Attribute) and target.attr == 'identity' for target in node.targets)]
+    if len(starts) != 1:
+        raise ValueError('Cannot identify the complete measurement protocol')
+    nodes = [functions['matched'], functions['summarize'], methods['snapshot'], methods['collect'], *body[starts[0]:]]
+    canonical = ast.dump(ast.Module(body=nodes, type_ignores=[]), include_attributes=False)
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def reuse_outerspace(path, expected_sha, commit, metadata):
+    """Explicit operator binding of a completed phase; never accept a partial or changed protocol."""
+    if path.is_symlink() or digest(path) != expected_sha:
+        raise ValueError('Reused observation checksum mismatch')
+    if len(commit) != 40 or any(c not in '0123456789abcdef' for c in commit):
+        raise ValueError('Reuse requires a full harness commit')
+    run('git', '-C', ROOT, 'merge-base', '--is-ancestor', commit, 'HEAD')
+    old_source = run('git', '-C', ROOT, 'show', commit + ':tests/harness/worker-comparison.py').stdout
+    protocol = measurement_protocol((ROOT / 'tests/harness/worker-comparison.py').read_text())
+    if measurement_protocol(old_source) != protocol:
+        raise ValueError('Reused measurement protocol differs')
+    hashes = {}
+    for name in INPUTS:
+        if name == 'tests/harness/worker-comparison.py':
+            continue
+        content = run('git', '-C', ROOT, 'show', commit + ':' + name).stdout
+        hashes[name] = hashlib.sha256(content.encode()).hexdigest()
+        if hashes[name] != digest(ROOT / name):
+            raise ValueError('Reused observer, runtime or workload input differs: ' + name)
+    observation = json.loads(path.read_text())
+    identity = observation['worker']['outerspace_identity']
+    profiles = native.load_script('profiles', native.BUILD_TOOLS)
+    if identity != profiles.image_identity('agent', 'cpu', metadata['architecture'], metadata['commit']):
+        raise ValueError('Reused observation belongs to another candidate')
+    if set(observation['stages']) != {'0', '1', '2', '4'} or observation['concurrent_agents'] != [1, 2, 4]:
+        raise ValueError('Reused observation did not complete every density stage')
+    launches = observation['launches']
+    if len(launches) != 4 or len({item['pod']['metadata']['uid'] for item in launches}) != 4:
+        raise ValueError('Reused Agent identities are incomplete')
+    for count, stage in observation['stages'].items():
+        if stage['summary'] != summarize(stage['raw'], observation['worker']['clock_ticks_per_second'], 4):
+            raise ValueError('Reused summary differs from its raw observations')
+        for sample in stage['raw']:
+            for item in launches[:int(count)]:
+                pod = item['pod']
+                group = sample['pods'][pod['metadata']['uid']]
+                native.verify_agent_resource_limits(group)
+                native.verify_agent_io_limits(group, pod['status']['containerStatuses'][0]['containerID'])
+    return observation, {'binding': 'explicit operator-supplied checksum and original harness commit',
+        'harness_commit': commit, 'observations_sha256': expected_sha,
+        'measurement_protocol_sha256': protocol, 'unchanged_inputs_sha256': hashes}
 
 
 class ComparisonLab(native.Lab):
@@ -176,7 +237,7 @@ runcmd:
         return {'raw': samples, 'summary': summarize(samples, self.identity['clock_ticks_per_second'], 4)}
 
     def measure(self):
-        node = wait_for('Waiting for the comparison worker', self.worker, timeout=1200)
+        node = wait_for('Waiting for the comparison worker', self.worker, timeout=3600 if self.reference else 1200)
         name = node['metadata']['name']
         self.extend_renewal_lifetime()
         self.kube('wait', '--for=condition=Ready', 'node/' + name, '--timeout=1200s', timeout=1230)
@@ -229,7 +290,13 @@ def main():
     parser.add_argument('--image-output', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--cache', type=Path, default=ROOT / '.cache/ubuntu-reference')
+    parser.add_argument('--reuse-outerspace', type=Path, help='Reuse only a complete, explicitly bound OuterSpace phase')
+    parser.add_argument('--reuse-outerspace-sha256')
+    parser.add_argument('--reuse-harness-commit')
     args = parser.parse_args()
+    if any([args.reuse_outerspace, args.reuse_outerspace_sha256, args.reuse_harness_commit]) and not all(
+            [args.reuse_outerspace, args.reuse_outerspace_sha256, args.reuse_harness_commit]):
+        parser.error('Reuse requires the observation path, its SHA256 and original harness commit')
     if run('git', '-C', ROOT, 'status', '--porcelain', '--untracked-files=normal').stdout:
         raise ValueError('Commit the comparison harness before running it')
     commit = run('git', '-C', ROOT, 'rev-parse', 'HEAD').stdout.strip()
@@ -250,7 +317,18 @@ def main():
         raise ValueError('Runtime pins differ from the qualified image')
     image, provenance = signed_image(cache, metadata['architecture'], download=False)
     observations = {}
-    for subject in ['outerspace', 'ubuntu']:
+    reuse = None
+    if args.reuse_outerspace:
+        observations['outerspace'], reuse = reuse_outerspace(args.reuse_outerspace.resolve(),
+            args.reuse_outerspace_sha256, args.reuse_harness_commit, metadata)
+        saved = output / 'outerspace'
+        saved.mkdir(exist_ok=True)
+        for name in ['observations.json', 'boot-enroll.log', 'qemu-command-enroll.json', 'dnsmasq.log']:
+            source = args.reuse_outerspace.resolve().parent / name
+            if source.is_symlink():
+                raise ValueError('Reused evidence must be regular files')
+            shutil.copyfile(source, saved / name)
+    for subject in ['ubuntu'] if reuse else ['outerspace', 'ubuntu']:
         result_dir = output / subject
         result_dir.mkdir(exist_ok=True)
         (result_dir / 'observations.json').unlink(missing_ok=True)
@@ -265,6 +343,7 @@ def main():
                     lab.reference_seed(image, cache, metadata['architecture'])
                 lab.vm('start', '--config-drive', *(['--ubuntu-reference'] if lab.reference else []))
                 observations[subject] = {'configuration': config, **lab.measure()}
+                observations[subject]['configuration']['client_signing_duration'] = '10m initial bootstrap; 4h renewals (test lab only)'
                 (result_dir / 'observations.json').write_text(json.dumps(observations[subject], indent=2) + '\n')
             finally:
                 try:
@@ -284,6 +363,8 @@ def main():
     if commit != run('git', '-C', ROOT, 'rev-parse', 'HEAD').stdout.strip() or run('git', '-C', ROOT, 'status', '--porcelain', '--untracked-files=normal').stdout or hashes != {name: digest(ROOT / name) for name in INPUTS}:
         raise ValueError('Comparison source changed during observation')
     report.write_text(json.dumps({'schema': 1, 'status': 'observed', 'harness_commit': commit,
+        'subject_harness_commits': {'outerspace': reuse['harness_commit'] if reuse else commit, 'ubuntu': commit},
+        'reused_outerspace': reuse,
         'harness_sha256': hashes, 'outerspace_image': metadata, 'ubuntu_provenance': provenance,
         'observations': observations, 'logs_sha256': {
             str(path.relative_to(output)): digest(path) for subject in observations

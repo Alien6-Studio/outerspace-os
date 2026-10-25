@@ -69,6 +69,17 @@ The comparison rejects different kernel version/build notes, runtime binary
 hashes or configuration hashes. The report distinguishes the candidate's
 source commit from the comparison harness commit and retains both identities.
 
+Ubuntu's first-boot package installation and initramfs generation have a separate
+60-minute preparation deadline under TCG, before any observation or launch timing.
+A completed OuterSpace phase can be explicitly reused after a failed Ubuntu
+preparation with `--reuse-outerspace`, `--reuse-outerspace-sha256` and
+`--reuse-harness-commit` on the comparison CLI, using a separate output directory.
+The supplied checksum and original commit are an explicit operator binding.
+The tool checks source ancestry, unchanged observer/runtime/workload inputs,
+an identical measurement protocol, all four raw density stages and every actual
+Agent cgroup/I/O budget. It records each subject's harness commit separately;
+failed or incomplete stages are never promoted to successful observations.
+
 After readiness, the existing read-only probe collects four raw samples,
 separated by at least ten guest seconds, after a 60-second settling period.
 Stages contain zero, one, two and four Agents. Raw platform and per-pod

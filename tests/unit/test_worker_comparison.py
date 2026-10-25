@@ -2,6 +2,7 @@
 import copy
 import importlib.util
 import sys
+import tempfile
 from pathlib import Path
 import unittest
 
@@ -13,6 +14,24 @@ spec.loader.exec_module(comparison)
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_reuse_protocol_excludes_boot_timeout_but_binds_observer_and_workload_loop(self):
+        source = (harness / 'worker-comparison.py').read_text()
+        expected = comparison.measurement_protocol(source)
+        self.assertEqual(expected, comparison.measurement_protocol(source.replace(
+            'timeout=3600 if self.reference else 1200', 'timeout=7200 if self.reference else 1200')))
+        for before, after in [('time.sleep(10)', 'time.sleep(1)'),
+                              ('range(1, 5)', 'range(1, 4)'),
+                              ("'--comparison-identity'", "'--other-observer'")]:
+            with self.subTest(change=before):
+                self.assertNotEqual(expected, comparison.measurement_protocol(source.replace(before, after)))
+
+    def test_reuse_refuses_changed_evidence_before_loading_or_starting_a_lab(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'observations.json'
+            path.write_text('{}')
+            with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
+                comparison.reuse_outerspace(path, '0' * 64, '0' * 40, {})
+
     def test_mismatched_kernel_runtime_policy_or_cpu_refuses_comparison(self):
         worker = {'kernel_version': '6.8', 'kernel_notes_sha256': 'a',
                   'runtime_sha256': {'containerd': 'b'}, 'config_sha256': {'kubelet': 'c'},

@@ -14,7 +14,7 @@ state = os.statvfs(root / 'var')
 comparison = len(sys.argv) == 3 and sys.argv[2] in ('--comparison', '--comparison-identity')
 if comparison:
     # Explicit benchmark-only path: never grant Ubuntu an OuterSpace image identity.
-    observation = {'identity': {'profile': 'agent'}, 'comparison': True}
+    observation = {'comparison': True}
     if sys.argv[2] == '--comparison-identity':
         def sha(path):
             with path.open('rb') as stream:
@@ -70,7 +70,7 @@ if len(sys.argv) == 2 or comparison:
              'memory.events', 'pids.max', 'pids.current', 'pids.events', 'cgroup.procs',
              'io.max', 'io.stat', 'io.pressure']
     io_policy = None
-    if observation['identity']['profile'] == 'agent':
+    if comparison or observation['identity']['profile'] == 'agent':
         policy = json.loads((root / 'run/outerspace/agent-blockio.json').read_text())
         parameters = policy['Classes']['outerspace-agent-v1'][0]
         device = parameters['Devices'][0]

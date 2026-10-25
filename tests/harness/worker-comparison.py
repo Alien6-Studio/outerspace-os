@@ -137,6 +137,13 @@ class ComparisonLab(native.Lab):
         lock = payload / 'components.lock.json'
         lock.write_text(json.dumps(components))
         installer = native.load_script('install-components', native.BUILD_TOOLS)
+        (cache / 'components').mkdir(exist_ok=True)
+        for component in components['components'].values():
+            sha = component['artifacts'][architecture]['sha256']
+            existing = cache.parent / 'components' / sha
+            if existing.is_file():
+                installer.verify(existing, sha)
+                shutil.copyfile(existing, cache / 'components' / sha)
         installer.fetch(cache / 'components', {'amd64': 'x86-64', 'arm64': 'arm64'}[architecture], lock)
         (payload / 'cache').mkdir()
         for component in components['components'].values():
@@ -232,6 +239,8 @@ def main():
     report = output / 'worker-comparison.json'
     report.unlink(missing_ok=True)
     metadata = json.loads((image_output / 'build-identity.json').read_text())
+    if metadata['architecture'] != native.load_script('profiles', native.BUILD_TOOLS).architecture():
+        raise ValueError('The candidate architecture must match the native lab runner')
     if metadata['profile'] != 'agent' or metadata['hardware_profile'] != 'cpu':
         raise ValueError('A qualified Agent CPU image is required')
     bundle = image_output / f'outerspace-{metadata["version"]}-agent-cpu-{metadata["architecture"]}'

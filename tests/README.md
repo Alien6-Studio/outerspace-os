@@ -74,6 +74,8 @@ and initrd, so its output is not accepted as UEFI qualification evidence.
 without Cilium or an OS worker. `agent-isolation` runs that policy on the real
 Agent image, checks process/filesystem/LSM controls and missing-profile refusal,
 then repeats execution and ingress/egress checks after cold-node recovery.
+Admission refuses termination-log redirection into writable memory volumes;
+the runtime probe requires write denial on the implicit host-backed log file.
 `agent-resources` adds six resource-pressure cases with kernel cgroup evidence,
 neighbor/API responsiveness and post-deletion process/cgroup/mount/workspace
 checks. Its `agent-resources.json` also records quiescent enrolled-node memory,

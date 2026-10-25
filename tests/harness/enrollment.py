@@ -83,7 +83,7 @@ def verify_agent_probe(observation):
                 'no_new_privileges': True, 'read_only_root': True, 'capabilities': 'none',
                 'workspace': 'passed', 'host_access': 'denied', 'privilege_escalation': 'denied',
                 'mounts': 'denied', 'device_creation': 'denied',
-                'policy_change': 'denied', 'child_confinement': 'passed'}
+                'policy_change': 'denied', 'termination_log_write': 'denied', 'child_confinement': 'passed'}
     if any(type(observation.get(key)) is not type(value) or observation.get(key) != value
            for key, value in required.items()):
         raise ValueError('Agent did not prove every required runtime boundary')
@@ -471,6 +471,7 @@ nodes:
         if json.loads(result.stdout)['spec']['runtimeClassName'] != 'outerspace-agent-v1':
             raise ValueError('Agent RuntimeClass missing after admission')
         changes = [
+            ('termination-path', ['spec', 'containers', 0, 'terminationMessagePath'], '/workspace/host-write'),
             ('missing-io-class', ['metadata', 'annotations'], {}),
             ('io-class', ['metadata', 'annotations', 'blockio.resources.beta.kubernetes.io/pod'], 'unlimited'),
             ('container-io-class', ['metadata', 'annotations', 'blockio.resources.beta.kubernetes.io/container.agent'], 'unlimited'),

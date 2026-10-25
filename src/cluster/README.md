@@ -128,6 +128,11 @@ devices, accelerator resources and mutable image tags are refused at admission.
 Priority escalation, pod preemption, extra group authority, workload sysctls,
 registry credential references and alternate user namespaces are also refused.
 Container overrides, resize and the ephemeral-container update subresources are checked.
+Kubernetes also mounts a host-backed termination-log file implicitly. Admission
+fixes that mount at `/dev/termination-log`, where the Agent AppArmor policy denies
+writes; it cannot be redirected into the writable memory workspace or scratch.
+The native isolation probe verifies that the file exists and rejects writes,
+both before and after node recovery.
 
 Each Agent must select `blockio.resources.beta.kubernetes.io/pod=outerspace-agent-v1`.
 Admission refuses a missing/different class, per-container class overrides and

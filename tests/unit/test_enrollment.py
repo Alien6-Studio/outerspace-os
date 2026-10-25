@@ -253,7 +253,7 @@ class EnrollmentEvidenceTests(unittest.TestCase):
             'no_new_privileges': True, 'read_only_root': True, 'capabilities': 'none',
             'workspace': 'passed', 'host_access': 'denied', 'privilege_escalation': 'denied',
             'mounts': 'denied', 'device_creation': 'denied',
-            'policy_change': 'denied', 'child_confinement': 'passed'}
+            'policy_change': 'denied', 'termination_log_write': 'denied', 'child_confinement': 'passed'}
         enrollment.verify_agent_probe(observation)
         for key in observation:
             missing = dict(observation)

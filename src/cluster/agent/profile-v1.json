@@ -101,6 +101,10 @@
             "message": "OuterSpace Agent v1 permits only its bounded per-pod memory workspace and scratch volumes."
           },
           {
+            "expression": "variables.containers.all(c, c.terminationMessagePath == '/dev/termination-log')",
+            "message": "OuterSpace Agent v1 fixes the implicit termination-log mount at its AppArmor-protected path."
+          },
+          {
             "expression": "variables.containers.all(c, has(c.volumeMounts) && size(c.volumeMounts) == 2 && c.volumeMounts.all(m, ((m.name == 'workspace' && m.mountPath == '/workspace') || (m.name == 'scratch' && m.mountPath == '/scratch')) && (!has(m.subPath) || m.subPath == '') && (!has(m.subPathExpr) || m.subPathExpr == '') && (!has(m.mountPropagation) || m.mountPropagation == 'None') && (!has(m.readOnly) || !m.readOnly)) && (!has(c.volumeDevices) || size(c.volumeDevices) == 0))",
             "message": "OuterSpace Agent v1 forbids additional mounts, subpaths, mount propagation and block devices."
           },

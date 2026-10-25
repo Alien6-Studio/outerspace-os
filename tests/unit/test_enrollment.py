@@ -17,6 +17,51 @@ spec.loader.exec_module(enrollment)
 
 
 class EnrollmentEvidenceTests(unittest.TestCase):
+    def io_pod(self):
+        identifier = 'a' * 64
+        return {'path': 'pod', 'container_id': 'containerd://' + identifier,
+                'files': {'cpu.max': '50000 100000', 'memory.max': '134217728', 'pids.max': '256'},
+                'io_policy': {'class': 'outerspace-agent-v1', 'device': '252:0',
+                              'limits': {'rbps': 8388608, 'wbps': 4194304, 'riops': 256, 'wiops': 256}},
+                'descendants': {'cri-containerd-' + identifier + '.scope': {
+                    'io.max': '252:0 rbps=8388608 wbps=4194304 riops=256 wiops=256',
+                    'io.stat': '252:0 rbytes=0 wbytes=0 rios=0 wios=0'}}}
+
+    def test_io_requires_limits_on_the_actual_workload_and_backing_device(self):
+        pod = self.io_pod()
+        enrollment.verify_agent_io_limits(pod, pod['container_id'])
+        scope = next(iter(pod['descendants']))
+        for value in ['', '252:1 rbps=8388608 wbps=4194304 riops=256 wiops=256',
+                      '252:0 rbps=max wbps=4194304 riops=256 wiops=256']:
+            changed = copy.deepcopy(pod)
+            changed['descendants'][scope]['io.max'] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                enrollment.verify_agent_io_limits(changed, pod['container_id'])
+        with self.assertRaises(ValueError):
+            enrollment.verify_agent_io_limits(pod, 'containerd://' + 'b' * 64)
+
+    def test_io_does_not_count_pause_or_stacked_device_bytes(self):
+        before = self.io_pod()
+        after = copy.deepcopy(before)
+        scope = next(iter(after['descendants']))
+        after['descendants']['pause.scope'] = {'io.stat': '252:0 rbytes=99999999 wbytes=0'}
+        after['descendants'][scope]['io.stat'] = '253:0 rbytes=99999999 wbytes=0'
+        self.assertFalse(enrollment.agent_pressure_observed('io', before, after))
+        after['descendants'][scope]['io.stat'] += '\n252:0 rbytes=16777216 wbytes=0'
+        self.assertTrue(enrollment.agent_pressure_observed('io', before, after))
+        after['result'] = 'io-direct-failed'
+        with self.assertRaises(ValueError):
+            enrollment.agent_pressure_observed('io', before, after)
+
+    def test_io_device_can_exist_before_any_counter_has_been_recorded(self):
+        before = self.io_pod()
+        scope = next(iter(before['descendants']))
+        before['descendants'][scope]['io.stat'] = '252:0'
+        self.assertEqual(enrollment.agent_io_bytes(before), 0)
+        after = copy.deepcopy(before)
+        after['descendants'][scope]['io.stat'] = '252:0 rbytes=48758784 wbytes=0 rios=372 wios=0'
+        self.assertTrue(enrollment.agent_pressure_observed('io', before, after))
+
     def test_lab_renewal_cannot_roll_again_during_the_ci_job(self):
         timeouts = re.findall(r'^\s+timeout-minutes:\s*(\d+)\s*$',
             (enrollment.ROOT / '.github/workflows/ci.yml').read_text(), re.MULTILINE)
@@ -208,7 +253,7 @@ class EnrollmentEvidenceTests(unittest.TestCase):
             'no_new_privileges': True, 'read_only_root': True, 'capabilities': 'none',
             'workspace': 'passed', 'host_access': 'denied', 'privilege_escalation': 'denied',
             'mounts': 'denied', 'device_creation': 'denied',
-            'policy_change': 'denied', 'child_confinement': 'passed'}
+            'policy_change': 'denied', 'termination_log_write': 'denied', 'child_confinement': 'passed'}
         enrollment.verify_agent_probe(observation)
         for key in observation:
             missing = dict(observation)

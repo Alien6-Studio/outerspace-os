@@ -41,7 +41,19 @@ if len(sys.argv) == 2:
     assert isinstance(uids, list) and all(re.fullmatch(r'[a-f0-9-]{36}', uid) for uid in uids)
     cgroup_root = root / 'sys/fs/cgroup'
     files = ['cpu.max', 'cpu.stat', 'memory.max', 'memory.current', 'memory.peak',
-             'memory.events', 'pids.max', 'pids.current', 'pids.events', 'cgroup.procs']
+             'memory.events', 'pids.max', 'pids.current', 'pids.events', 'cgroup.procs',
+             'io.max', 'io.stat', 'io.pressure']
+    io_policy = None
+    if observation['identity']['profile'] == 'agent':
+        policy = json.loads((root / 'run/outerspace/agent-blockio.json').read_text())
+        parameters = policy['Classes']['outerspace-agent-v1'][0]
+        device = parameters['Devices'][0]
+        assert re.fullmatch(r'/dev/[A-Za-z0-9_-]+', device)
+        io_policy = {'class': 'outerspace-agent-v1', 'device_path': device,
+                     'device': (root / 'sys/class/block' / Path(device).name / 'dev').read_text().strip(),
+                     'limits': {key: int(parameters[name]) for key, name in
+                         [('rbps', 'ThrottleReadBps'), ('wbps', 'ThrottleWriteBps'),
+                          ('riops', 'ThrottleReadIOPS'), ('wiops', 'ThrottleWriteIOPS')]}}
     def read_group(path):
         values = {}
         for name in files:
@@ -78,7 +90,8 @@ if len(sys.argv) == 2:
                        'descendants': {str(path.relative_to(paths[0])): read_group(path)
                                        for path in paths[0].rglob('*.scope')} if paths else {},
                        'processes': processes, 'mounts': mounts,
-                       'workspace_present': workspace.exists(), 'log_files': log_files}
+                       'workspace_present': workspace.exists(), 'log_files': log_files,
+                       'io_policy': io_policy}
         scratch = workspace / 'volumes/kubernetes.io~empty-dir/scratch'
         if scratch.is_mount():
             fs = os.statvfs(scratch)

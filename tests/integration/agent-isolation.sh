@@ -20,6 +20,9 @@ printf 'agent-workspace-ok\n' > /workspace/result
 printf 'agent-scratch-ok\n' > /scratch/result
 grep -qx agent-workspace-ok /workspace/result || fail 'workspace not usable'
 if touch /etc/outerspace-agent-write-test 2>/scratch/root-error; then fail 'root filesystem writable'; fi
+test -f /dev/termination-log || fail 'termination log mount absent'
+if sh -c ': > /dev/termination-log' 2>/scratch/termination-error; then fail 'host termination log writable'; fi
+grep -q 'Permission denied' /scratch/termination-error || fail 'termination log denial was not a permission failure'
 if cat /proc/sys/kernel/random/boot_id >/scratch/host-id 2>/scratch/lsm-error; then
     fail 'host identity readable through proc'
 fi
@@ -42,4 +45,4 @@ if mknod /workspace/forbidden-device c 1 3 2>/scratch/device-error; then fail 'd
 grep -Eq '[Pp]ermission denied|Operation not permitted' /scratch/device-error || fail 'device refusal was not a permission failure'
 # The child must inherit the same LSM boundary.
 sh -c 'test "$(cat /proc/self/attr/current)" = "outerspace-agent-v1 (enforce)"' || fail 'child escaped AppArmor'
-echo '{"status":"passed","uid":65534,"gid":65534,"apparmor":"outerspace-agent-v1 (enforce)","seccomp":2,"no_new_privileges":true,"read_only_root":true,"capabilities":"none","workspace":"passed","host_access":"denied","privilege_escalation":"denied","mounts":"denied","device_creation":"denied","policy_change":"denied","child_confinement":"passed"}'
+echo '{"status":"passed","uid":65534,"gid":65534,"apparmor":"outerspace-agent-v1 (enforce)","seccomp":2,"no_new_privileges":true,"read_only_root":true,"capabilities":"none","workspace":"passed","host_access":"denied","privilege_escalation":"denied","mounts":"denied","device_creation":"denied","policy_change":"denied","termination_log_write":"denied","child_confinement":"passed"}'

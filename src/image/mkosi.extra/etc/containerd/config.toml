@@ -25,6 +25,7 @@ state = "/run/containerd"
 
 [plugins.'io.containerd.cri.v1.runtime'.containerd]
   default_runtime_name = "runc"
+  ignore_blockio_not_enabled_errors = false
 
 [plugins.'io.containerd.cri.v1.runtime'.containerd.runtimes.runc]
   runtime_type = "io.containerd.runc.v2"

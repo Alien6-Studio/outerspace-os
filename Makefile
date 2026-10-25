@@ -19,6 +19,7 @@ help:
 	@echo 'make PROFILE=inference cpu-serving               Qualify real CPU model serving'
 	@echo 'make agent-admission                             Preflight Agent admission on a disposable API'
 	@echo 'make PROFILE=agent agent-isolation               Qualify the native OCI Agent boundary'
+	@echo 'make PROFILE=agent agent-resources               Qualify Agent resource pressure and teardown'
 	@echo 'make clean-test-cache                            Remove obsolete OuterSpace Docker images'
 	@echo 'make config-drive CONFIG_DIR=out/node-config      Package worker configuration'
 	@echo 'Generated images, reports and release assets: out/'

@@ -1,0 +1,29 @@
+#!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2026 OuterSpace OS contributors
+set -euo pipefail
+. /usr/lib/os-release
+[[ "$OUTERSPACE_PROFILE" == agent ]] || exit 0
+fail() { echo "OUTERSPACE_AGENT_IO_INVALID: $*" >&2; exit 1; }
+umask 077
+install -d -m 0700 /run/outerspace
+config=/run/outerspace/agent-blockio.json
+rm -f "$config"
+grep -qw io /sys/fs/cgroup/cgroup.controllers || fail 'cgroup v2 I/O controller missing'
+state=$(readlink -f "$(findmnt -nro SOURCE --target /var)")
+[[ -b "$state" && "$state" == "$(readlink -f /dev/disk/by-label/OOS_STATE)" ]] || fail 'unexpected state filesystem'
+# The shipped image uses one partition on one disk. Refuse stacked storage;
+# a partition's device number is not the queue on which I/O is accounted.
+disk=$(lsblk -dnro PKNAME "$state")
+[[ "$disk" =~ ^[a-zA-Z0-9_-]+$ && -b "/dev/$disk" ]] || fail 'state disk cannot be resolved'
+[[ $(lsblk -dnro TYPE "/dev/$disk") == disk ]] || fail 'state disk is not a physical block queue'
+[[ -z $(ls -A "/sys/class/block/$disk/slaves") ]] || fail 'stacked state storage is unsupported'
+cat > "$config.tmp" <<EOF
+{"Classes":{"outerspace-agent-v1":[{
+  "Devices":["/dev/$disk"],
+  "ThrottleReadBps":"8388608", "ThrottleWriteBps":"4194304",
+  "ThrottleReadIOPS":"256", "ThrottleWriteIOPS":"256"
+}]}}
+EOF
+mv "$config.tmp" "$config"
+printf 'OUTERSPACE_AGENT_IO_READY device=%s major_minor=%s\n' "$disk" "$(cat "/sys/class/block/$disk/dev")"

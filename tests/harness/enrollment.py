@@ -36,7 +36,10 @@ HARNESS_INPUTS = ['tests/harness/enrollment.py', 'tests/harness/enrollment-vm.py
                   'src/image/mkosi.extra/etc/outerspace/kubelet.yaml',
                   'src/cluster/agent/workload-v1.json',
                   'src/image/mkosi.extra/usr/share/outerspace/apparmor/agent-v1',
-                  'src/image/mkosi.extra/usr/lib/systemd/system/outerspace-agent-profile.service']
+                  'src/image/mkosi.extra/usr/lib/systemd/system/outerspace-agent-profile.service',
+                  'src/image/mkosi.extra/usr/lib/outerspace/agent-io',
+                  'src/image/mkosi.extra/usr/lib/systemd/system/containerd.service',
+                  'src/image/mkosi.extra/etc/containerd/config.toml', 'src/image/mkosi.postinst']
 AGENT_NAMESPACE = 'outerspace-agents-v1'
 AGENT_NODE_LABEL = 'outerspace.sh.node-restriction.kubernetes.io/agent-profile'
 LAB_RENEWAL_DURATION = '4h'
@@ -80,7 +83,7 @@ def verify_agent_probe(observation):
                 'no_new_privileges': True, 'read_only_root': True, 'capabilities': 'none',
                 'workspace': 'passed', 'host_access': 'denied', 'privilege_escalation': 'denied',
                 'mounts': 'denied', 'device_creation': 'denied',
-                'policy_change': 'denied', 'child_confinement': 'passed'}
+                'policy_change': 'denied', 'termination_log_write': 'denied', 'child_confinement': 'passed'}
     if any(type(observation.get(key)) is not type(value) or observation.get(key) != value
            for key, value in required.items()):
         raise ValueError('Agent did not prove every required runtime boundary')
@@ -92,9 +95,40 @@ def verify_agent_resource_limits(pod):
         raise ValueError('Actual Agent cgroup CPU, memory or PID limit differs from the budget')
 
 
+def verify_agent_io_limits(pod, container_id):
+    policy = pod.get('io_policy') or {}
+    expected = {'rbps': 8388608, 'wbps': 4194304, 'riops': 256, 'wiops': 256}
+    if policy.get('class') != 'outerspace-agent-v1' or policy.get('limits') != expected:
+        raise ValueError('Agent I/O policy is missing or differs from the fixed budget')
+    identifier = container_id.removeprefix('containerd://')
+    if not re.fullmatch(r'[a-f0-9]{64}', identifier):
+        raise ValueError('Agent workload container identity is missing')
+    scope = pod.get('descendants', {}).get('cri-containerd-' + identifier + '.scope', {})
+    limits = {line.split()[0]: dict(pair.split('=') for pair in line.split()[1:])
+              for line in scope.get('io.max', '').splitlines()}
+    if limits.get(policy.get('device')) != {key: str(value) for key, value in expected.items()}:
+        raise ValueError('Actual workload cgroup lacks the required device I/O limits')
+    return scope
+
+
+def agent_io_bytes(pod):
+    device = pod['io_policy']['device']
+    scope = verify_agent_io_limits(pod, pod['container_id'])
+    for line in scope.get('io.stat', '').splitlines():
+        if line.split()[0] == device:
+            return int(dict(pair.split('=') for pair in line.split()[1:]).get('rbytes', 0))
+    return 0
+
+
 def agent_pressure_observed(mode, before, after):
     verify_agent_resource_limits(before)
     verify_agent_resource_limits(after)
+    if mode == 'io':
+        if after.get('result') == 'io-direct-failed':
+            raise ValueError('Direct I/O workload failed')
+        # The I/O case never restarts. Bind both snapshots to the actual
+        # workload container, excluding the pause scope and stacked devices.
+        return agent_io_bytes({**after, 'container_id': before['container_id']}) - agent_io_bytes(before) >= 16777216
     def counter(pod, file, key):
         values = dict(line.split() for line in pod['files'][file].splitlines())
         return int(values[key])
@@ -437,6 +471,11 @@ nodes:
         if json.loads(result.stdout)['spec']['runtimeClassName'] != 'outerspace-agent-v1':
             raise ValueError('Agent RuntimeClass missing after admission')
         changes = [
+            ('termination-path', ['spec', 'containers', 0, 'terminationMessagePath'], '/workspace/host-write'),
+            ('missing-io-class', ['metadata', 'annotations'], {}),
+            ('io-class', ['metadata', 'annotations', 'blockio.resources.beta.kubernetes.io/pod'], 'unlimited'),
+            ('container-io-class', ['metadata', 'annotations', 'blockio.resources.beta.kubernetes.io/container.agent'], 'unlimited'),
+            ('cri-io-class', ['metadata', 'annotations', 'io.kubernetes.cri.blockio-class'], 'unlimited'),
             ('runtime', ['spec', 'runtimeClassName'], None),
             ('scheduler', ['spec', 'schedulerName'], 'untrusted-scheduler'),
             ('direct-node', ['spec', 'nodeName'], self.agent_node),
@@ -603,25 +642,35 @@ nodes:
         if refused.returncode == 0 or 'OuterSpace Agent v1' not in refused.stderr:
             raise ValueError('Over-budget Agent resize was not refused: ' + refused.stderr)
         self.agent_checks['resize'] = {'bounded_admitted': True, 'over_budget_refused': refused.stderr.strip()}
-        # A missing required LSM must fail on the real OS, outside the policy's
-        # namespace so admission does not mask the runtime refusal.
-        missing = copy.deepcopy(workload)
-        missing['metadata'] = {'name': 'missing-agent-lsm', 'namespace': LAB}
-        missing['spec'].pop('runtimeClassName')
-        missing['spec'].pop('nodeSelector')
-        missing['spec']['nodeName'] = node
-        missing['spec']['serviceAccountName'] = 'default'
-        missing['spec']['securityContext']['appArmorProfile']['localhostProfile'] = 'outerspace-agent-v1-absent'
-        self.apply(missing)
-        def missing_refused():
-            pod = self.api('-n', LAB, 'pod', 'missing-agent-lsm')
-            status = pod.get('status', {})
-            diagnostics = json.dumps(status)
-            return pod if ('AppArmor' in diagnostics or 'apparmor' in diagnostics) and not any(
-                state.get('state', {}).get('running') for state in status.get('containerStatuses', [])) else None
-        refused = wait_for('Checking runtime refusal of an unloaded Agent AppArmor profile', missing_refused, timeout=120)
-        self.agent_checks['missing_lsm_refusal'] = refused['status']
-        self.kube('-n', LAB, 'delete', 'pod', 'missing-agent-lsm', '--wait=true', '--timeout=60s')
+        # Test the actual runtime outside the admission namespace, so policy
+        # refusal cannot mask a missing runtime enforcement mechanism.
+        for control in ['lsm', 'io']:
+            missing = copy.deepcopy(workload)
+            name = 'missing-agent-' + control
+            missing['metadata'] = {'name': name, 'namespace': LAB, 'annotations':
+                {'blockio.resources.beta.kubernetes.io/pod': 'outerspace-agent-v1'}}
+            missing['spec'].pop('runtimeClassName')
+            missing['spec'].pop('nodeSelector')
+            missing['spec']['nodeName'] = node
+            missing['spec']['serviceAccountName'] = 'default'
+            if control == 'lsm':
+                missing['spec']['securityContext']['appArmorProfile']['localhostProfile'] = 'outerspace-agent-v1-absent'
+            else:
+                missing['metadata']['annotations']['blockio.resources.beta.kubernetes.io/pod'] = 'outerspace-agent-v1-absent'
+            self.apply(missing)
+            def missing_refused():
+                pod = self.api('-n', LAB, 'pod', name)
+                status = pod.get('status', {})
+                for container in status.get('containerStatuses', []):
+                    if (container.get('state', {}).get('running') or container.get('state', {}).get('terminated')
+                            or container.get('lastState', {}).get('terminated') or container.get('restartCount', 0)):
+                        raise ValueError('A workload ran without its required ' + control + ' control')
+                diagnostic = json.dumps(status).lower()
+                marker = 'apparmor' if control == 'lsm' else 'blockio'
+                return pod if marker in diagnostic and 'outerspace-agent-v1-absent' in diagnostic else None
+            refused = wait_for('Checking runtime refusal of missing Agent ' + control, missing_refused, timeout=120)
+            self.agent_checks['missing_' + control + '_refusal'] = refused['status']
+            self.kube('-n', LAB, 'delete', 'pod', name, '--wait=true', '--timeout=60s')
 
     def agent_sample(self, phase):
         pod = self.api('-n', AGENT_NAMESPACE, 'pod', 'agent')
@@ -631,6 +680,10 @@ nodes:
                            (ROOT / 'tests/integration/agent-isolation.sh').read_text())
         observation = json.loads(result.stdout)
         verify_agent_probe(observation)
+        snapshot = self.agent_resource_snapshot([pod['metadata']['uid']])
+        snapshot['pods'][pod['metadata']['uid']]['container_id'] = pod['status']['containerStatuses'][0]['containerID']
+        verify_agent_io_limits(snapshot['pods'][pod['metadata']['uid']], pod['status']['containerStatuses'][0]['containerID'])
+        self.agent_checks.setdefault('io_limits', {})[phase] = snapshot
         # Prove the HTTP endpoints and explicit allow paths before checking a
         # bounded timeout after the temporary policies are removed.
         service = self.api('-n', LAB, 'service', 'cpu')['spec']['clusterIP']
@@ -713,7 +766,7 @@ nodes:
         quiet = self.agent_resource_snapshot(uids)
         cases = {}
         previous_uids = []
-        for mode in ['cpu', 'scratch', 'oom', 'fork', 'logs']:
+        for mode in ['cpu', 'scratch', 'oom', 'fork', 'logs', 'io']:
             print('Qualifying Agent resource pressure: ' + mode, flush=True)
             workload = json.loads((ROOT / 'src/cluster/agent/workload-v1.json').read_text())
             workload['metadata']['name'] = 'pressure'
@@ -738,6 +791,9 @@ nodes:
                 diagnostic = self.output / ('agent-resources-' + mode + '-latest.json')
                 diagnostic.write_text(json.dumps({'pod_uid': uid, 'before': before}, indent=2) + '\n')
                 verify_agent_resource_limits(before['pods'][uid])
+                current = self.api('-n', AGENT_NAMESPACE, 'pod', 'pressure')
+                before['pods'][uid]['container_id'] = current['status']['containerStatuses'][0]['containerID']
+                verify_agent_io_limits(before['pods'][uid], current['status']['containerStatuses'][0]['containerID'])
                 self.kube('-n', AGENT_NAMESPACE, 'exec', 'pressure', '--', 'touch', '/workspace/go')
                 pulses = []
                 def exercised():
@@ -753,6 +809,8 @@ nodes:
                 pod = self.api('-n', AGENT_NAMESPACE, 'pod', 'pressure')
                 if pod['spec']['nodeName'] != self.agent_node:
                     raise ValueError('Resource pressure ran on another worker')
+                after['pods'][uid]['container_id'] = pod['status']['containerStatuses'][0]['containerID']
+                verify_agent_io_limits(after['pods'][uid], pod['status']['containerStatuses'][0]['containerID'])
                 if mode == 'oom':
                     status = pod['status']['containerStatuses'][0]
                     terminated = status.get('lastState', {}).get('terminated', {})
@@ -783,7 +841,9 @@ nodes:
             'cases': cases, 'tested_concurrent_agents': 2,
             'limits': ['Quiescent enrolled node includes Cilium and qualification workloads; not bare idle host',
                        'No matched standard-worker comparison or physical-hardware performance claim',
-                       'Density 10/100 and aggregate block-I/O throttling are not qualified',
+                       'Density 10/100 and stacked/multiple state disks are not qualified',
+                       'I/O limits cover the container and descendants on the state disk; direct reads exercised',
+                       'No writable disk is admitted; host-side CRI log/image writes are not charged to this container',
                        'Log rotation is asynchronous; no hard 2 MiB per-write quota',
                        'No agent dependencies, framework or model loaded by the pressure workload'],
         }

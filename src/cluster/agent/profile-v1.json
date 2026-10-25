@@ -57,6 +57,10 @@
         "variables": [{"name": "containers", "expression": "object.spec.containers"}],
         "validations": [
           {
+            "expression": "has(object.metadata.annotations) && 'blockio.resources.beta.kubernetes.io/pod' in object.metadata.annotations && object.metadata.annotations['blockio.resources.beta.kubernetes.io/pod'] == 'outerspace-agent-v1' && object.metadata.annotations.all(k, (!k.startsWith('blockio.resources.beta.kubernetes.io/') || k == 'blockio.resources.beta.kubernetes.io/pod') && k != 'io.kubernetes.cri.blockio-class')",
+            "message": "OuterSpace Agent v1 requires its fixed I/O class and forbids per-container or CRI class overrides."
+          },
+          {
             "expression": "!has(object.spec.resources) && variables.containers.all(c, ['cpu', 'memory', 'ephemeral-storage'].all(k, quantity(c.resources.requests[k]).compareTo(quantity(c.resources.limits[k])) == 0))",
             "message": "OuterSpace Agent v1 requires full CPU, memory and storage reservations without overcommit, including resize requests."
           },
@@ -95,6 +99,10 @@
           {
             "expression": "has(object.spec.volumes) && size(object.spec.volumes) == 2 && object.spec.volumes.all(v, has(v.emptyDir) && v.emptyDir.medium == 'Memory' && has(dyn(v.emptyDir).sizeLimit) && ((v.name == 'workspace' && quantity(dyn(v.emptyDir).sizeLimit).compareTo(quantity('64Mi')) == 0) || (v.name == 'scratch' && quantity(dyn(v.emptyDir).sizeLimit).compareTo(quantity('16Mi')) == 0)))",
             "message": "OuterSpace Agent v1 permits only its bounded per-pod memory workspace and scratch volumes."
+          },
+          {
+            "expression": "variables.containers.all(c, c.terminationMessagePath == '/dev/termination-log')",
+            "message": "OuterSpace Agent v1 fixes the implicit termination-log mount at its AppArmor-protected path."
           },
           {
             "expression": "variables.containers.all(c, has(c.volumeMounts) && size(c.volumeMounts) == 2 && c.volumeMounts.all(m, ((m.name == 'workspace' && m.mountPath == '/workspace') || (m.name == 'scratch' && m.mountPath == '/scratch')) && (!has(m.subPath) || m.subPath == '') && (!has(m.subPathExpr) || m.subPathExpr == '') && (!has(m.mountPropagation) || m.mountPropagation == 'None') && (!has(m.readOnly) || !m.readOnly)) && (!has(c.volumeDevices) || size(c.volumeDevices) == 0))",

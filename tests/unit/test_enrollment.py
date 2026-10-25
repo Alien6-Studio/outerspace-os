@@ -53,6 +53,15 @@ class EnrollmentEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             enrollment.agent_pressure_observed('io', before, after)
 
+    def test_io_device_can_exist_before_any_counter_has_been_recorded(self):
+        before = self.io_pod()
+        scope = next(iter(before['descendants']))
+        before['descendants'][scope]['io.stat'] = '252:0'
+        self.assertEqual(enrollment.agent_io_bytes(before), 0)
+        after = copy.deepcopy(before)
+        after['descendants'][scope]['io.stat'] = '252:0 rbytes=48758784 wbytes=0 rios=372 wios=0'
+        self.assertTrue(enrollment.agent_pressure_observed('io', before, after))
+
     def test_lab_renewal_cannot_roll_again_during_the_ci_job(self):
         timeouts = re.findall(r'^\s+timeout-minutes:\s*(\d+)\s*$',
             (enrollment.ROOT / '.github/workflows/ci.yml').read_text(), re.MULTILINE)

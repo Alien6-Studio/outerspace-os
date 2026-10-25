@@ -116,7 +116,7 @@ def agent_io_bytes(pod):
     scope = verify_agent_io_limits(pod, pod['container_id'])
     for line in scope.get('io.stat', '').splitlines():
         if line.split()[0] == device:
-            return int(dict(pair.split('=') for pair in line.split()[1:])['rbytes'])
+            return int(dict(pair.split('=') for pair in line.split()[1:]).get('rbytes', 0))
     return 0
 
 

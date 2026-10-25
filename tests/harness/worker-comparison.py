@@ -21,7 +21,7 @@ INPUTS = native.HARNESS_INPUTS + ['tests/harness/worker-comparison.py',
     'src/components.lock.json', 'build/tools/install-components.py']
 
 
-def signed_image(cache, architecture):
+def signed_image(cache, architecture, download=True):
     """Recheck the pinned image against Canonical's detached, full-fingerprint signature."""
     lock = json.loads(LOCK.read_text())
     cache.mkdir(parents=True, exist_ok=True)
@@ -49,8 +49,8 @@ def signed_image(cache, architecture):
     expected = lock['images'][architecture]
     if sums.read_text().splitlines().count(expected + ' *' + name) != 1:
         raise ValueError('Ubuntu image pin differs from the signed inventory')
-    image = fetch(name, lock['base_url'] + name)
-    if digest(image) != expected:
+    image = fetch(name, lock['base_url'] + name) if download else cache / name
+    if download and digest(image) != expected:
         raise ValueError('Ubuntu image checksum mismatch')
     return image, {'lock': lock, 'image_sha256': expected, 'signed_inventory_sha256': digest(sums),
                    'signature_sha256': digest(signature)}
@@ -239,7 +239,7 @@ def main():
         {'identity': metadata, 'sha256sums': digest(bundle / 'SHA256SUMS')})
     if digest(ROOT / 'src/components.lock.json') != metadata['components_lock_sha256']:
         raise ValueError('Runtime pins differ from the qualified image')
-    image, provenance = signed_image(cache, metadata['architecture'])
+    image, provenance = signed_image(cache, metadata['architecture'], download=False)
     observations = {}
     for subject in ['outerspace', 'ubuntu']:
         result_dir = output / subject
@@ -251,6 +251,7 @@ def main():
                 lab.setup()
                 config = lab.configure()
                 if lab.reference:
+                    image, provenance = signed_image(cache, metadata['architecture'])
                     lab.reference_seed(image, cache, metadata['architecture'])
                 lab.vm('start', '--config-drive', *(['--ubuntu-reference'] if lab.reference else []))
                 observations[subject] = {'configuration': config, **lab.measure()}

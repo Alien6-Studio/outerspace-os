@@ -1,7 +1,8 @@
 {
   "apiVersion": "v1",
   "kind": "Pod",
-  "metadata": {"name": "agent", "namespace": "outerspace-agents-v1", "labels": {"app": "agent"}},
+  "metadata": {"name": "agent", "namespace": "outerspace-agents-v1", "labels": {"app": "agent"},
+    "annotations": {"blockio.resources.beta.kubernetes.io/pod": "outerspace-agent-v1"}},
   "spec": {
     "runtimeClassName": "outerspace-agent-v1",
     "nodeSelector": {"outerspace.sh.node-restriction.kubernetes.io/agent-profile": "v1"},

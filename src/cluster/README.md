@@ -76,12 +76,14 @@ DNS/service traffic, default-deny and explicit allow. A read-only host probe
 checks locked accounts and public certificate fingerprints. Serving CSRs are
 approved only after checking requester, subject, usages and the exact node SANs.
 The lab alone uses ten-minute initial client certificates to observe real rotation,
-then one-hour renewals so the credential stays valid during an emulated cold boot.
+then four-hour renewals so the credential stays stable throughout the bounded CI job.
 It then revokes the bootstrap token (or proves its server-side absence if the TTL
 has already expired), powers off the VM, detaches the config drive
 and checks the same Node UID, hostname, machine ID and rotated certificate on the
 next boot, followed by workload/network recovery. A fresh disk overlay and stable
 VM UUID are used; the packaged raw disk must remain unchanged.
+The lab allows ten minutes for ACPI shutdown and requires both QEMU exit and the
+kernel's powerdown confirmation before starting recovery; it records the duration.
 
 `enrollment.json` binds the result to the full image identity, public configuration,
 probe snapshots and selected workload digest. Private config drives and tokens
@@ -127,6 +129,24 @@ Priority escalation, pod preemption, extra group authority, workload sysctls,
 registry credential references and alternate user namespaces are also refused.
 Container overrides, resize and the ephemeral-container update subresources are checked.
 
+Each Agent must select `blockio.resources.beta.kubernetes.io/pod=outerspace-agent-v1`.
+Admission refuses a missing/different class, per-container class overrides and
+the CRI class annotation. Containerd's built-in block-I/O class applies cgroup v2
+limits of 8 MiB/s read, 4 MiB/s write and 256 read/write IOPS to the workload
+container and all its descendants. These are fixed v1 budgets, not performance
+targets or a measured hardware capacity claim.
+
+Before containerd starts on an Agent image, a short boot preparation step resolves
+the disk behind the `OOS_STATE` partition and writes a root-only runtime class
+configuration. It refuses a missing I/O controller, an unexpected state mount or
+stacked storage. No device number is baked into the image and no wildcard can
+silently select zero devices. The supported topology is one state partition on
+one unstacked disk; hotplug, LVM/RAID and multiple state disks remain unsupported.
+Inference images do not enable this class. No new daemon or package is installed.
+The class uses containerd's native
+[block-I/O integration](https://github.com/containerd/containerd/blob/v2.3.7/docs/man/containerd-config.toml.5.md)
+and the kernel's [cgroup v2 I/O controller](https://docs.kernel.org/admin-guide/cgroup-v2.html#io).
+
 The kubelet limits every Pod to 256 PIDs and the node to 32 Pods. The existing
 system/Kubernetes reservations each retain 100m CPU and 192 MiB memory, with
 1,024 PIDs reserved for each. Four nonterminal Agent Pods, including queued
@@ -149,16 +169,24 @@ refusal and allowed/denied network paths before and after cold node recovery.
 It emits `agent-isolation.json` only after runtime checks and cleanup succeed.
 
 `make PROFILE=agent agent-resources` adds CPU saturation, scratch exhaustion,
-memory OOM, fork exhaustion and a finite log flood. An independent read-only
+memory OOM, fork exhaustion, a finite log flood and four concurrent direct readers.
+An independent read-only
 probe records the actual pod cgroup limits and kernel events while the API,
 node and neighboring Agent must remain responsive. Each deleted offender must
 leave no processes, cgroup, mounts or workspace; the next Pod with the same name
-must receive a fresh workspace. `agent-resources.json` binds those observations
+must receive a fresh workspace. I/O observations bind the actual workload's CRI
+container ID to its cgroup and the state disk; pause-container counters and
+stacked-device counters are excluded. The direct-read test bypasses page cache
+and requires at least 16 MiB of device reads. The fixed limits are checked again
+after cold recovery, and an unknown class must prevent execution at runtime.
+The profile admits no writable disk, so this does not qualify a direct-write
+workload. CRI log writes and image unpacking run in host services and are not
+charged to the Agent's I/O cgroup. `agent-resources.json` binds those observations
 to the packaged image and the enrollment report. Native Agent CI runs this gate.
 The current lab has four vCPUs, 4 GiB RAM and two concurrent Agents; it records
 quiescent enrolled-node, platform and per-pod measurements separately. It does
 not establish a bare idle-host baseline, a matched standard-worker comparison,
-10/100-Agent density or aggregate block-I/O throttling.
+10/100-Agent density or a hardware throughput/latency target.
 
 The AppArmor signal boundary permits reception from the host and Ubuntu's named
 `runc` runtime profile, so CRI can terminate and reap an exhausted workload.

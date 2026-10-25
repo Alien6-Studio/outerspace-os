@@ -19,6 +19,11 @@ for service in systemd-networkd systemd-resolved systemd-timesyncd; do
 done
 ln -sf /usr/lib/systemd/system/apparmor.service "$root/etc/systemd/system/sysinit.target.wants/apparmor.service"
 if [[ "$OUTERSPACE_PROFILE" == agent ]]; then
+    cat >> "$root/etc/containerd/config.toml" <<'EOF'
+
+[plugins.'io.containerd.service.v1.tasks-service']
+  blockio_config_file = "/run/outerspace/agent-blockio.json"
+EOF
     ln -sf /usr/lib/systemd/system/outerspace-agent-profile.service \
         "$root/etc/systemd/system/multi-user.target.wants/outerspace-agent-profile.service"
 fi

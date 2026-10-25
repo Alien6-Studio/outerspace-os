@@ -21,6 +21,8 @@ touch /var/lib/outerspace/state-write-test
 [[ $(sysctl -n net.ipv4.ip_forward) == 1 ]] || fail 'forwarding disabled'
 [[ $(cat /sys/module/apparmor/parameters/enabled) == Y ]] || fail 'AppArmor disabled'
 if [[ "$OUTERSPACE_PROFILE" == agent ]]; then
+    [[ -s /run/outerspace/agent-blockio.json ]] || fail 'Agent I/O policy missing'
+    grep -qw io /sys/fs/cgroup/cgroup.controllers || fail 'Agent I/O controller missing'
     systemctl is-active --quiet outerspace-agent-profile || fail 'Agent AppArmor policy not loaded'
     grep -qx 'outerspace-agent-v1 (enforce)' /sys/kernel/security/apparmor/profiles || fail 'Agent AppArmor policy not enforcing'
     abi=/sys/kernel/security/apparmor/features/policy/versions

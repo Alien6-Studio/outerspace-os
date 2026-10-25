@@ -53,6 +53,19 @@ case "$mode" in
         yes "$line" | head -c 20971520
         printf 'logs-written\n' > /workspace/result
         ;;
+    io)
+        # Direct reads bypass the shared page cache. Four children share one
+        # container's device budget; no host device or writable disk is exposed.
+        for worker in 1 2 3 4; do
+            (while :; do
+                if ! dd if=/bin/busybox of=/dev/null bs=131072 count=4 iflag=direct 2>"/workspace/io-error.$worker"; then
+                    printf 'io-direct-failed\n' > /workspace/result
+                    exit 93
+                fi
+            done) &
+        done
+        wait
+        ;;
     *) exit 92 ;;
 esac
 while :; do sleep 1; done

@@ -263,8 +263,8 @@ nodes:
             '--set', 'cgroup.autoMount.enabled=true', '--wait', '--timeout=10m')
         self.kube('wait', '--for=condition=Ready', 'nodes', '--all', '--timeout=300s')
 
-    def configure(self):
-        token = run('docker', 'exec', self.control_plane, 'kubeadm', 'token', 'create', '--ttl=30m').stdout.strip()
+    def configure(self, bootstrap_ttl='30m'):
+        token = run('docker', 'exec', self.control_plane, 'kubeadm', 'token', 'create', '--ttl=' + bootstrap_ttl).stdout.strip()
         self.token_id = token.split('.')[0]
         token_file = self.state / 'token'
         token_file.write_text(token + '\n')
@@ -294,7 +294,7 @@ nodes:
             'mcopy -s -i /state/node-config.raw /state/config/* ::/')
         return {'api_server': 'https://' + self.api_ip + ':6443', 'cluster_dns': ['10.97.0.10'],
                 'ca_sha256': digest(ca), 'kubelet_config_sha256': digest(self.state / 'config/kubelet.yaml'),
-                'bootstrap_ttl': '30m', 'client_signing_duration': '10m (test lab only)',
+                'bootstrap_ttl': bootstrap_ttl, 'client_signing_duration': '10m (test lab only)',
                 'worker_ip': VM_IP, 'kind_image': KIND_IMAGE, 'cilium_chart': '1.20.3',
                 'tools': {'kind': run('kind', 'version').stdout.strip(),
                           'kubectl': json.loads(run('kubectl', 'version', '--client', '-o', 'json').stdout)['clientVersion']['gitVersion'],

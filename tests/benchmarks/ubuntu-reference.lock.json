@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "release": "24.04",
+  "build": "20261017",
+  "base_url": "https://cloud-images.ubuntu.com/noble/20261017/",
+  "signing_fingerprint": "D2EB44626FDDC30B513D5BB71A5D6C4C7DB87C81",
+  "images": {
+    "amd64": "04e8f2461a16a44e78a370284471f29616cdd9baf1893df25807b71f985b6c94",
+    "arm64": "50e24e1fb79e89116e939d90aa7738f7af48c442fa1bc2510131e0b39c50348e"
+  }
+}

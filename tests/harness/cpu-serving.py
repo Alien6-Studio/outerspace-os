@@ -15,6 +15,10 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[2]
 NAMESPACE = 'outerspace-inference-v1'
 LAB_NAMESPACE = 'outerspace-enrollment'
+# Cold OCI pull/extraction on native-architecture TCG CI can exceed Kubernetes'
+# default ten-minute Deployment deadline. Keep the controller, kubectl and
+# subprocess budgets consistent; readiness still requires real token generation.
+START_TIMEOUT_SECONDS = 1200
 SERVER_ARGS = ('--model', '/models/model.gguf', '--host', '0.0.0.0', '--port', '8080',
                '--n-gpu-layers', '0', '--threads', '2', '--ctx-size', '256',
                '--batch-size', '32', '--ubatch-size', '32', '--parallel', '1', '--offline')
@@ -363,7 +367,8 @@ class Serving:
                      'http://127.0.0.1:8080/completion | grep -Eq \'"tokens_predicted"[[:space:]]*:[[:space:]]*1([,}])\'')
         return {'apiVersion': 'apps/v1', 'kind': 'Deployment',
                 'metadata': {'name': 'inference', 'namespace': self.namespace},
-                'spec': {'replicas': 1, 'strategy': {'type': 'Recreate'},
+                'spec': {'replicas': 1, 'progressDeadlineSeconds': START_TIMEOUT_SECONDS,
+                         'strategy': {'type': 'Recreate'},
                          'selector': {'matchLabels': {'app': 'inference'}},
                          'template': {'metadata': {'labels': {'app': 'inference'}}, 'spec': {
                              'nodeSelector': {'kubernetes.io/hostname': self.node},
@@ -395,7 +400,8 @@ class Serving:
 
     def ready(self):
         print('Waiting for model readiness through actual token generation', flush=True)
-        self.lab.kube('-n', self.namespace, 'rollout', 'status', 'deployment/inference', '--timeout=900s')
+        self.lab.kube('-n', self.namespace, 'rollout', 'status', 'deployment/inference',
+                      '--timeout=' + str(START_TIMEOUT_SECONDS) + 's', timeout=START_TIMEOUT_SECONDS + 30)
 
     def snapshot(self):
         pod = self.lab.api('-n', self.namespace, 'pods', '-l', 'app=inference')['items'][0]

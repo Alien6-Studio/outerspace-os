@@ -47,6 +47,10 @@ tokens, host mounts/namespaces, extra capabilities or privilege escalation. Its
 root and model mount are read-only, seccomp is RuntimeDefault, and actual cgroup
 limits must be two CPUs and 512 MiB. The engine has a 256-token context, one slot,
 two threads and explicit offline/zero-GPU flags. Readiness generates a token.
+Cold image delivery and startup have a bounded twenty-minute allowance under
+TCG, shared by the Deployment controller and rollout wait; the subprocess has
+thirty seconds of cleanup margin. This is a laboratory timeout, not a startup
+performance target. Actual cold/warm timings remain in the raw observations.
 
 A fail-closed ValidatingAdmissionPolicy protects every Pod in the dedicated
 `outerspace-inference-v1` lab namespace, including resize and ephemeral-container

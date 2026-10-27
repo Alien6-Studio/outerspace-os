@@ -110,3 +110,6 @@ partial traces and boot/QEMU logs are retained even after failure. These are
 synthetic native-QEMU measurements, not physical efficiency, energy, production
 endurance or real provider-performance claims. Acceptance requires a completed
 native report; unit tests and the existence of this harness do not qualify #29.
+The Agent CI matrix runs the complete paired scenario on amd64 and arm64 after
+ordinary image, boot, isolation and resource qualification. It retains the raw
+phase datasets and failure traces with each architecture's development artifact.

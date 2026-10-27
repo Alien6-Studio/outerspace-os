@@ -192,7 +192,8 @@ class PhaseLab(comparison.ComparisonLab):
             'trusted-observer-exec': ['-n', native.LAB, 'exec', 'probe', '--', 'true'],
         }
         for case, args in cases.items():
-            result = self.kube('--as=' + account, *args, check=False)
+            result = self.kube('--as=' + account, '--as-group=system:serviceaccounts',
+                '--as-group=system:serviceaccounts:' + NS, '--as-group=system:authenticated', *args, check=False)
             if result.returncode == 0 or 'Forbidden' not in result.stderr:
                 raise ValueError('Agent authority refusal was not proven: ' + case)
         self.kube('-n', NS, 'exec', name, '--', '/bin/sh', '-euc',
@@ -250,6 +251,8 @@ class PhaseLab(comparison.ComparisonLab):
         self.operation(name, 'cached-read')
         self.kube('-n', NS, 'delete', 'pod', 'phase-neighbor', '--wait=true', '--timeout=90s')
         before = self.api('-n', NS, 'pod', name)['status']['containerStatuses'][0]
+        oom_operation = self.session.boundary('start', agent_id=self.agent_id,
+            tool_id=self.tools['oom-restart'], scope_id=scope)
         self.execute(name, 'oom-restart', check=False)
         def restarted():
             status = self.api('-n', NS, 'pod', name)['status']['containerStatuses'][0]
@@ -258,18 +261,24 @@ class PhaseLab(comparison.ComparisonLab):
         if after.get('lastState', {}).get('terminated', {}).get('reason') != 'OOMKilled':
             raise ValueError('Expected a native OOMKilled restart')
         lost = self.observe(scope, missing=True)
+        self.session.boundary('end', oom_operation, outcome='error')
         if lost['status'] == 'observed':
             raise ValueError('Retired container unexpectedly retained its original scope')
         self.register(name, expected_restart=after['restartCount'])
         self.operation(name, 'cpu-burst')
         new_scope = self.scope_by_name[name]
+        prior_processes = {(p['pid'], p['start_ticks']) for p in self.observe(new_scope)['processes']}
         cancellation = self.session.boundary('start', agent_id=self.agent_id,
             tool_id=self.tools['cancellation'], scope_id=new_scope)
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(self.execute, name, 'cancellation', False)
-            self.observe(new_scope)
+            def cancellation_started():
+                observed = self.observe(new_scope)
+                return [p for p in observed['processes'] if (p['pid'], p['start_ticks']) not in prior_processes]
+            running_cancelled = wait_for('Observing the running tool before cancellation', cancellation_started, timeout=60)
             self.kube('-n', NS, 'delete', 'pod', name, '--wait=true', '--timeout=90s')
-            future.result()
+            if future.result().returncode == 0:
+                raise ValueError('Cancelled workload unexpectedly completed successfully')
         cancelled = self.observe(new_scope, missing=True)
         self.session.boundary('end', cancellation, outcome='cancelled')
         if cancelled['status'] == 'observed':
@@ -292,7 +301,8 @@ class PhaseLab(comparison.ComparisonLab):
                 'overlapping_operations': operations, 'external_provider_operation': external,
                 'oom_restart': {'before': before['containerID'], 'after': after['containerID'],
                                 'reason': after['lastState']['terminated']['reason']},
-                'cancellation': cancellation, 'collector_loss': 'stopped-and-retained-partial-trace'}
+                'cancellation': {'operation_id': cancellation, 'running_processes': running_cancelled},
+                'collector_loss': 'stopped-and-retained-partial-trace'}
 
     def measure(self, enabled, repetitions):
         self.initialize(enabled)

@@ -21,6 +21,32 @@ IDLE_MEMORY = {'MemTotal', 'MemAvailable', 'Buffers', 'Cached', 'AnonPages', 'Sl
                'SReclaimable', 'KernelStack', 'PageTables', 'Unevictable'}
 IDLE_SERVICES = {'containerd', 'systemd-journald', 'systemd-networkd', 'systemd-resolved',
                  'outerspace-selftest'}
+IDLE_POLICY = ROOT / 'tests/benchmarks/idle-host.lock.json'
+
+
+def idle_host_budget(baseline, identity):
+    """Fail closed on an unsupported reference or a regression in either cold boot."""
+    policy = json.loads(IDLE_POLICY.read_text())
+    key = '-'.join(identity[field] for field in ['profile', 'hardware_profile', 'architecture'])
+    if (policy.get('schema') != 1 or baseline.get('reference') != policy['reference']
+            or key not in policy['budgets'] or set(baseline.get('boots', {})) != {'prepare', 'verify'}):
+        raise ValueError('No qualified idle-host regression budget for this reference')
+    budget = policy['budgets'][key]
+    derivation = policy['derivation']
+    quantum = derivation['memory_round_up_bytes']
+    memory = math.ceil(budget['memory_max_bytes'] * derivation['memory_factor'] / quantum) * quantum
+    quantum = derivation['cpu_round_up_percent']
+    cpu = math.ceil(budget['cpu_max_percent'] * derivation['cpu_factor'] / quantum) * quantum
+    if memory != budget['memory_limit_bytes'] or cpu != budget['cpu_limit_percent']:
+        raise ValueError('Idle-host budget differs from its documented derivation')
+    thresholds = {'memory_unavailable_bytes': memory, 'guest_busy_cpu_percent': cpu}
+    for boot in baseline['boots'].values():
+        if any(type(boot[name]['max']) not in (int, float) or not math.isfinite(boot[name]['max'])
+               or not 0 <= boot[name]['max'] <= limit for name, limit in thresholds.items()):
+            raise ValueError('Idle-host regression budget exceeded: ' + json.dumps({'boot': boot, 'limits': thresholds}))
+    observed = {name: max(boot[name]['max'] for boot in baseline['boots'].values()) for name in thresholds}
+    return {'schema': 1, 'status': 'passed', 'policy_sha256': sha256(IDLE_POLICY), 'budget': key,
+            'observed_max': observed, 'limits': thresholds}
 
 
 def idle_host_report(logs, identity):
@@ -169,6 +195,8 @@ def verify_boot_report(output, profile, hardware, commit):
                                  for phase in ['prepare', 'verify']}, identity)
     if report.get('idle_host') != baseline:
         raise ValueError('Idle host report differs from the source-bound boot logs')
+    if report.get('host_regression') != idle_host_budget(baseline, identity):
+        raise ValueError('Idle-host regression evidence is missing or altered')
     return report
 
 
@@ -202,6 +230,7 @@ def main():
     for phase in ['prepare', 'verify']:
         shutil.copyfile(output / f'boot-uefi-{phase}.log', bundle / f'boot-uefi-{phase}.log')
     shutil.copyfile(ROOT / 'src/components.lock.json', bundle / 'components.lock.json')
+    shutil.copyfile(IDLE_POLICY, bundle / 'idle-host.lock.json')
     subprocess.run(['zstd', '-q', str(output / 'outerspace-source.tar'), '-o', str(bundle / 'source.tar.zst')], check=True)
     metadata = {'schema': 2, 'identity': identity,
                 'channel': 'development' if '-dev.' in version else 'candidate',
@@ -210,6 +239,7 @@ def main():
                 'ubuntu_inputs': 'signed Noble repositories, not snapshot-locked',
                 'manifest_sha256': sha256(output / 'outerspace.manifest'),
                 'components_lock_sha256': sha256(ROOT / 'src/components.lock.json'),
+                'host_regression': boot_report['host_regression'],
                 'files': {p.name: sha256(p) for p in sorted(bundle.iterdir())}}
     (bundle / 'build-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
     files = sorted(bundle.iterdir())

@@ -12,7 +12,7 @@ import profiles
 
 
 def idle_record(subject, phase):
-    memory = {'MemTotal': 3900 * 1024**2, 'MemAvailable': 3600 * 1024**2,
+    memory = {'MemTotal': 3900 * 1024**2, 'MemAvailable': 3700 * 1024**2,
               'Buffers': 1024, 'Cached': 2048, 'AnonPages': 4096, 'Slab': 8192,
               'SReclaimable': 4096, 'KernelStack': 1024, 'PageTables': 2048, 'Unevictable': 0}
     services = {name: {'memory_current_bytes': 1024**2, 'memory_anon_bytes': 512*1024,

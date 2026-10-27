@@ -29,8 +29,10 @@ and [cgroup v2 accounting](https://www.kernel.org/doc/html/v6.8/admin-guide/cgro
 Memory summaries use `MemTotal - MemAvailable`, rather than process RSS.
 Min/median/max and all samples remain bound to source identity and boot logs;
 packaging recomputes the summaries and rejects altered evidence. These short
-virtual-machine observations establish no hardware performance threshold,
-Ubuntu comparison or density claim. Enrolled-platform measurements remain in
+virtual-machine observations establish no hardware performance threshold.
+The [Agent baseline protocol](agent-baseline.md) defines measured idle regression
+ceilings enforced by boot and packaging, and the opt-in matched Ubuntu worker
+comparison. Enrolled-platform measurements remain in
 `agent-resources.json` and include their explicitly listed qualification pods.
 
 For each run record the OS build and manifest, kernel, runtime, image digest, model
@@ -55,5 +57,6 @@ and runtime versions as a reference.
 
 Run only on disposable nodes. Do not delete containerd storage to manufacture a
 cold-cache test on an enrolled node. Provision a fresh disk for each cold run.
-Performance gates and acceptable footprint budgets will be selected from these
-measurements, rather than guessed before the first working image.
+The existing idle-host budgets use the qualified cold-boot observations and
+explicit headroom. Additional hardware performance gates require
+their own measurements.

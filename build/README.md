@@ -36,10 +36,11 @@ resized. Rebuild an old Inference image before running the CPU serving lab.
 To include Ubuntu's complete firmware set for hardware discovery:
 
 ```sh
-make PROFILE=inference HARDWARE=cpu-full-firmware build smoke package
+make PROFILE=inference HARDWARE=cpu-full-firmware build
 ```
 
-That variant needs its own hardware qualification. The kernel ABI and upstream
+That variant needs its own hardware qualification and idle-host budget before
+`smoke` and `package` can pass. The kernel ABI and upstream
 runtimes are pinned in the [image configuration](../src/image/mkosi.conf) and
 [component lock](../src/components.lock.json).
 
@@ -53,6 +54,9 @@ commit, component lock, disk/UKI/manifest/source digests and verity root hash.
 The raw image stays unchanged. Packaging requires both successful boots and
 matching identity/log hashes. `make smoke-split` is a diagnostic shortcut and
 cannot qualify a package; see the [test guide](../tests/README.md).
+Both boots must meet the measured CPU/RAM regression ceilings for their exact
+profile and architecture. Packaging independently reapplies the policy and
+includes its checksum and result; see the [baseline policy](../tests/benchmarks/agent-baseline.md).
 
 `make package` creates a versioned bundle with the compressed disk, UKI, exact
 source archive, inventories, boot evidence and SHA256 checksums. Development CI

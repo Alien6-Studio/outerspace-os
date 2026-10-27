@@ -11,6 +11,12 @@
 - Passed locally on arm64: full UEFI disk boot, CRI and read-only root, then a
   second cold start retaining test state/hostname and stable VM identity.
 - Passed separately in kind: three-node Cilium DNS/service routing, deny and restore.
+- Idle-host CPU/RAM regression ceilings are derived from both boots of each
+  qualified Agent/Inference amd64/arm64 archive and enforced at boot and packaging.
+  The opt-in [Agent density comparison](../../tests/benchmarks/agent-baseline.md)
+  has [local arm64 observations](../../tests/reports/2026-10-27-agent-baseline.md)
+  against a matched Ubuntu worker at 0/1/2/4 Agents, with complete teardown.
+  Density 10/100 and physical performance remain separate, unqualified measurements.
 - Passed on the actual OS kernel: both Agent and Inference enrollment, Node Ready,
   Cilium policy, real kubelet client rotation and recovery without bootstrap
   credentials. Native amd64/arm64 evidence is attached to the enrollment work.

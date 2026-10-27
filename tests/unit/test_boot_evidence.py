@@ -33,6 +33,7 @@ class BootEvidenceTests(unittest.TestCase):
                        'image_sha256': profiles.sha256(self.output / 'outerspace.raw'),
                        'idle_host': package.idle_host_report({phase: idle_log(self.identity, phase) for phase in ['prepare', 'verify']}, self.identity),
                        'logs': {name: profiles.sha256(self.output / name) for name in logs}}
+        self.report['host_regression'] = package.idle_host_budget(self.report['idle_host'], self.identity)
         self.save_report()
 
     def verify(self, profile='agent', commit='a' * 40):
@@ -74,3 +75,34 @@ class BootEvidenceTests(unittest.TestCase):
         self.save_report()
         with self.assertRaisesRegex(ValueError, 'differs from'):
             self.verify()
+
+    def test_regression_result_is_required_and_cannot_hide_a_changed_threshold(self):
+        self.report.pop('host_regression')
+        self.save_report()
+        with self.assertRaisesRegex(ValueError, 'regression evidence'):
+            self.verify()
+        self.report['host_regression'] = package.idle_host_budget(self.report['idle_host'], self.identity)
+        self.report['host_regression']['limits']['memory_unavailable_bytes'] *= 2
+        self.save_report()
+        with self.assertRaisesRegex(ValueError, 'regression evidence'):
+            self.verify()
+
+    def test_regression_gate_checks_both_boots_and_each_metric_for_all_four_images(self):
+        import copy
+        policy = json.loads(package.IDLE_POLICY.read_text())
+        for key, budget in policy['budgets'].items():
+            profile, hardware, arch = key.split('-')
+            subject = {**self.identity, 'profile': profile, 'hardware_profile': hardware, 'architecture': arch}
+            baseline = copy.deepcopy(self.report['idle_host'])
+            for boot in baseline['boots'].values():
+                boot['memory_unavailable_bytes']['max'] = budget['memory_limit_bytes']
+                boot['guest_busy_cpu_percent']['max'] = budget['cpu_limit_percent']
+            self.assertEqual(package.idle_host_budget(baseline, subject)['status'], 'passed')
+            for phase in ['prepare', 'verify']:
+                for metric in ['memory_unavailable_bytes', 'guest_busy_cpu_percent']:
+                    changed = copy.deepcopy(baseline)
+                    changed['boots'][phase][metric]['max'] += 1
+                    with self.subTest(image=key, phase=phase, metric=metric), self.assertRaisesRegex(ValueError, 'exceeded'):
+                        package.idle_host_budget(changed, subject)
+        with self.assertRaisesRegex(ValueError, 'No qualified'):
+            package.idle_host_budget(self.report['idle_host'], {**self.identity, 'hardware_profile': 'cpu-full-firmware'})

@@ -22,15 +22,15 @@ install -d /var/lib/outerspace /var/lib/kubelet /etc/containerd /usr/lib/outersp
 cp "$seed/containerd.toml" /etc/containerd/config.toml
 cp "$seed/agent-v1" /usr/share/outerspace/apparmor/agent-v1
 install -m 0755 "$seed/agent-io" /usr/lib/outerspace/agent-io
-# Same I/O class, on the reference's unstacked root disk (which contains /var).
-# Retain Ubuntu's writable root and stock OS identity; record the layout difference.
-state=$(readlink -f "$(findmnt -nro SOURCE --target /var)")
-e2label "$state" OOS_STATE
-# Relabeling an already discovered partition does not update udev's label links.
-# The identical Agent I/O initializer requires the actual OOS_STATE device.
-udevadm trigger --action=change "/sys/class/block/${state##*/}"
-udevadm settle --timeout=30
-[[ $(readlink -f /dev/disk/by-label/OOS_STATE) == "$state" ]]
+# Only Agent requires a labeled device for its fixed I/O class. Inference keeps
+# Ubuntu's original root label, which its stock fstab needs after a cold boot.
+if [[ "$profile" == agent ]]; then
+    state=$(readlink -f "$(findmnt -nro SOURCE --target /var)")
+    e2label "$state" OOS_STATE
+    udevadm trigger --action=change "/sys/class/block/${state##*/}"
+    udevadm settle --timeout=30
+    [[ $(readlink -f /dev/disk/by-label/OOS_STATE) == "$state" ]]
+fi
 # Dependency lists cannot be reset in systemd drop-ins. Materialize fixture
 # units without the product's provisioning/P2P dependencies; keep ExecStart,
 # delegation, limits and runtime configuration identical.

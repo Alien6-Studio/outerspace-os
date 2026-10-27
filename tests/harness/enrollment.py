@@ -310,7 +310,7 @@ nodes:
 
     def extend_renewal_lifetime(self):
         # Short initial certificates trigger a real renewal promptly; renewed
-        # certificates must outlast the entire 120-minute CI job, including
+        # certificates must outlast the entire bounded CI job, including
         # their earliest 70%-lifetime renewal point. A second natural renewal
         # must not race the strict byte-for-byte cold-boot persistence check.
         name = 'kube-controller-manager-' + self.control_plane

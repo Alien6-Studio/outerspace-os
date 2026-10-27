@@ -1,0 +1,5 @@
+# Exact reviewed public kernel X.509 subject identifiers in immutable phase evidence.
+evidence/agent-phases-20261027/profiled/boot-enroll.log:generic-api-key:341
+evidence/agent-phases-20261027/profiled/boot-enroll.log:generic-api-key:363
+evidence/agent-phases-20261027/baseline/boot-enroll.log:generic-api-key:341
+evidence/agent-phases-20261027/baseline/boot-enroll.log:generic-api-key:363

@@ -1,0 +1,207 @@
+{
+  "status": "passed",
+  "path": "out/phase-acceptance/agent-phases/phase-benchmark.json",
+  "report_sha256": "c6c8ba767505559263a41645a11cf9bdfeb94c2cbfebc3a585eb0c546810b590",
+  "source_inputs_verified": 31,
+  "bound_files_verified": 8,
+  "image": {
+    "schema": 1,
+    "profile": "agent",
+    "hardware_profile": "cpu",
+    "architecture": "arm64",
+    "version": "0.1.0-dev.0",
+    "commit": "b575d80cef331eff89f52f717724efa268c0acba",
+    "components_lock_sha256": "988e9ac9efff78dbe818d6bfb8bd0161bb9d74c3169d2be1e094c5f87a9c42ec",
+    "host_features": [
+      "containerd",
+      "kubelet",
+      "dm-verity",
+      "cgroup-v2",
+      "apparmor",
+      "ebpf",
+      "optional-dragonfly"
+    ],
+    "raw_image_sha256": "65e46cc243e96a70bedc07b555dc2fa64fee0e51ed73350f3c38226c64392bbd",
+    "uki_sha256": "78454d9e0c5177551d732e1ed123e118dd35b0e739aecd67e26a2ca484c72e50",
+    "verity_root_hash": "01f5dea92fe05337f8021536026fd51cdeff484383b7d66f2effd90ecc958c53",
+    "manifest_sha256": "10a0e0099b1c321a19c5382ef8a80f3842a95ce882a2f5fedb47296f6a3d748a",
+    "source_archive_sha256": "cece96009f8a2828cf5040175f438fe8d9f32256cf535676e76b1fd981874ec7"
+  },
+  "harness_commit": "b575d80cef331eff89f52f717724efa268c0acba",
+  "scope_count": 14,
+  "operation_count": 53,
+  "summary": {
+    "baseline": {
+      "first_image_pull_create_to_ready_seconds": 47.02093270799378,
+      "cached_image_fresh_sandbox_seconds": {
+        "samples": 9,
+        "p50": 8.515708666993305,
+        "p95": 8.962244999944232,
+        "min": 7.215987042000052,
+        "max": 8.962244999944232
+      },
+      "phases": {
+        "cpu-burst": {
+          "samples": 10,
+          "p50": 5.078738165961113,
+          "p95": 5.6727215420105495,
+          "min": 4.880036416987423,
+          "max": 5.6727215420105495
+        },
+        "memory-spike": {
+          "samples": 10,
+          "p50": 6.152313500002492,
+          "p95": 6.516256458009593,
+          "min": 5.753832791000605,
+          "max": 6.516256458009593
+        },
+        "io": {
+          "samples": 10,
+          "p50": 3.2835987079888582,
+          "p95": 3.510760582983494,
+          "min": 3.0845252499566413,
+          "max": 3.510760582983494
+        },
+        "remote-llm-wait": {
+          "samples": 10,
+          "p50": 3.3978450410068035,
+          "p95": 3.440698500024155,
+          "min": 3.1647702920017764,
+          "max": 3.440698500024155
+        }
+      },
+      "endpoint_resource_observer": {
+        "pod_cpu_seconds": {
+          "samples": 40,
+          "p50": 1.544257,
+          "p95": 2.4105480000000004,
+          "min": 0.42509700000000006,
+          "max": 2.4541199999999996
+        },
+        "host_busy_cpu_seconds": {
+          "samples": 40,
+          "p50": 18.56,
+          "p95": 23.59,
+          "min": 10.7,
+          "max": 24.3
+        },
+        "host_unavailable_memory_bytes": {
+          "samples": 40,
+          "p50": 643117056,
+          "p95": 681828352,
+          "min": 631119872,
+          "max": 685424640
+        },
+        "pod_current_memory_bytes": {
+          "samples": 40,
+          "p50": 602112,
+          "p95": 647168,
+          "min": 593920,
+          "max": 651264
+        },
+        "pod_lifetime_peak_bytes": {
+          "samples": 40,
+          "p50": 20201472,
+          "p95": 20340736,
+          "min": 4612096,
+          "max": 20340736
+        }
+      }
+    },
+    "profiled": {
+      "first_image_pull_create_to_ready_seconds": 41.34972454200033,
+      "cached_image_fresh_sandbox_seconds": {
+        "samples": 9,
+        "p50": 8.330545666976832,
+        "p95": 10.410894584027119,
+        "min": 7.679024083015975,
+        "max": 10.410894584027119
+      },
+      "phases": {
+        "cpu-burst": {
+          "samples": 10,
+          "p50": 35.29543483396992,
+          "p95": 37.584818791016005,
+          "min": 32.116530624974985,
+          "max": 37.584818791016005
+        },
+        "memory-spike": {
+          "samples": 10,
+          "p50": 34.95971508399816,
+          "p95": 38.904727292014286,
+          "min": 32.077086750010494,
+          "max": 38.904727292014286
+        },
+        "io": {
+          "samples": 10,
+          "p50": 34.47671395796351,
+          "p95": 36.87020520900842,
+          "min": 32.838132999953814,
+          "max": 36.87020520900842
+        },
+        "remote-llm-wait": {
+          "samples": 10,
+          "p50": 33.76656720798928,
+          "p95": 38.537469167029485,
+          "min": 31.15943800000241,
+          "max": 38.537469167029485
+        }
+      },
+      "endpoint_resource_observer": {
+        "pod_cpu_seconds": {
+          "samples": 40,
+          "p50": 1.6743839999999999,
+          "p95": 2.5431009999999996,
+          "min": 0.4439720000000005,
+          "max": 2.6698829999999996
+        },
+        "host_busy_cpu_seconds": {
+          "samples": 40,
+          "p50": 53.22,
+          "p95": 63.61,
+          "min": 34.81,
+          "max": 78.7
+        },
+        "host_unavailable_memory_bytes": {
+          "samples": 40,
+          "p50": 645980160,
+          "p95": 657416192,
+          "min": 633282560,
+          "max": 675807232
+        },
+        "pod_current_memory_bytes": {
+          "samples": 40,
+          "p50": 602112,
+          "p95": 651264,
+          "min": 589824,
+          "max": 655360
+        },
+        "pod_lifetime_peak_bytes": {
+          "samples": 40,
+          "p50": 20242432,
+          "p95": 20398080,
+          "min": 4657152,
+          "max": 20398080
+        }
+      },
+      "collector": {
+        "process_cpu_seconds_total": 801.084206,
+        "peak_rss_bytes": {
+          "samples": 149,
+          "p50": 19152896,
+          "p95": 19378176,
+          "min": 18735104,
+          "max": 19443712
+        },
+        "read_wall_seconds": {
+          "samples": 149,
+          "p50": 0.861877125,
+          "p95": 1.005059815,
+          "min": 0.117732818,
+          "max": 1.30170385
+        }
+      }
+    }
+  },
+  "scope": "Source, raw observations, counter intervals, operation links and checksums verified; HMAC keys are deliberately absent from exported datasets"
+}

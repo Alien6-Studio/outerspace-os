@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "checked_at_utc": "2026-10-27T21:27:00.147406+00:00",
+  "benchmark_exit_code": 0,
+  "remaining_owned_containers_including_stopped": [],
+  "remaining_kind_labelled_containers": [],
+  "remaining_owned_networks": [],
+  "remaining_temporary_lab_directories": [],
+  "volume_cleanup_basis": "Successful harness cleanup inventories each kind container /var volume before deletion, then removes the exact remaining owned volume IDs; no claim based solely on volume labels.",
+  "cleanup_source_sha256": "8291a1e2e58df2e5628b9277cf8a8b5f46f48ac38a5e9ac6d51a2b647c43a775"
+}

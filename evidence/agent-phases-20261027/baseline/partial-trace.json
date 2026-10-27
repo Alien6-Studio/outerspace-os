@@ -1,0 +1,215 @@
+{
+  "schema": "outerspace.phase.v1",
+  "run_id": "fb682131-d33c-4bf5-b834-ed3e7a8f35c0",
+  "issuer_id": "21ac134e-58a0-44af-89ef-b3b8f569846f",
+  "policy_sha256": "d020f0c61ba2705aec88ca6918a9b2b9e8be55fd98a7921ed7f69cb199c826c9",
+  "status": "recorded",
+  "authentication": "Per-run HMAC verified before acceptance; key excluded from export",
+  "events": [],
+  "scopes": {
+    "7c4e93e7-9daf-42b5-98b6-56ecda6d7876": {
+      "identity": {
+        "pod_uid": "74402eeb-a438-41e0-8043-cf29a67b5c03",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "064b8c24f7e0d0404feec386b7fe0f673ba27409be3126048234548ad07899b3",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "386fa9c5-9bb6-4c93-aa69-d55210a49791": {
+      "identity": {
+        "pod_uid": "df96aaac-faa4-4e61-8a4d-f51283d2e275",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "ab6a698413101f1ad55ef4638ec9e7bebf8093d6f623bc568e0297c34fb32744",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "c521848f-684e-4f7b-81cb-e466979f5be4": {
+      "identity": {
+        "pod_uid": "035dde21-f93a-4a8d-98f3-eeee40cb5ae6",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "d43995fa4db7c08977202888a4e755df838fa8b1011c55ec264d946fb513e136",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "6f96d963-f218-4c50-b0fa-dca22dfcbebc": {
+      "identity": {
+        "pod_uid": "a72df306-65b2-4efb-9b67-4452cffd4030",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "7eefd7d9ef15e93c93839a8f79181f57a6d39d087bd62162096d97e2b7c1ce33",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "afdf2501-7593-40dc-ad2e-2bf46f6a5e6d": {
+      "identity": {
+        "pod_uid": "5efa0d91-7857-4fbd-a9cd-e259014c269b",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "04538f91d1b13ed3e2f98d0e5f4263f71b69e9b2907b30583615e39496d300cb",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "45e2eb23-ace2-4d3b-8139-e8f1505626b8": {
+      "identity": {
+        "pod_uid": "4bf11f0a-5545-4f26-9497-ad22cb388499",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "6418843f3e263cd89182f311cad88b147063f4039c816fe2af196380b5d9ef56",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "b16e8e22-dae3-469d-9816-54623b1413cb": {
+      "identity": {
+        "pod_uid": "cbfd25af-724b-4c7d-9e79-2f3870cf19fd",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "06cedae98d32f989199a87713d840f5f7c7fc7a507a115adb47b6061f6ddffe2",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "3324d7a8-d269-4d2e-a6be-d3ae8183a821": {
+      "identity": {
+        "pod_uid": "94bd8446-4036-4b21-a7d1-4cd43dfc5eba",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "5057c1216c1ec994a6b45631c009303476b7be7a258cf9e4df0cdbc3365421a1",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "60a825c1-8268-45cf-8db0-6cd47c91dc59": {
+      "identity": {
+        "pod_uid": "b3fc6923-9a1e-49c8-81f1-67f6f6aff2f9",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "c3f17610c21771cf7d2ae3a330a10e26d9c0a5e23ebec9531df67ac21f453800",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    },
+    "54cd2abf-e914-44c9-b32e-4133e4cac606": {
+      "identity": {
+        "pod_uid": "9faaa363-7c73-4efa-a436-fe48a8b399d4",
+        "node_uid": "a03b3468-2da2-4dd7-aa6b-c138cbcd025e",
+        "boot_id": "7fc88ffc-69bc-4a69-bafb-0356a9d085c6",
+        "container_id": "555537c4db37eed6727d3330e06ac2eb35156c823b5d07af65277466592a0cea",
+        "image_id": "bdf57e528e45e4433820e045b29b4597825a1c9e38353532d90a01445013f82e",
+        "restart_count": 0
+      },
+      "status": "partial",
+      "reasons": [
+        "missing-samples"
+      ],
+      "intervals": [],
+      "operation_ids": [],
+      "samples": [],
+      "attribution": "scope-only",
+      "memory_semantics": "current gauges and lifetime peaks; shared/page-cache charges are not private RSS",
+      "coverage": "cgroup descendants; unobserved escaped or external processes are unknown"
+    }
+  },
+  "spans": [],
+  "buffer_bytes": 3270,
+  "aggregation": "Each scope interval occurs once; never sum per-tool or memory peaks",
+  "failure_behavior": "Reject unauthenticated boundaries; cancel pending benchmark work on lost collection or buffer failure; retain partial traces"
+}

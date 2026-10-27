@@ -1,0 +1,6 @@
+# These exact boot-log findings are the public kernel X.509 certificate
+# subject identifier printed by Linux, not private key material or credentials.
+evidence/agent-baseline-20261027/ubuntu/boot-enroll.log:generic-api-key:352
+evidence/agent-baseline-20261027/ubuntu/boot-enroll.log:generic-api-key:373
+evidence/agent-baseline-20261027/outerspace/boot-enroll.log:generic-api-key:341
+evidence/agent-baseline-20261027/outerspace/boot-enroll.log:generic-api-key:363

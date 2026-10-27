@@ -12,9 +12,10 @@ parser.add_argument('--min-seconds', type=int, default=0)
 args = parser.parse_args()
 assert 1 <= args.requests <= 128 and 0 <= args.min_seconds <= 600
 samples, started = [], time.monotonic()
-for index in range(256):
+for index in range(1024):
     if len(samples) >= args.requests and time.monotonic() - started >= args.min_seconds:
         break
+    assert time.monotonic() - started < 1800, 'Serving observation exceeded its bounded duration'
     payload = {'prompt': 'The capital of France is', 'n_predict': 8, 'temperature': 0,
                'seed': 42, 'cache_prompt': False, 'stream': True}
     start = time.monotonic()

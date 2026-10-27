@@ -148,18 +148,18 @@ class CorrelationTests(unittest.TestCase):
             for name, text in {'cpu.stat': 'usage_usec 123\nuser_usec 100\nsystem_usec 23\n',
                 'memory.current': '42', 'memory.peak': '100', 'memory.events': 'oom 1\noom_kill 1\n',
                 'memory.stat': 'anon 10\nfile 20\nshmem 5\nkernel 7\n',
-                'io.stat': '8:0 rbytes=10 wbytes=20 rios=1 wios=2\n', 'cgroup.procs': '21\n'}.items():
+                'io.stat': '8:0 rbytes=10 wbytes=20 rios=1 wios=2\n', 'cgroup.procs': '0\n'}.items():
                 (group / name).write_text(text)
             for kind in ['cpu', 'memory', 'io']:
                 (group / (kind + '.pressure')).write_text('some avg10=0.10 avg60=0.00 avg300=0.00 total=20\n')
             child = group / 'child'
             child.mkdir()
-            (child / 'cgroup.procs').write_text('22\n')
+            (child / 'cgroup.procs').write_text('0\n')
             for pid, path in [(21, group), (22, child), (23, cgroups / 'unrelated-private-tenant')]:
                 proc = root / 'proc' / str(pid)
                 proc.mkdir()
                 (proc / 'stat').write_text(str(pid) + ' (private ) prompt name) S ' + '0 ' * 18 + '99 0\n')
-                (proc / 'cgroup').write_text('0::/' + str(path.relative_to(cgroups)) + '\n')
+                (proc / 'cgroup').write_text('0::/../../' + str(path.relative_to(cgroups)) + '\n')
             request = {'pod_uid': self.identity['pod_uid'], 'container_id': self.identity['container_id'],
                        'known_processes': [{'pid': 23, 'start_ticks': 99}]}
             result = probe.snapshot(root, request)

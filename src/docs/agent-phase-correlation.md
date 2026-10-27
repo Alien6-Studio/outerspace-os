@@ -70,7 +70,9 @@ per-tool attribution remains unknown.
 
 One session accepts at most 32 unique scopes, 1,024 boundary events, 256 samples
 per scope and 8 MiB of serialized measurements. Boundary messages are limited to
-4 KiB and process observations to 128 identities. Invalid authentication is
+4 KiB and process observations to 128 identities, with a 4,096-entry host procfs
+enumeration ceiling. Host procfs supplies process IDs because `cgroup.procs`
+masks foreign-container PIDs in the observer's PID namespace. Invalid authentication is
 refused without granting execution authority. Exhausted buffers or loss of the
 required observer stop pending benchmark work, delete the disposable execution
 scope and retain the failed/partial trace. No successful measurement is emitted

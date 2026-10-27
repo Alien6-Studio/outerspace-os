@@ -7,6 +7,7 @@ agent or on the OS image. Output contains IDs and counters, not host paths,
 process arguments, environment, prompts, logs, or credentials.
 """
 import hashlib
+from itertools import islice
 import json
 import os
 from pathlib import Path
@@ -78,27 +79,38 @@ def snapshot(root, request):
             result['io'] = {line.split()[0]: dict((key, int(value)) for key, value in
                            (field.split('=') for field in line.split()[1:]))
                            for line in (path / 'io.stat').read_text().splitlines()}
-            pids = set()
-            for group in [path, *path.rglob('*')]:
-                if group.is_dir():
-                    pids.update((group / 'cgroup.procs').read_text().split())
-                    if len(pids) > 128:
-                        raise ValueError('Process observation budget exceeded')
-            relative = '/' + str(path.relative_to(cgroups))
-            for pid in sorted(pids, key=int):
+            # cgroup.procs translates PIDs into the observer's PID namespace;
+            # foreign containers appear as 0. Use the host procfs mount, just as
+            # the native enrollment probe does. Match kernel-provided cgroup
+            # components, including a possible cgroup-namespace-relative prefix.
+            def belongs(group):
+                parts = group.removeprefix('0::').split('/')
+                return ('cri-containerd-' + container + '.scope' in parts and
+                        any(part.endswith('pod' + uid.replace('-', '_') + '.slice') for part in parts))
+            entries = list(islice((root / 'proc').glob('[0-9]*/cgroup'), 4097))
+            if len(entries) > 4096:
+                raise ValueError('Host process enumeration budget exceeded')
+            for entry in entries:
                 try:
-                    identity, group = process(root, pid)
-                    if group.removeprefix('0::') == relative or group.removeprefix('0::').startswith(relative + '/'):
+                    if not belongs(entry.read_text().strip()):
+                        continue
+                except (FileNotFoundError, ProcessLookupError):
+                    continue  # An unrelated host process can exit at any time.
+                try:
+                    identity, group = process(root, entry.parent.name)
+                    if belongs(group):
                         result['processes'].append(identity)
+                        if len(result['processes']) > 128:
+                            raise ValueError('Process observation budget exceeded')
                     else:
                         result['gaps'].append('process-moved-during-snapshot')
                 except (FileNotFoundError, ProcessLookupError):
                     result['gaps'].append('process-exited-during-snapshot')
+            result['processes'].sort(key=lambda p: p['pid'])
             for previous in known:
                 try:
                     current, group = process(root, previous['pid'])
-                    if current == previous and not (group.removeprefix('0::') == relative or
-                                                    group.removeprefix('0::').startswith(relative + '/')):
+                    if current == previous and not belongs(group):
                         result['detached_processes'].append(current)
                 except (FileNotFoundError, ProcessLookupError):
                     pass

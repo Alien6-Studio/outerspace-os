@@ -9,7 +9,7 @@ refusals and two actual incompatible/untrusted model refusals pass on each worke
 
 ## Identity and reproducibility
 
-- Harness: `f5efaabaa07d4a6fc93c050867a4d403ea31d82a`, the parent of this evidence commit.
+- Harness: `f5efaabaa07d4a6fc93c050867a4d403ea31d82a`, retained in this branch's source ancestry.
 - Inference image source: `56a96282b63b27caf66d8e81a8273d05226bb036`.
 - Raw disk SHA256: `d77cd1a1316f73a75566e1d80cabfc36df0b1534b7add96b3fd2fb45e4c6a3e1`.
 - Combined report SHA256: `fcd907a53c6b28f5d9e1a4b93682157d8275bc80589a7f800515e91bd6c556c5`.
@@ -62,6 +62,8 @@ and egress are checked in all five phases.
 can rerun them against a checkout of the exact harness source. `SHA256SUMS`
 covers every archived file except itself. The original dataset remains unchanged.
 `cleanup-verification.json` records successful removal of the owned laboratory.
+`secret-scan-review.json` records an exclusion-free scan of all 20 original logs,
+with their exact hashes and the individually reviewed public-identifier findings.
 The archive excludes VM disks, model weights, config drives, kubeconfigs and
 bootstrap credentials. Exact secret-scanner false positives, if listed in the
 branch's `.gitleaksignore`, are public kernel certificate identifiers or Kubernetes

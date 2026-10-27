@@ -1,0 +1,24 @@
+dnsmasq: started, version 2.91 cachesize 150
+dnsmasq: compile time options: IPv6 GNU-getopt DBus no-UBus i18n IDN2 DHCP DHCPv6 no-Lua TFTP conntrack ipset nftset auth DNSSEC loop-detect inotify dumpfile
+dnsmasq-dhcp: DHCP, IP range 172.30.80.10 -- 172.30.80.10, lease time 1h
+dnsmasq-dhcp: DHCP, sockets bound exclusively to interface br0
+dnsmasq: using nameserver 127.0.0.11#53
+dnsmasq: read /etc/hosts - 9 names
+dnsmasq-dhcp: DHCPDISCOVER(br0) 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPOFFER(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPDISCOVER(br0) 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPOFFER(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPREQUEST(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPACK(br0) 172.30.80.10 52:54:00:80:00:10 ubuntu-reference-worker
+dnsmasq-dhcp: DHCPREQUEST(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPACK(br0) 172.30.80.10 52:54:00:80:00:10 ubuntu-reference-worker
+dnsmasq-dhcp: DHCPREQUEST(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPACK(br0) 172.30.80.10 52:54:00:80:00:10 ubuntu-reference-worker
+dnsmasq-dhcp: DHCPDISCOVER(br0) 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPOFFER(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPDISCOVER(br0) 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPOFFER(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPREQUEST(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPACK(br0) 172.30.80.10 52:54:00:80:00:10 ubuntu-reference-worker
+dnsmasq-dhcp: DHCPREQUEST(br0) 172.30.80.10 52:54:00:80:00:10 
+dnsmasq-dhcp: DHCPACK(br0) 172.30.80.10 52:54:00:80:00:10 ubuntu-reference-worker

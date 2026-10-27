@@ -115,3 +115,7 @@ native report; unit tests and the existence of this harness do not qualify #29.
 The Agent CI matrix runs the complete paired scenario on amd64 and arm64 after
 ordinary image, boot, isolation and resource qualification. It retains the raw
 phase datasets and failure traces with each architecture's development artifact.
+
+The [2026-10-27 local qualification](../../tests/reports/2026-10-27-agent-phases.md)
+links the complete immutable dataset, independently verified failure cases and
+measured collection overhead.

@@ -148,6 +148,7 @@ class Serving:
         self.lock = json.loads((ROOT / 'tests/benchmarks/cpu-serving.lock.json').read_text())
         validate_lock(self.lock)
         self.observations = {}
+        self.model_loads = {}
         self.started = time.monotonic()
 
     def prepare(self):
@@ -207,8 +208,8 @@ class Serving:
         for field, expected in [('containers', server), ('initContainers', init)]:
             c = 'object.spec.' + field + '[0]'
             expressions += [c + '.name == ' + value(expected['name']), c + '.image == ' + value(expected['image']),
-                c + '.resources.limits == ' + value(expected['resources']['limits']),
-                c + '.resources.requests == ' + value(expected['resources']['requests'])]
+                'dyn(' + c + '.resources).limits == ' + value(expected['resources']['limits']),
+                'dyn(' + c + '.resources).requests == ' + value(expected['resources']['requests'])]
             for key in ['command', 'args']:
                 expressions.append(c + '.' + key + ' == ' + value(expected[key]) if key in expected
                                    else '(!has(' + c + '.' + key + ') || size(' + c + '.' + key + ') == 0)')
@@ -444,8 +445,11 @@ class Serving:
         pod = self.lab.api('-n', self.namespace, 'pods', '-l', 'app=inference')['items'][0]
         started = pod['status']['containerStatuses'][0]['state']['running']['startedAt']
         loaded = [line.split()[0] for line in logs.stdout.splitlines() if 'model loaded' in line]
-        if not loaded:
+        if not loaded and after['container_id'] not in self.model_loads:
             raise ValueError('No engine model-load completion in the serving log')
+        if not loaded:
+            self.observations[phase]['model_load'] = self.model_loads[after['container_id']]
+            return
         seconds = (datetime.fromisoformat(loaded[-1].replace('Z', '+00:00'))
                    - datetime.fromisoformat(started.replace('Z', '+00:00'))).total_seconds()
         if seconds < 0:
@@ -454,6 +458,7 @@ class Serving:
             'container_started_at': started, 'engine_loaded_at': loaded[-1],
             'container_start_to_model_loaded_seconds': seconds,
             'scope': 'Includes container startup; raw engine logs retain finer load diagnostics'}
+        self.model_loads[after['container_id']] = self.observations[phase]['model_load']
 
     def restart(self):
         print('Replacing the serving pod and reloading its verified model cache', flush=True)

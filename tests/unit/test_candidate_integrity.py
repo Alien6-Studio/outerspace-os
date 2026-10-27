@@ -49,6 +49,28 @@ class CandidateIntegrityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'regular file'):
             self.verify()
 
+    def test_development_runtime_qualification_still_verifies_all_evidence(self):
+        subject = identity('agent', 'arm64', version='0.1.0-dev.0')
+        base = inventory(self.bundle, subject)
+        (self.bundle / 'build-metadata.json').write_text(json.dumps({'schema': 2, 'identity': subject, 'supply_chain': base}))
+        self.inventory.write_text(''.join(f'{prepare.sha256(p)}  {p.name}\n' for p in sorted(self.bundle.iterdir())
+                                         if p != self.inventory))
+        artifact = {'identity': subject, 'sha256sums': prepare.sha256(self.inventory)}
+        with patch.object(prepare.supply_chain, 'verify', return_value=None) as sources, \
+             patch.object(prepare.security, 'verify', return_value=None) as security, \
+             patch.object(prepare.redistribution, 'verify', return_value=None) as licenses:
+            prepare.verify_bundle(self.bundle, subject['version'], subject['commit'], artifact, development=True)
+            sources.assert_called_once()
+            self.assertFalse(security.call_args.kwargs['require_pass'])
+            self.assertFalse(licenses.call_args.kwargs['require_pass'])
+            security.side_effect = ValueError('stale security evidence')
+            with self.assertRaisesRegex(ValueError, 'stale security evidence'):
+                prepare.verify_bundle(self.bundle, subject['version'], subject['commit'], artifact, development=True)
+
+    def test_public_candidate_cannot_opt_into_development_qualification(self):
+        with self.assertRaisesRegex(ValueError, 'Only development'):
+            prepare.verify_bundle(self.bundle, '0.1.0-alpha.1', 'a' * 40, self.artifact, development=True)
+
     def test_blocked_security_cannot_promote(self):
         with patch.object(prepare.supply_chain, 'verify', return_value=None), \
              patch.object(prepare.security, 'verify', side_effect=ValueError('unresolved vulnerability')):

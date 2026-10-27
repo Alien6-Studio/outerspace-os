@@ -311,7 +311,8 @@ def main():
         raise ValueError('A qualified Agent CPU image is required')
     bundle = image_output / f'outerspace-{metadata["version"]}-agent-cpu-{metadata["architecture"]}'
     native.load_script('prepare-release', native.BUILD_TOOLS).verify_bundle(bundle, metadata['version'], metadata['commit'],
-        {'identity': metadata, 'sha256sums': digest(bundle / 'SHA256SUMS')})
+        {'identity': metadata, 'sha256sums': digest(bundle / 'SHA256SUMS')},
+        development='-dev.' in metadata['version'])
     if digest(ROOT / 'src/components.lock.json') != metadata['components_lock_sha256']:
         raise ValueError('Runtime pins differ from the qualified image')
     image, provenance = signed_image(cache, metadata['architecture'], download=False)

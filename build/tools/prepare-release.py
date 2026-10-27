@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import tarfile
 from package import sha256
-from release import ROOT, validate_release
+from release import ROOT, validate_release, parse_version
 from sbom import verify_inventory
 import supply_chain
 import security
@@ -22,7 +22,9 @@ def gh_json(*args):
     return json.loads(subprocess.check_output(['gh', *args], text=True))
 
 
-def verify_bundle(bundle, version, commit, artifact):
+def verify_bundle(bundle, version, commit, artifact, *, development=False):
+    if development and parse_version(version) != 'dev':
+        raise ValueError('Only development images may be tested with unresolved release reviews')
     if (bundle / 'build-metadata.json').is_symlink():
         raise ValueError('Candidate metadata must not be a symlink')
     metadata = json.loads((bundle / 'build-metadata.json').read_text())
@@ -53,9 +55,9 @@ def verify_bundle(bundle, version, commit, artifact):
         raise ValueError('Candidate SBOM differs from qualified inventory')
     if metadata.get('distribution_inventory') != supply_chain.verify(bundle, identity, manifests[0]):
         raise ValueError('Candidate sources or provenance differ')
-    if metadata.get('security_review') != security.verify(bundle, identity, require_pass=True):
+    if metadata.get('security_review') != security.verify(bundle, identity, require_pass=not development):
         raise ValueError('Candidate security review differs')
-    if metadata.get('redistribution_review') != redistribution.verify(bundle, identity, require_pass=True):
+    if metadata.get('redistribution_review') != redistribution.verify(bundle, identity, require_pass=not development):
         raise ValueError('Candidate redistribution review differs')
 
 

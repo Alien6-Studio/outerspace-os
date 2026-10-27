@@ -12,6 +12,11 @@ Packaging and promotion independently recompute decisions. Databases and scans
 older than 120 hours, future timestamps, changed subjects and expired exceptions
 are rejected. Scanners stay in disposable build/qualification tooling.
 
+Runtime labs can qualify `-dev.N` images with unresolved findings, after checking
+the complete integrity, source and review evidence. This explicit development
+path rejects alpha/beta/RC/stable versions. Candidate promotion always requires
+passing vulnerability and redistribution reviews; it never enables that path.
+
 For each finding, inspect the original `vulnerabilities.grype.json`, installed
 source package, architecture, binary symbols and upstream advisory. Ubuntu tracks
 source names: for example, `runc-app` supplies the `runc` executable while `runc`

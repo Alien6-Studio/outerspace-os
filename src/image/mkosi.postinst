@@ -46,6 +46,8 @@ python3 /work/src/build/tools/profiles.py install --root "$root" --profile "${OU
     --commit "${OUTERSPACE_SOURCE_COMMIT:?Missing source identity}"
 chmod 0755 "$root/usr/lib/outerspace/"*
 chmod 0600 "$root/etc/audit/rules.d/99-outerspace.rules"
+python3 /work/src/build/tools/apt-inputs.py --root "$root" --output "$OUTPUTDIR" \
+    --lock /work/src/build/inputs.lock.json
 install -d -m 0700 "$root/var/lib/outerspace" "$root/var/lib/kubelet"
 install -d -m 0700 "$root/var/lib/outerspace/certs.d"
 install -d "$root/opt" "$root/etc/cni" "$root/var/lib/cni/bin" "$root/var/lib/outerspace/cni/net.d"

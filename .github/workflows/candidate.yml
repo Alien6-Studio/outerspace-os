@@ -10,6 +10,10 @@ permissions:
   contents: read
 jobs:
   build:
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -21,7 +25,7 @@ jobs:
           - arch: arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -39,17 +43,37 @@ jobs:
           version = Path('VERSION').read_text().strip()
           assert release.parse_version(version) != 'dev', 'Development snapshots are not candidates'
           assert os.environ['TAG'] == 'v' + version, 'Tag must match VERSION'
+          assert os.environ['GITHUB_REF'] == 'refs/tags/' + os.environ['TAG'], 'Dispatch this workflow at the candidate tag'
+          import subprocess
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == os.environ['GITHUB_SHA'], 'Workflow and source must be the same revision'
           PY
       - run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu check builder build smoke package
+      - name: Require the supply-chain release decisions
+        run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu security-gate
+      - name: Sign the immutable checksum inventory
+        id: provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/outerspace-*/SHA256SUMS
+      - name: Preserve the offline verification bundle
+        env:
+          BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+        run: cp "$BUNDLE" out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/candidate-attestation.jsonl
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: candidate-${{ matrix.profile }}-cpu-${{ matrix.arch }}
-          path: out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/outerspace-*/
+          path: |
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/outerspace-*/
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/candidate-attestation.jsonl
           if-no-files-found: error
           retention-days: 30
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: failed-boot-${{ matrix.profile }}-cpu-${{ matrix.arch }}
-          path: out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
+          name: failed-qualification-${{ matrix.profile }}-cpu-${{ matrix.arch }}
+          path: |
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*review.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/vulnerabilities.grype.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/source-index.json
           retention-days: 7

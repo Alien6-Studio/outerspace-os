@@ -1,0 +1,286 @@
+{
+  "schema": 1,
+  "sources": {
+    "containerd": {
+      "repo": "containerd/containerd",
+      "version": "2.3.7",
+      "commit": "6f589cf13dc01a5b493911355427e05b2ff005d7",
+      "url": "https://codeload.github.com/containerd/containerd/tar.gz/6f589cf13dc01a5b493911355427e05b2ff005d7",
+      "sha256": "80ac465c51750299f4778a19fa1a37f9d9d0a82acd9ec6435488008837caf51d",
+      "size": 11836542
+    },
+    "kubelet": {
+      "repo": "kubernetes/kubernetes",
+      "version": "1.36.5",
+      "commit": "ad950d1cc78b0183c476bd4d3f1934c104229727",
+      "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/ad950d1cc78b0183c476bd4d3f1934c104229727",
+      "sha256": "6d2bc7ef75ec9927dd7e6ff3fe47332a1d58b2f6171606e6a63940b02b055122",
+      "size": 39950833
+    },
+    "crictl": {
+      "repo": "kubernetes-sigs/cri-tools",
+      "version": "1.36.0",
+      "commit": "88d8ad9d40f82726fda53c2d271e6172b4c619c9",
+      "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/88d8ad9d40f82726fda53c2d271e6172b4c619c9",
+      "sha256": "0e7559231dd55918dd3a488f9ac833e939ef0f7579492d5528a0346260bcaba7",
+      "size": 7433281
+    },
+    "dfdaemon": {
+      "repo": "dragonflyoss/client",
+      "version": "1.4.9",
+      "commit": "1bdea4a11b7825a3bd727595e540ba2e7cacb151",
+      "url": "https://codeload.github.com/dragonflyoss/client/tar.gz/1bdea4a11b7825a3bd727595e540ba2e7cacb151",
+      "sha256": "5ee3577ee369d2f09424ffd7fe60f04c37cd2cd95a894a22463b25ac0cbaad7c",
+      "size": 483950
+    },
+    "go1.26.9": {
+      "url": "https://go.dev/dl/go1.26.9.src.tar.gz",
+      "sha256": "9735d7dcdb65b35d3fa577f04064737c03b89cf1a2b71e6e69fe2f3c6f9fd4ca",
+      "size": 34162146
+    },
+    "go1.26.8": {
+      "url": "https://go.dev/dl/go1.26.8.src.tar.gz",
+      "sha256": "4e39b98e42f946fa05ac8bc5b71877df97dbdb7cbb1a777b541667ad7117fd2e",
+      "size": 34150120
+    },
+    "go1.26.2": {
+      "url": "https://go.dev/dl/go1.26.2.src.tar.gz",
+      "sha256": "2e91ebb6947a96e9436fb2b3926a8802efe63a6d375dffec4f82aa9dbd6fd43b",
+      "size": 34120738
+    },
+    "go1.24.4": {
+      "url": "https://go.dev/dl/go1.24.4.src.tar.gz",
+      "sha256": "5a86a83a31f9fa81490b8c5420ac384fd3d95a3e71fba665c7b3f95d1dfef2b4",
+      "size": 30788576
+    }
+  },
+  "cargo_git_sources": {
+    "git+https://github.com/IBM/mocktail?rev=860e75e171a8eb818083813dbeed4401d1a40b3b#860e75e171a8eb818083813dbeed4401d1a40b3b": {
+      "commit": "860e75e171a8eb818083813dbeed4401d1a40b3b",
+      "url": "https://codeload.github.com/IBM/mocktail/tar.gz/860e75e171a8eb818083813dbeed4401d1a40b3b",
+      "sha256": "21d9eff4779b1fb1590d24748c9969cc86f50f83e44ab9e2e34bb1769fc33e62",
+      "size": 37151
+    }
+  },
+  "supplemental_sources": [
+    {
+      "name": "zrzka/anes-rs",
+      "commit": "378ac7461ecac29fde9e10df7b08359d1315a9ad",
+      "url": "https://codeload.github.com/zrzka/anes-rs/tar.gz/378ac7461ecac29fde9e10df7b08359d1315a9ad",
+      "sha256": "c3a8e5a84822e2bf5c1f392b972dbe9c8cb3f2fed4d69e1942e585987671e721",
+      "size": 30057,
+      "for_crates": [
+        "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
+      ]
+    },
+    {
+      "name": "rusticata/asn1-rs",
+      "commit": "28257314e48d1ad4e62b8159c939518e17caf826",
+      "url": "https://codeload.github.com/rusticata/asn1-rs/tar.gz/28257314e48d1ad4e62b8159c939518e17caf826",
+      "sha256": "f64c593e28e0d5c2936cb2bd83249ea1a92954de87f5cb13d3954757e27d257d",
+      "size": 89448,
+      "for_crates": [
+        "726535892e8eae7e70657b4c8ea93d26b8553afb1ce617caee529ef96d7dee6c"
+      ]
+    },
+    {
+      "name": "rusticata/asn1-rs",
+      "commit": "78620ca0954d44ddc57d0280d0072dfbd8566de4",
+      "url": "https://codeload.github.com/rusticata/asn1-rs/tar.gz/78620ca0954d44ddc57d0280d0072dfbd8566de4",
+      "sha256": "609bb5c738ed844e6e6222a7e2fab6b3cbffd0b2c1fc835dde8652befceaacb4",
+      "size": 65562,
+      "for_crates": [
+        "2777730b2039ac0f95f093556e61b6d26cebed5393ca6f152717777cec3a42ed"
+      ]
+    },
+    {
+      "name": "sarah-ek/equator",
+      "commit": "9d4107bdd6a75598aed4a60fe46200c9e9f4e653",
+      "url": "https://codeload.github.com/sarah-ek/equator/tar.gz/9d4107bdd6a75598aed4a60fe46200c9e9f4e653",
+      "sha256": "834407ba41d59fc3504dc6675302057d3cf3a1fe232bb602ae43259f452fd8a5",
+      "size": 8413,
+      "for_crates": [
+        "c35da53b5a021d2484a7cc49b2ac7f2d840f8236a286f84202369bd338d761ea"
+      ]
+    },
+    {
+      "name": "sarah-ek/equator",
+      "commit": "c9061f3da9a7cc53b0d388f26ab6bb95422823c3",
+      "url": "https://codeload.github.com/sarah-ek/equator/tar.gz/c9061f3da9a7cc53b0d388f26ab6bb95422823c3",
+      "sha256": "2f7d12a24e2e7c4d4c16052c101bbcbbf899a72b06f04faea3e2d6d80a464abb",
+      "size": 8408,
+      "for_crates": [
+        "3bf679796c0322556351f287a51b49e48f7c4986e727b5dd78c972d30e2e16cc"
+      ]
+    },
+    {
+      "name": "rustwasm/gloo",
+      "commit": "f3bb1d1a1c33dbcccaf26446aca7d0cea8e9d574",
+      "url": "https://codeload.github.com/rustwasm/gloo/tar.gz/f3bb1d1a1c33dbcccaf26446aca7d0cea8e9d574",
+      "sha256": "ec6dfd7ef6e9c2b4a23f301ee0f99ddee0f3c9de04fa80a0f5fdaca4c19a6df5",
+      "size": 438845,
+      "for_crates": [
+        "bbb143cf96099802033e0d4f4963b19fd2e0b728bcf076cd9cf7f6634f092994"
+      ]
+    },
+    {
+      "name": "hyperium/http-body",
+      "commit": "2474edda2035ea4c6bb22f79417d7964479b2a10",
+      "url": "https://codeload.github.com/hyperium/http-body/tar.gz/2474edda2035ea4c6bb22f79417d7964479b2a10",
+      "sha256": "5e1876abc2fd032e54ffeedff31e68749cb4ed9cfa2e9ea95cac75576a828073",
+      "size": 15224,
+      "for_crates": [
+        "1cac85db508abc24a2e48553ba12a996e87244a0395ce011e62b37158745d643"
+      ]
+    },
+    {
+      "name": "jbaublitz/neli",
+      "commit": "2b72a9d9745ee0bb9412d48a5fc332755d08d093",
+      "url": "https://codeload.github.com/jbaublitz/neli/tar.gz/2b72a9d9745ee0bb9412d48a5fc332755d08d093",
+      "sha256": "d1a56629355235c800b46f2fd03d55819614dec9cdce843f9b0fbd9abb905fd1",
+      "size": 59344,
+      "for_crates": [
+        "c168194d373b1e134786274020dae7fc5513d565ea2ebb9bc9ff17ffb69106d4"
+      ]
+    },
+    {
+      "name": "madsmtm/objc2",
+      "commit": "7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "url": "https://codeload.github.com/madsmtm/objc2/tar.gz/7b1abfd750a2cacaea71d6a56ecfb83cb7de560b",
+      "sha256": "a6685e9b30da4c2b9ed807e8344d7248447daf1d5ab5b7af4fa3755545f96a4d",
+      "size": 1309694,
+      "for_crates": [
+        "2a180dd8642fa45cdb7dd721cd4c11b1cadd4929ce112ebd8b9f5803cc79d536",
+        "33fafba39597d6dc1fb709123dfa8289d39406734be322956a69f0931c73bb15"
+      ]
+    },
+    {
+      "name": "open-telemetry/opentelemetry-rust",
+      "commit": "285dc925f98403ff426acc70968f104dc820d4f2",
+      "url": "https://codeload.github.com/open-telemetry/opentelemetry-rust/tar.gz/285dc925f98403ff426acc70968f104dc820d4f2",
+      "sha256": "1c1d57f22e360abcc6ae5f215f6cc1132cd6858cc43e45afa4e6a6b1bd18b987",
+      "size": 725609,
+      "for_crates": [
+        "b84bcd6ae87133e903af7ef497404dda70c60d0ea14895fc8a5e6722754fc2a0",
+        "d7a6d09a73194e6b66df7c8f1b680f156d916a1a942abf2de06823dd02b7855d",
+        "a7175df06de5eaee9909d4805a3d07e28bb752c34cab57fa9cff549da596b30f",
+        "e14ae4f5991976fd48df6d843de219ca6d31b01daaab2dad5af2badeded372bd"
+      ]
+    },
+    {
+      "name": "open-telemetry/opentelemetry-rust",
+      "commit": "febe718fa9ad80c281a82f754e399d3ba6c40c26",
+      "url": "https://codeload.github.com/open-telemetry/opentelemetry-rust/tar.gz/febe718fa9ad80c281a82f754e399d3ba6c40c26",
+      "sha256": "a6f8fb7c4ccc5f12f7b74c3a9cd3105b81bc35e08147c1459bbb6260bfba87f5",
+      "size": 727764,
+      "for_crates": [
+        "1f69cd6acbb9af919df949cd1ec9e5e7fdc2ef15d234b6b795aaa525cc02f71f"
+      ]
+    },
+    {
+      "name": "open-telemetry/opentelemetry-rust",
+      "commit": "74cb6f3a4129bf11fa3191f28d38c518c4ec4ae6",
+      "url": "https://codeload.github.com/open-telemetry/opentelemetry-rust/tar.gz/74cb6f3a4129bf11fa3191f28d38c518c4ec4ae6",
+      "sha256": "21dc058bc66b792ab107b8c12841028c4987d9a11efa626f2d9513a92239a615",
+      "size": 853545,
+      "for_crates": [
+        "c913ac17a6c451661ee255f4625d143e51647ae78ebd969b75e41c4442f4fe47"
+      ]
+    },
+    {
+      "name": "eminence/procfs",
+      "commit": "71addc0766626dca44f5be3d771b204f6ed1fc3d",
+      "url": "https://codeload.github.com/eminence/procfs/tar.gz/71addc0766626dca44f5be3d771b204f6ed1fc3d",
+      "sha256": "3d4a7e845b2629ca91f7c6455f05b0d0906fc61cf904ec3da9f2cafa64d1452c",
+      "size": 135392,
+      "for_crates": [
+        "731e0d9356b0c25f16f33b5be79b1c57b562f141ebfcdb0ad8ac2c13a24293b4",
+        "2d3554923a69f4ce04c4a754260c338f505ce22642d3830e049a399fc2059a29"
+      ]
+    },
+    {
+      "name": "fdeantoni/prost-wkt",
+      "commit": "781786cf8efff7fb30a31cf102985db2e56f6806",
+      "url": "https://codeload.github.com/fdeantoni/prost-wkt/tar.gz/781786cf8efff7fb30a31cf102985db2e56f6806",
+      "sha256": "184c9dc70293a458804062b13d148a9cbc4a3e91092d6a4e3749605d50f0a768",
+      "size": 29640,
+      "for_crates": [
+        "cd3de5e9c9e84fcb5efa204b8e283d23e615a8bc8c777bf1d6622bb01dc61445",
+        "fe500dc80e757a75e1e8fb7290e448d62dfba3105ece1d058579cb00b58151cd",
+        "13807eaa7e15833d06e899008371926201cdcd11d74b6d490f49130cdb3f415e"
+      ]
+    },
+    {
+      "name": "hyperium/tonic",
+      "commit": "21d24942a5a4a1806344beb331d4157d510a210c",
+      "url": "https://codeload.github.com/hyperium/tonic/tar.gz/21d24942a5a4a1806344beb331d4157d510a210c",
+      "sha256": "8cc9ca7958108be6707d1038b5c5277694193adc77e8e0ae1d30e51b80207343",
+      "size": 38258936,
+      "for_crates": [
+        "a55376a0bbaa4975a3f10d009ad763d8f4108f067c7c2e74f3001fb49778d309",
+        "f3144df636917574672e93d0f56d7edec49f90305749c668df5101751bb8f95a"
+      ]
+    },
+    {
+      "name": "Keats/validator",
+      "commit": "6a89bde8f67ed4a879c9eec0542f18e29a56bac8",
+      "url": "https://codeload.github.com/Keats/validator/tar.gz/6a89bde8f67ed4a879c9eec0542f18e29a56bac8",
+      "sha256": "94b4519c3abc616067ff2d77ff43f05943b0d77cc7d1ab3cfec8faf2da2d6146",
+      "size": 42674,
+      "for_crates": [
+        "b92f40481c04ff1f4f61f304d61793c7b56ff76ac1469f1beb199b1445b253bd"
+      ]
+    },
+    {
+      "name": "Keats/validator",
+      "commit": "44cc91749c675985468e59e126d76465fc675fb5",
+      "url": "https://codeload.github.com/Keats/validator/tar.gz/44cc91749c675985468e59e126d76465fc675fb5",
+      "sha256": "0fab2473105001c4adb504d394130df5eea06239736d3b87cca140b4d66ab991",
+      "size": 42501,
+      "for_crates": [
+        "bc44ca3088bb3ba384d9aecf40c6a23a676ce23e09bdaca2073d99c207f864af",
+        "111abfe30072511849c5910134e8baf8dc05de4c0e5903d681cbd5c9c4d611e3"
+      ]
+    },
+    {
+      "name": "qnighy/yasna.rs",
+      "commit": "b7e65f9a4c317494cce2d18ea02b3d6eaaea7985",
+      "url": "https://codeload.github.com/qnighy/yasna.rs/tar.gz/b7e65f9a4c317494cce2d18ea02b3d6eaaea7985",
+      "sha256": "d34b1995b71c7c72760d1a11ac18754c17129a1abf90317aa7ec1b2a6daa8f72",
+      "size": 59894,
+      "for_crates": [
+        "e17bb3549cc1321ae1296b9cdc2698e2b6cb1992adfa19a8c72e5b7a738f44cd"
+      ]
+    },
+    {
+      "name": "polarsignals/rust-jemalloc-pprof",
+      "commit": "605dd84a188e88c8b18bfdf18935db1c6247622c",
+      "url": "https://codeload.github.com/polarsignals/rust-jemalloc-pprof/tar.gz/605dd84a188e88c8b18bfdf18935db1c6247622c",
+      "sha256": "4fe735c489e4b5026c252cefe6439186897730f8bf88ee0dada9be6f07540e3d",
+      "size": 28845,
+      "for_crates": [
+        "2c012489c8d9854763e1bca83817084d7aefcc14ba00f48fa13a855c7a6a4560"
+      ]
+    },
+    {
+      "name": "polarsignals/rust-jemalloc-pprof",
+      "commit": "ed506dedadef8b6308ab9c806b6165dd522f3b29",
+      "url": "https://codeload.github.com/polarsignals/rust-jemalloc-pprof/tar.gz/ed506dedadef8b6308ab9c806b6165dd522f3b29",
+      "sha256": "de330bd6e3333b27b9edba51ecba89bca62a45c2080e1cc9dc24fde2ed8f4473",
+      "size": 28705,
+      "for_crates": [
+        "36a97c97faba2c539e30e8a3e625ad152fb1f38c297078b8078b2205c25778d2"
+      ]
+    },
+    {
+      "name": "bytecodealliance/wit-bindgen",
+      "commit": "66bfda38bee488df27692311e364d79a3cd301a7",
+      "url": "https://codeload.github.com/bytecodealliance/wit-bindgen/tar.gz/66bfda38bee488df27692311e364d79a3cd301a7",
+      "sha256": "7fa180327500f1f46e2aab88dab170fec78d330471f8ce3ad0805cb5b1641981",
+      "size": 324964,
+      "for_crates": [
+        "3268f3d866458b787f390cf61f4bbb563b922d091359f9608842999eaee3943c"
+      ]
+    }
+  ]
+}

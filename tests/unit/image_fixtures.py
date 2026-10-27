@@ -9,6 +9,7 @@ import sys
 BUILD_TOOLS = Path(__file__).resolve().parents[2] / 'build/tools'
 sys.path.insert(0, str(BUILD_TOOLS))
 import profiles
+import sbom
 
 
 def idle_record(subject, phase):
@@ -59,3 +60,36 @@ def qualification(policy):
                                      'gates': {gate: {'status': 'passed', 'evidence': 'synthetic-test-only',
                                                       'subject': copy.deepcopy(subject)} for gate in gates}})
     return evidence
+
+
+def inventory(directory, subject):
+    """Small synthetic inventory for exercising candidate integrity boundaries."""
+    manifest = {'manifest_version': 1, 'config': {'architecture': subject['architecture'],
+        'version': subject['version']}, 'packages': [{'type': 'deb', 'name': 'systemd',
+        'version': '255-test', 'architecture': subject['architecture']}]}
+    sbom.write_json(directory / 'image.manifest', manifest)
+    components = sbom.read_json(profiles.ROOT / 'src/components.lock.json')
+    (directory / 'components.lock.json').write_bytes((profiles.ROOT / 'src/components.lock.json').read_bytes())
+    subject['manifest_sha256'] = profiles.sha256(directory / 'image.manifest')
+    runtimes = [{'component': n, 'version': v, 'artifact': a, 'path': p, 'sha256': 'b' * 64}
+                for n, v, a, m, p, archive in sbom.runtime_files(components, subject['architecture'])]
+    raw = {'descriptor': {'name': 'syft', 'version': sbom.read_json(sbom.LOCK)['version']},
+           'source': {'type': 'directory'}, 'artifacts': [{'type': 'go-module', 'name': 'example.org/library',
+               'locations': [{'path': '/usr/bin/containerd'}]}],
+           'files': [{'location': {'path': r['path']}, 'metadata': {'type': 'RegularFile'},
+                      'digests': [{'algorithm': 'sha256', 'value': r['sha256']}]} for r in runtimes]}
+    scan = {'bomFormat': 'CycloneDX', 'specVersion': '1.6', 'version': 1,
+            'metadata': {'component': {'bom-ref': 'scan-root', 'type': 'file', 'name': 'scan'}},
+            'components': [{'bom-ref': 'package-1', 'type': 'library', 'name': 'example.org/library'}],
+            'dependencies': [{'ref': 'scan-root', 'dependsOn': ['package-1']}]}
+    for name, value in zip(sbom.FILES, [raw, scan, sbom.compose(scan, manifest, subject, runtimes)]):
+        sbom.write_json(directory / name, value)
+    lock = sbom.read_json(sbom.LOCK)
+    evidence = {'schema': 1, 'status': 'inventoried', 'identity': subject,
+        'scanner_lock_sha256': profiles.sha256(sbom.LOCK), 'scanner_config_sha256': profiles.sha256(sbom.CONFIG),
+        'scanner': {'version': lock['version'], 'architecture': subject['architecture'],
+            'artifact': lock['artifacts'][subject['architecture']], 'binary_sha256': 'c' * 64},
+        'runtimes': runtimes, 'coverage': sbom.inventory_summary(raw, manifest, components, subject, runtimes),
+        'files': {name: profiles.sha256(directory / name) for name in sbom.FILES}}
+    sbom.write_json(directory / sbom.REPORT, evidence)
+    return sbom.verify_inventory(directory, subject, directory / 'image.manifest', directory / 'components.lock.json')

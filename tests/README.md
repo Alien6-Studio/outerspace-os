@@ -55,6 +55,19 @@ functional observations, not hardware performance claims.
 The two UEFI boots also record a source-bound idle-host baseline on the same
 four-vCPU/4-GiB reference. This uses the existing opt-in selftest, with CRI empty
 and kubelet/P2P inactive. See the [measurement protocol](benchmarks/README.md).
+Both boots must also meet the CPU/RAM ceilings derived from the four qualified
+native archives. Packaging recomputes the measurements and requires the same
+policy-bound result; see the [baseline policy](benchmarks/agent-baseline.md).
+
+`make worker-comparison IMAGE_OUTPUT=/absolute/path/to/agent-cpu-ARCH` runs an
+opt-in comparison against a signed, pinned Ubuntu cloud image. It measures zero,
+one, two and four admitted Agents on serial four-vCPU/4-GiB QEMU workers with
+identical kernels, runtimes, CNI and Agent budgets. It checks health, stable
+workload identities and complete teardown, and refuses a mismatched comparison.
+The lab needs GnuPG in addition to the enrollment tools. Its image-bound raw
+results are observations; ten/hundred-Agent density and physical performance
+remain untested. The [protocol](benchmarks/agent-baseline.md) records preparation,
+storage differences and the limits of this reference.
 
 The disposable lab initially signs ten-minute client certificates to exercise
 a real rotation, then gives renewals four hours. Their earliest automatic

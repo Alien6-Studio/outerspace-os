@@ -62,7 +62,7 @@ class Session:
         self.bytes += size
 
     def register(self, metadata):
-        if (set(metadata) != SCOPE_FIELDS or len(self.scopes) >= MAX_SCOPES
+        if (set(metadata) != SCOPE_FIELDS
                 or any(not identifier(metadata[k]) for k in ['pod_uid', 'node_uid', 'boot_id'])
                 or any(not HEX64.fullmatch(metadata[k]) for k in ['container_id', 'image_id'])
                 or type(metadata['restart_count']) is not int or metadata['restart_count'] < 0):
@@ -71,6 +71,9 @@ class Session:
         if any((s['pod_uid'], s['container_id']) == (metadata['pod_uid'], metadata['container_id'])
                for s in self.scopes.values()):
             raise ValueError('Execution scope is already registered')
+        if len(self.scopes) >= MAX_SCOPES:
+            self.failed = True
+            raise ValueError('Execution scope buffer budget exceeded; cancel pending benchmark work')
         self.reserve(metadata)
         scope = str(uuid.uuid4())
         self.scopes[scope], self.samples[scope] = dict(metadata), []

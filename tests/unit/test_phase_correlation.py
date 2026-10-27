@@ -125,6 +125,23 @@ class CorrelationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'failed closed'):
             self.begin(self.scope)
 
+    def test_scope_exhaustion_retains_evidence_and_closes_existing_scopes(self):
+        self.begin(self.scope)
+        self.observe(1, 100)
+        next_identity = {**self.identity, 'pod_uid': str(uuid.uuid4()), 'container_id': 'e' * 64}
+        with patch.object(correlation, 'MAX_SCOPES', 1):
+            with self.assertRaisesRegex(ValueError, 'scope buffer budget'):
+                self.session.register(next_identity)
+        report = self.session.report()
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(len(report['scopes']), 1)
+        self.assertEqual(len(report['scopes'][self.scope]['samples']), 1)
+        self.assertIn('unfinished-operation', report['scopes'][self.scope]['reasons'])
+        with self.assertRaisesRegex(ValueError, 'failed closed'):
+            self.begin(self.scope)
+        with self.assertRaisesRegex(ValueError, 'failed closed'):
+            self.observe(2, 200)
+
     def test_probe_rejects_path_injection_and_unbounded_process_lists(self):
         for request in [dict(pod_uid='../../secret', container_id='b' * 64, known_processes=[]),
                         dict(pod_uid=self.identity['pod_uid'], container_id='b' * 64,

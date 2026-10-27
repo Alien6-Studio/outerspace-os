@@ -30,6 +30,11 @@
   Physical-host identity and hardware qualification remain separate gates.
 - Still required: broader host-hardening and security coverage,
   dependency/vulnerability inventory and redistribution/corresponding-source review.
+- Per-image builds now generate a checksum-bound [CycloneDX inventory](../../build/sbom/README.md)
+  from the final disk, installed APT manifest and verified external binaries.
+  Packaging and promotion refuse stale or altered inventories. Undiscoverable
+  transitive dependencies, license/source review, vulnerability triage and input
+  snapshot locking remain open; inventory generation alone qualifies none of them.
 
 ## 0.2 — Faster and smaller delivery, measured
 

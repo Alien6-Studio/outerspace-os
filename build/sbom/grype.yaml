@@ -1,0 +1,17 @@
+check-for-app-update: false
+db:
+  auto-update: false
+  validate-by-hash-on-start: true
+  validate-age: true
+  max-allowed-built-age: 120h
+match:
+  java:
+    using-cpes: false
+  golang:
+    using-cpes: false
+    always-use-cpe-for-stdlib: false
+    allow-main-module-pseudo-version-comparison: false
+  rust:
+    using-cpes: false
+  stock:
+    using-cpes: false

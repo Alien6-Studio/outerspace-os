@@ -50,6 +50,13 @@ jobs:
         with:
           persist-credentials: false
       - run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu builder build smoke package
+      - name: Record independent-build reproducibility differences
+        run: |
+          make PROFILE=${{ matrix.profile }} HARDWARE=cpu OUT_DIR="$PWD/out/repeated" build
+          python3 build/tools/reproducibility.py \
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }} \
+            out/repeated/${{ matrix.profile }}-cpu-${{ matrix.arch }} \
+            --output out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/reproducibility.json
       - name: Qualify the packaged worker on its own kernel
         run: |
           if [ '${{ matrix.profile }}' = agent ]; then
@@ -70,6 +77,10 @@ jobs:
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-isolation*.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-resources*.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/agent-resources*.log
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/reproducibility.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/security-review.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/redistribution-review.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/supply-chain.json
           retention-days: 7
   ci:
     name: ci

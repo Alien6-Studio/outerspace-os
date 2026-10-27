@@ -28,7 +28,9 @@
       "config_contract",
       "checksums",
       "release_notes",
-      "license_review"
+      "license_review",
+      "sbom",
+      "vulnerability_review"
     ],
     "beta": [
       "boot",
@@ -41,7 +43,9 @@
       "cilium",
       "dragonfly_p2p",
       "image_gc",
-      "state_reboot"
+      "state_reboot",
+      "sbom",
+      "vulnerability_review"
     ],
     "rc": [
       "boot",

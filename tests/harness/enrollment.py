@@ -932,7 +932,8 @@ def main():
     metadata = json.loads((output / 'build-identity.json').read_text())
     bundle = output / f'outerspace-{metadata["version"]}-{args.profile}-cpu-{metadata["architecture"]}'
     load_script('prepare-release', BUILD_TOOLS).verify_bundle(bundle, metadata['version'], metadata['commit'],
-                                                {'identity': metadata, 'sha256sums': digest(bundle / 'SHA256SUMS')})
+                                                {'identity': metadata, 'sha256sums': digest(bundle / 'SHA256SUMS')},
+                                                development='-dev.' in metadata['version'])
     verify_args = ['docker', 'run', '--rm', '--cap-drop=ALL', '--mount', f'type=bind,src={ROOT},dst=/work,readonly',
                    '--mount', f'type=bind,src={output},dst=/out,readonly', 'outerspace-builder:dev',
                    'python3', '-c', 'import sys; from pathlib import Path; sys.path.insert(0,"/work/build/tools"); '

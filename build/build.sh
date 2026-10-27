@@ -12,8 +12,9 @@ if [[ $# -gt 2 || -n $(git -C "$repo" status --porcelain --untracked-files=norma
     exit 1
 fi
 commit=$(git -C "$repo" rev-parse HEAD)
-output="$repo/out/$directory"
+output="${OUTERSPACE_OUTPUT_ROOT:-$repo/out}/$directory"
 mkdir -p "$output" "$repo/.cache"
+output=$(cd "$output" && pwd)
 source_tree=$(mktemp -d "${TMPDIR:-/tmp}/outerspace-source.XXXXXX")
 cleanup_source() {
     # Docker Desktop can return before releasing a nested read-only bind mount.
@@ -30,13 +31,15 @@ tar -xf "$source_tree/source.tar" -C "$source_tree/tree"
 if ! docker image inspect "$builder" >/dev/null 2>&1; then
     docker build -t "$builder" -f "$repo/build/Dockerfile" "$repo"
 fi
+builder_id=$(docker image inspect --format '{{.Id}}' "$builder")
 # Privileges are confined to the disposable Linux builder. No host devices or
 # Docker socket are mounted. mkosi needs mount/user namespaces to assemble an OS.
 docker run --rm --privileged \
     --env "OUTERSPACE_SOURCE_COMMIT=$commit" \
+    --env "OUTERSPACE_BUILDER_ID=$builder_id" \
     --mount "type=bind,src=$source_tree/tree,dst=/repo,readonly" \
     --mount "type=bind,src=$source_tree/source.tar,dst=/source.tar,readonly" \
     --mount "type=bind,src=$repo/.cache,dst=/repo/.cache,readonly" \
     --mount "type=bind,src=$output,dst=/out" \
     --mount "type=bind,src=$repo/.cache,dst=/cache" \
-    "$builder" bash /repo/build/assemble.sh "$profile" "$hardware"
+    "$builder_id" bash /repo/build/assemble.sh "$profile" "$hardware"

@@ -1,0 +1,74 @@
+[
+  {
+    "vulnerability": "",
+    "include-aliases": false,
+    "reason": "",
+    "namespace": "",
+    "fix-state": "",
+    "package": {
+      "name": "kernel-headers",
+      "version": "",
+      "language": "",
+      "type": "rpm",
+      "location": "",
+      "upstream-name": "kernel"
+    },
+    "vex-status": "",
+    "vex-justification": "",
+    "match-type": "exact-indirect-match"
+  },
+  {
+    "vulnerability": "",
+    "include-aliases": false,
+    "reason": "",
+    "namespace": "",
+    "fix-state": "",
+    "package": {
+      "name": "linux(-.*)?-headers-.*",
+      "version": "",
+      "language": "",
+      "type": "deb",
+      "location": "",
+      "upstream-name": "linux.*"
+    },
+    "vex-status": "",
+    "vex-justification": "",
+    "match-type": "exact-indirect-match"
+  },
+  {
+    "vulnerability": "",
+    "include-aliases": false,
+    "reason": "",
+    "namespace": "",
+    "fix-state": "",
+    "package": {
+      "name": "linux-libc-dev",
+      "version": "",
+      "language": "",
+      "type": "deb",
+      "location": "",
+      "upstream-name": "linux"
+    },
+    "vex-status": "",
+    "vex-justification": "",
+    "match-type": "exact-indirect-match"
+  },
+  {
+    "vulnerability": "",
+    "include-aliases": false,
+    "reason": "",
+    "namespace": "",
+    "fix-state": "",
+    "package": {
+      "name": "linux-kbuild-.*",
+      "version": "",
+      "language": "",
+      "type": "deb",
+      "location": "",
+      "upstream-name": "linux.*"
+    },
+    "vex-status": "",
+    "vex-justification": "",
+    "match-type": "exact-indirect-match"
+  }
+]

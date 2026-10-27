@@ -14,6 +14,9 @@ RUN curl -fsSL https://github.com/systemd/mkosi/archive/refs/tags/v25.3.tar.gz -
     && ln -s /opt/mkosi/bin/mkosi /usr/local/bin/mkosi \
     && rm /tmp/mkosi.tar.gz
 ENV PYTHONPATH=/opt/mkosi
+COPY build/sbom/syft.lock.json /opt/outerspace/syft.lock.json
+COPY build/tools/install-syft.py /opt/outerspace/install-syft.py
+RUN python3 /opt/outerspace/install-syft.py /opt/outerspace/syft.lock.json /usr/local/bin/syft
 RUN apt-get update && apt-get install -y --no-install-recommends systemd-boot \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /repo

@@ -18,3 +18,6 @@ mkosi --directory=/repo/src/image --profile="$profiles" --image-version="$(cat /
 cp /source.tar /out/outerspace-source.tar
 python3 /repo/build/tools/profiles.py stamp --root=/out --profile "$profile" --hardware "$hardware" \
     --commit "$OUTERSPACE_SOURCE_COMMIT"
+# Scan the completed disk, offline and read-only, with tooling outside the host.
+unshare --net python3 /repo/build/tools/sbom.py --output=/out --profile "$profile" --hardware "$hardware" \
+    --commit "$OUTERSPACE_SOURCE_COMMIT"

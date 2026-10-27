@@ -9,6 +9,7 @@ and packaging; qualification commands live in [tests/](../tests/README.md).
 | `build.sh` | Archive committed source and launch the isolated builder |
 | `assemble.sh` | Assemble the selected mkosi profile inside the builder |
 | `tools/` | Component integrity, kernel preparation, image identity and release validation |
+| `sbom/` | Pinned offline scanner policy and per-image inventory coverage |
 | `release/` | Release policy, evidence schema and version-specific notes |
 
 ## Build an image
@@ -49,6 +50,9 @@ runtimes are pinned in the [image configuration](../src/image/mkosi.conf) and
 Assembly produces a raw GPT disk, UKI, split kernel/initrd, package manifest and
 source archive. `build-identity.json` records the profile, architecture, source
 commit, component lock, disk/UKI/manifest/source digests and verity root hash.
+The final disk is then scanned read-only to produce an independently bound
+[CycloneDX SBOM](sbom/README.md), raw scanner evidence and explicit coverage gaps.
+The scanner remains in the builder; no scanner enters the OS image.
 
 `make smoke` boots the complete disk through UEFI twice on a disposable overlay.
 The raw image stays unchanged. Packaging requires both successful boots and
@@ -62,6 +66,9 @@ includes its checksum and result; see the [baseline policy](../tests/benchmarks/
 source archive, inventories, boot evidence and SHA256 checksums. Development CI
 uploads reports and inventories. Candidate promotion follows the
 [release process](release/README.md).
+Both packaging and promotion require the exact SBOM and recheck its hashes,
+image subject, installed runtime entries and reconstruction from raw inputs.
+Older images must be rebuilt through this pipeline before candidate packaging.
 
 Ubuntu packages use signed Noble update/security repositories. Exact binary
 reproduction additionally requires a pinned package snapshot and build metadata.

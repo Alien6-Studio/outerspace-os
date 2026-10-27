@@ -1,0 +1,21 @@
+# Installed software, including Go/Rust binary metadata and kernel modules.
+# The scanner runs in a separate network namespace. No remote enrichment.
+check-for-app-update: false
+default-catalogers: [image]
+parallelism: 2
+file:
+  metadata:
+    selection: all
+    digests: [sha256]
+golang:
+  search-local-mod-cache-licenses: false
+  search-local-vendor-licenses: false
+  search-remote-licenses: false
+java:
+  resolve-transitive-dependencies: false
+javascript:
+  search-remote-licenses: false
+python:
+  search-remote-licenses: false
+license:
+  content: none

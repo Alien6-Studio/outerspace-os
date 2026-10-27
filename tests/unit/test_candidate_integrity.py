@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from image_fixtures import identity
+from image_fixtures import identity, inventory
 
 BUILD_TOOLS = Path(__file__).resolve().parents[2] / 'build/tools'
 sys.path.insert(0, str(BUILD_TOOLS))
@@ -22,7 +22,9 @@ class CandidateIntegrityTests(unittest.TestCase):
         self.bundle = Path(self.directory.name)
         (self.bundle / 'image.raw.zst').write_bytes(b'qualified image')
         self.artifact = {'identity': identity('agent', 'arm64')}
-        (self.bundle / 'build-metadata.json').write_text(json.dumps({'schema': 2, 'identity': self.artifact['identity']}))
+        supply_chain = inventory(self.bundle, self.artifact['identity'])
+        (self.bundle / 'build-metadata.json').write_text(json.dumps({'schema': 2, 'identity': self.artifact['identity'],
+                                                                  'supply_chain': supply_chain}))
         self.inventory = self.bundle / 'SHA256SUMS'
         self.inventory.write_text(''.join(f'{prepare.sha256(p)}  {p.name}\n' for p in sorted(self.bundle.iterdir())))
         self.digest = prepare.sha256(self.inventory)
@@ -43,6 +45,23 @@ class CandidateIntegrityTests(unittest.TestCase):
         (self.bundle / 'unexpected.sh').write_text('unqualified')
         with self.assertRaisesRegex(ValueError, 'extra file'):
             self.verify()
+
+    def test_promotion_requires_inventory_even_if_checksum_list_is_rewritten(self):
+        (self.bundle / 'sbom-evidence.json').unlink()
+        self.inventory.write_text(''.join(f'{prepare.sha256(p)}  {p.name}\n' for p in sorted(self.bundle.iterdir())
+                                          if p != self.inventory))
+        with self.assertRaisesRegex(ValueError, 'regular file'):
+            self.verify(prepare.sha256(self.inventory))
+
+    def test_promotion_rejects_forged_supply_chain_summary(self):
+        path = self.bundle / 'build-metadata.json'
+        metadata = json.loads(path.read_text())
+        metadata['supply_chain']['coverage']['license_review'] = 'passed'
+        path.write_text(json.dumps(metadata))
+        self.inventory.write_text(''.join(f'{prepare.sha256(p)}  {p.name}\n' for p in sorted(self.bundle.iterdir())
+                                          if p != self.inventory))
+        with self.assertRaisesRegex(ValueError, 'Candidate SBOM'):
+            self.verify(prepare.sha256(self.inventory))
 
     def test_inventory_must_be_bound_to_evidence(self):
         with self.assertRaisesRegex(ValueError, 'exact SHA256SUMS'):

@@ -13,6 +13,7 @@ import statistics
 import subprocess
 import uuid
 from profiles import PROFILES, HARDWARE, marker, verify_identity
+from sbom import FILES as SBOM_FILES, REPORT as SBOM_REPORT, verify_inventory
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -216,6 +217,7 @@ def main():
     except (ValueError, OSError) as error:
         parser.error(f'Cannot package unqualified disk: {error}')
     identity = boot_report['identity']
+    supply_chain = verify_inventory(output, identity, output / 'outerspace.manifest', ROOT / 'src/components.lock.json')
     arch = identity['architecture']
     version = (ROOT / 'VERSION').read_text().strip()
     bundle = output / f'outerspace-{version}-{args.profile}-{args.hardware}-{arch}'
@@ -231,6 +233,10 @@ def main():
         shutil.copyfile(output / f'boot-uefi-{phase}.log', bundle / f'boot-uefi-{phase}.log')
     shutil.copyfile(ROOT / 'src/components.lock.json', bundle / 'components.lock.json')
     shutil.copyfile(IDLE_POLICY, bundle / 'idle-host.lock.json')
+    for name in (*SBOM_FILES, SBOM_REPORT):
+        shutil.copyfile(output / name, bundle / name)
+    shutil.copyfile(ROOT / 'build/sbom/syft.lock.json', bundle / 'syft.lock.json')
+    shutil.copyfile(ROOT / 'build/sbom/syft.yaml', bundle / 'syft.yaml')
     subprocess.run(['zstd', '-q', str(output / 'outerspace-source.tar'), '-o', str(bundle / 'source.tar.zst')], check=True)
     metadata = {'schema': 2, 'identity': identity,
                 'channel': 'development' if '-dev.' in version else 'candidate',
@@ -240,6 +246,7 @@ def main():
                 'manifest_sha256': sha256(output / 'outerspace.manifest'),
                 'components_lock_sha256': sha256(ROOT / 'src/components.lock.json'),
                 'host_regression': boot_report['host_regression'],
+                'supply_chain': supply_chain,
                 'files': {p.name: sha256(p) for p in sorted(bundle.iterdir())}}
     (bundle / 'build-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
     files = sorted(bundle.iterdir())

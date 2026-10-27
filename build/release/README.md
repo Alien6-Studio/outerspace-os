@@ -93,10 +93,13 @@ release should be created while signing/updater/audit gates are unimplemented.
 ## Release contents
 
 Per profile, hardware and architecture: a tar bundle containing compressed raw disk, UKI, exact package
-manifest, runtime lock, build metadata, QEMU log and SHA256SUMS. The tar also gets
-an external checksum; qualification evidence accompanies the draft. The manifest
-is an inventory, not a complete SPDX/CycloneDX SBOM. RC requires a proper SBOM,
-license review and vulnerability report, including non-apt upstream binaries.
+manifest, runtime lock, build metadata, QEMU log, CycloneDX inventory, raw scanner
+evidence and SHA256SUMS. The tar also gets an external checksum; qualification
+evidence accompanies the draft. The [per-image inventory](../sbom/README.md)
+records its coverage gaps and is verified again during promotion. Its generation
+does not automatically pass the SBOM review, license or vulnerability gates.
+RC still requires reviewed dependency coverage, corresponding-source/notice and
+vulnerability evidence, including non-apt upstream binaries.
 The initial apt inputs are signed Noble repositories, not snapshot-locked;
 bit-for-bit reproducibility must not be claimed yet.
 

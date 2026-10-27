@@ -11,6 +11,7 @@ import tempfile
 import tarfile
 from package import sha256
 from release import ROOT, validate_release
+from sbom import verify_inventory
 
 
 def gh_json(*args):
@@ -41,6 +42,11 @@ def verify_bundle(bundle, version, commit, artifact):
         listed.add(name)
     if listed | {'SHA256SUMS'} != {p.name for p in bundle.iterdir()}:
         raise ValueError('Unverified extra file in candidate bundle')
+    manifests = list(bundle.glob('*.manifest'))
+    if len(manifests) != 1:
+        raise ValueError('Exactly one installed package manifest is required')
+    if metadata.get('supply_chain') != verify_inventory(bundle, identity, manifests[0], bundle / 'components.lock.json'):
+        raise ValueError('Candidate SBOM differs from qualified inventory')
 
 
 def main():

@@ -3,6 +3,7 @@
 # Copyright (C) 2026 OuterSpace OS contributors
 """Verify GitHub keyless provenance against an explicitly trusted candidate job."""
 import json
+import argparse
 from pathlib import Path
 import re
 import subprocess
@@ -35,3 +36,14 @@ def verify(checksums, bundle, commit, tag, run_id):
             return {'repository': REPOSITORY, 'workflow': WORKFLOW, 'commit': commit,
                     'tag': tag, 'invocation': invocation}
     raise ValueError('Attestation does not identify the qualified workflow run')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--checksums', type=Path, required=True)
+    parser.add_argument('--bundle', type=Path, required=True)
+    parser.add_argument('--commit', required=True)
+    parser.add_argument('--tag', required=True)
+    parser.add_argument('--run', required=True)
+    args = parser.parse_args()
+    print(json.dumps(verify(args.checksums, args.bundle, args.commit, args.tag, args.run), indent=2))

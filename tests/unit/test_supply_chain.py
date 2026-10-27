@@ -8,6 +8,7 @@ import io
 import json
 from pathlib import Path
 import subprocess
+import shutil
 import tarfile
 import tempfile
 import unittest
@@ -18,6 +19,7 @@ import attestations
 import redistribution
 import security
 import supply_chain
+import reproducibility
 
 spec = importlib.util.spec_from_file_location('apt_inputs', BUILD_TOOLS / 'apt-inputs.py')
 apt_inputs = importlib.util.module_from_spec(spec)
@@ -101,6 +103,49 @@ class SourceArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Unsafe'):
                 supply_chain.sources.license_evidence(path)
 
+    @unittest.skipUnless(shutil.which('zstd'), 'Source archive integration requires zstd')
+    def test_source_archive_corruption_and_missing_cargo_closure_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); cache = root / 'cache'; cache.mkdir()
+            for dependency in [False, True]:
+                lock_text = 'version=4\n[[package]]\nname="workspace"\nversion="1.0.0"\n'
+                if dependency:
+                    lock_text += ('[[package]]\nname="required"\nversion="1.0.0"\n'
+                                  'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="' + 'e'*64 + '"\n')
+                path = self.archive(root, {'project/Cargo.lock': lock_text.encode()})
+                digest = security.sha256(path); shutil.copyfile(path, cache / digest)
+                entry = {'sha256': digest, 'size': path.stat().st_size, 'url': 'https://example.invalid/source'}
+                lockfile = root / 'sources.lock.json'
+                security.write_json(lockfile, {'sources': {'dfdaemon': entry}})
+                index = {'schema': 1, 'source_lock_sha256': security.sha256(lockfile),
+                         'entries': [{**entry, 'name': 'dfdaemon', 'kind': 'runtime-source'}]}
+                security.write_json(root / 'source-index.json', index)
+                supply_chain.sources.bundle(cache, root, index)
+                if dependency:
+                    with self.assertRaisesRegex(ValueError, 'transitive Cargo'):
+                        supply_chain.sources.verify(root, {'sources': []}, lockfile)
+                    continue
+                self.assertEqual(supply_chain.sources.verify(root, {'sources': []}, lockfile)['objects'], 1)
+                archive = root / 'corresponding-source.tar.zst'
+                data = subprocess.check_output(['zstd', '-dc', str(archive)])
+                buffer = io.BytesIO()
+                with tarfile.open(fileobj=io.BytesIO(data)) as original, tarfile.open(fileobj=buffer, mode='w') as changed:
+                    for member in original:
+                        content = original.extractfile(member).read()
+                        if member.name.startswith('objects/'):
+                            content = bytes([content[0] ^ 1]) + content[1:]
+                        changed.addfile(member, io.BytesIO(content))
+                subprocess.run(['zstd', '-q', '-f', '-o', str(archive)], input=buffer.getvalue(), check=True)
+                with self.assertRaisesRegex(ValueError, 'checksum'):
+                    supply_chain.sources.verify(root, {'sources': []}, lockfile)
+
+    def test_reproducibility_localizes_changed_disk_regions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); a, b = root / 'a', root / 'b'
+            a.write_bytes(b'a' * 256); b.write_bytes(b'a' * 64 + b'b' + b'a' * 191)
+            differences = reproducibility.differing_blocks(a, b, block_size=64)
+            self.assertEqual([(d['offset'], d['length']) for d in differences], [(64, 64)])
+
 
 class VulnerabilityReviewTests(unittest.TestCase):
     def setUp(self):
@@ -164,6 +209,13 @@ class VulnerabilityReviewTests(unittest.TestCase):
     def test_hidden_scanner_ignores_are_rejected(self):
         self.scan['descriptor']['configuration']['ignore'].append({'vulnerability': 'TEST-CVE'})
         with self.assertRaisesRegex(ValueError, 'ignore'): self.evaluate()
+
+    def test_filtering_unfixed_findings_and_unknown_severity_cannot_pass(self):
+        self.scan['descriptor']['configuration']['only-fixed'] = True
+        with self.assertRaisesRegex(ValueError, 'Filtered'): self.evaluate()
+        self.scan['descriptor']['configuration']['only-fixed'] = False
+        self.match['vulnerability']['severity'] = 'unexpected'
+        with self.assertRaisesRegex(ValueError, 'severity'): self.evaluate()
 
 
 class ProvenanceTests(unittest.TestCase):

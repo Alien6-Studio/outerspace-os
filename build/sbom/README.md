@@ -25,6 +25,8 @@ command preserve:
   descriptors, original archives and distro patches; runtime source repositories
   including vendored Go dependencies; Go standard-library source; Cargo registry
   and explicitly pinned Git dependencies. The archive embeds the exact index.
+  Supplemental source archives recover omitted crate notices at the publication
+  commit recorded in each crate's `.cargo_vcs_info.json`; mismatches are rejected.
 - `distribution.sbom.syft.json`, `distribution.sbom.cdx.json`: combined native
   inventory used by Grype and the distribution's CycloneDX 1.6 inventory. APT
   source names replace ELF guesses. Runtime dependencies are checked against

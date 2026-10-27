@@ -69,7 +69,10 @@ def compose_native(raw, apt, native, manifest, index):
         result['artifacts'].append({'id': 'outerspace-source:' + purl,
             'name': entry['name'], 'version': entry['version'], 'type': 'rust-crate',
             'foundBy': 'outerspace-cargo-lock-source-closure', 'locations': [],
-            'language': 'rust', 'licenses': [], 'cpes': [], 'purl': purl})
+            'language': 'rust', 'licenses': [{'value': expression, 'spdxExpression': '',
+                'type': 'declared', 'urls': [], 'locations': []}
+                for expression in entry.get('licenses', {}).get('declared_licenses', [])],
+            'cpes': [], 'purl': purl})
     ids = [a['id'] for a in result['artifacts']]
     if len(ids) != len(set(ids)):
         raise ValueError('Duplicate combined SBOM identity')
@@ -169,6 +172,8 @@ def verify(directory, identity, manifest_path):
         path = directory / name
         if path.is_symlink() or not path.is_file() or sha256(path) != digest:
             raise ValueError('Supply chain integrity failure: ' + name)
+    if report.get('base_inventory') != verify_inventory(directory, identity, manifest_path, ROOT / 'src/components.lock.json'):
+        raise ValueError('Supply chain disk inventory differs')
     apt, native, manifest, index, raw = [read_json(p) for p in
         [directory / 'apt-inputs.json', directory / 'apt.sbom.syft.json', manifest_path,
          directory / 'source-index.json', directory / 'sbom.syft.json']]

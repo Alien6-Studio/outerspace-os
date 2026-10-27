@@ -130,6 +130,7 @@ def collect(cache, apt_inputs=None):
         list(pool.map(lambda e: fetch(cache, e), entries))
     cargo = cargo_inventory(cache / lock['sources']['dfdaemon']['sha256'], lock.get('cargo_git_sources', {}))
     entries.extend(cargo)
+    entries.extend({**e, 'kind': 'supplemental-notice-source'} for e in lock.get('supplemental_sources', []))
     if apt_inputs:
         for source in apt_inputs['sources']:
             for entry in source['files']:
@@ -138,6 +139,13 @@ def collect(cache, apt_inputs=None):
     with ThreadPoolExecutor(max_workers=6) as pool:
         list(pool.map(lambda e: fetch(cache, e), unique.values()))
     print('Verified source objects:', len(unique), flush=True)
+    for supplement in lock.get('supplemental_sources', []):
+        for digest in supplement['for_crates']:
+            if digest not in {e['sha256'] for e in cargo}:
+                raise ValueError('Supplemental notice refers to an unknown crate')
+            vcs = json.loads(archive_file(cache / digest, '.cargo_vcs_info.json'))
+            if vcs['git']['sha1'] != supplement['commit']:
+                raise ValueError('Supplemental notice source is not the crate publication revision')
     for entry in entries:
         if entry['kind'] != 'ubuntu-source':
             entry['licenses'] = license_evidence(cache / entry['sha256'])
@@ -160,7 +168,8 @@ def verify(directory, apt_inputs, lock_path=LOCK):
         raise ValueError('Sources differ from approved source lock')
     entries = index['entries']
     actual = {e['sha256']: e for e in entries}
-    required = list(lock['sources'].values()) + [f for s in apt_inputs['sources'] for f in s['files']]
+    required = (list(lock['sources'].values()) + lock.get('supplemental_sources', [])
+                + [f for s in apt_inputs['sources'] for f in s['files']])
     if any(e['sha256'] not in actual or any(actual[e['sha256']].get(k) != v for k, v in e.items()) for e in required):
         raise ValueError('Corresponding source is incomplete or changed')
     seen = set()

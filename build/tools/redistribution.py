@@ -22,8 +22,11 @@ def assess(identity, apt, index, reviews):
                        for p in apt['packages']],
                'sources': sorted({e['sha256'] for e in index['entries']})}
     digest = hashlib.sha256(json.dumps(subject, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    recovered = {digest for e in index['entries'] if e['kind'] == 'supplemental-notice-source'
+                 and e.get('licenses', {}).get('notices') for digest in e['for_crates']}
     missing_notices = [{'name': e['name'], 'version': e.get('version'), 'sha256': e['sha256']}
-                       for e in index['entries'] if e['kind'] != 'ubuntu-source' and not e.get('licenses', {}).get('notices')]
+                       for e in index['entries'] if e['kind'] != 'ubuntu-source'
+                       and e['sha256'] not in recovered and not e.get('licenses', {}).get('notices')]
     matching = [r for r in reviews['reviews'] if r.get('subject_sha256') == digest]
     if len(matching) > 1:
         raise ValueError('Ambiguous redistribution review')
@@ -32,12 +35,19 @@ def assess(identity, apt, index, reviews):
         if (approval.get('approved_by') not in reviews['approvers']
                 or approval.get('decision') != 'redistributable'
                 or len(approval.get('rationale', '')) < 80 or not approval.get('evidence')
+                or not all(str(u).startswith('https://') for u in approval['evidence'])
                 or approval.get('unresolved_notices') != []
                 or set(approval.get('notice_resolutions', {})) != {e['sha256'] for e in missing_notices}):
             raise ValueError('Incomplete or unaccountable redistribution approval')
+        for resolution in approval['notice_resolutions'].values():
+            if (not isinstance(resolution, dict) or len(resolution.get('rationale', '')) < 40
+                    or not resolution.get('evidence')
+                    or not all(str(u).startswith('https://') for u in resolution['evidence'])):
+                raise ValueError('Missing source-specific notice resolution evidence')
     return {'status': 'passed' if approval else 'review-required', 'subject_sha256': digest,
             'subject': subject, 'approval': approval, 'source_objects': len(subject['sources']),
             'apt_notices': len(apt['packages']), 'source_archives_without_notice_files': missing_notices,
+            'crates_with_recovered_notices': len(recovered),
             'obligations': ['Distribute corresponding-source.tar.zst and original source.tar.zst alongside binaries.',
                             'Keep APT copyright/common-license notices and upstream vendored LICENSE/NOTICE files.',
                             'Review license conditions and any missing notice evidence before public distribution.',

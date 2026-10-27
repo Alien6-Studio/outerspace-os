@@ -59,6 +59,8 @@ def evaluate(scan, database, identity, policy, now):
     configuration = descriptor.get('configuration', {})
     if configuration.get('ignore') != read_json(DEFAULT_IGNORE) or scan.get('ignoredMatches'):
         raise ValueError('Unreviewed scanner ignore rules are prohibited')
+    if any(configuration.get(k) for k in ['only-fixed', 'only-notfixed', 'ignore-wontfix', 'exclude', 'vex-documents']):
+        raise ValueError('Filtered vulnerability scans cannot qualify an image')
     db_status = descriptor.get('db', {}).get('status', {})
     if any(db_status.get(k) != database.get(k) for k in ['schemaVersion', 'built', 'from', 'valid']):
         raise ValueError('Scan does not use the recorded vulnerability database')
@@ -80,6 +82,8 @@ def evaluate(scan, database, identity, policy, now):
             raise ValueError('Duplicate vulnerability exception')
         exceptions[e['finding_key']] = e
     findings = [finding(m) for m in scan['matches']]
+    if any(f['severity'] not in ['Critical', 'High', 'Medium', 'Low', 'Negligible', 'Unknown'] for f in findings):
+        raise ValueError('Unrecognized vulnerability severity requires review')
     decisions = []
     used = set()
     for f in findings:

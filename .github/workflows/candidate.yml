@@ -70,6 +70,10 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: failed-boot-${{ matrix.profile }}-cpu-${{ matrix.arch }}
-          path: out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
+          name: failed-qualification-${{ matrix.profile }}-cpu-${{ matrix.arch }}
+          path: |
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*.log
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/*review.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/vulnerabilities.grype.json
+            out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/source-index.json
           retention-days: 7

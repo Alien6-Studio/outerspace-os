@@ -21,7 +21,8 @@ not by itself proof of safety when indirect calls or another artifact can expose
 the vulnerable behavior.
 
 An exception in `policy.json` requires the exact `finding_key` from the report,
-scope (profile, hardware profile, architecture and components-lock digest), owner,
+scope (profile, hardware profile, architecture, components-lock, Ubuntu/builder
+input-lock and source-lock digests), owner,
 authorized `approved_by`, review timestamp, expiry within 30 days, a detailed
 rationale and HTTPS evidence. Decisions are `not-affected` or `accepted-risk`.
 Unused scoped exceptions fail, and a changed dependency version/path cannot reuse

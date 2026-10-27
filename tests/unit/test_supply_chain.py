@@ -155,6 +155,22 @@ class SourceArchiveTests(unittest.TestCase):
             differences = reproducibility.differing_blocks(a, b, block_size=64)
             self.assertEqual([(d['offset'], d['length']) for d in differences], [(64, 64)])
 
+    def test_reproducibility_ignores_only_the_scanner_symlink_prefix(self):
+        def scan(root, target):
+            return {'source': {'type': 'directory', 'metadata': {'path': root}},
+                    'files': [{'location': {'path': '/bin'}, 'metadata': {
+                        'type': 'SymbolicLink', 'linkDestination': target}}]}
+        a = scan('/tmp/scan-a', '/tmp/scan-a/usr/bin')
+        b = scan('/tmp/scan-b', '/tmp/scan-b/usr/bin')
+        self.assertEqual(reproducibility.file_inventory(a), reproducibility.file_inventory(b))
+        self.assertEqual(a['files'][0]['metadata']['linkDestination'], '/tmp/scan-a/usr/bin')
+        for target in ['/tmp/scan-b/usr/sbin', '/tmp/scan-b-other/usr/bin', '../usr/bin']:
+            self.assertNotEqual(reproducibility.file_inventory(a),
+                                reproducibility.file_inventory(scan('/tmp/scan-b', target)))
+        a['files'].append(a['files'][0])
+        with self.assertRaisesRegex(ValueError, 'Duplicate'):
+            reproducibility.file_inventory(a)
+
 
 class VulnerabilityReviewTests(unittest.TestCase):
     def setUp(self):
@@ -177,7 +193,7 @@ class VulnerabilityReviewTests(unittest.TestCase):
 
     def exception(self):
         self.policy['exceptions'] = [{'finding_key': security.finding(self.match)['key'],
-            'scope': {k: self.subject[k] for k in ['profile', 'hardware_profile', 'architecture', 'components_lock_sha256']},
+            'scope': security.exception_scope(self.subject),
             'reviewed_at': '2026-10-27T11:00:00Z', 'expires_at': '2026-11-03T11:00:00Z',
             'approved_by': 'Coopyrightdmin', 'owner': 'synthetic test owner', 'decision': 'not-affected',
             'rationale': 'Synthetic fixture only: this is not approval of a real vulnerability.',
@@ -207,6 +223,14 @@ class VulnerabilityReviewTests(unittest.TestCase):
         self.exception()
         self.match['artifact']['version'] = '1.0.1'
         with self.assertRaisesRegex(ValueError, 'Unused'): self.evaluate()
+
+    def test_updated_ubuntu_or_source_inputs_invalidate_exception(self):
+        e = self.exception()
+        for field in ['inputs_lock_sha256', 'sources_lock_sha256']:
+            previous = e['scope'][field]
+            e['scope'][field] = '0' * 64
+            self.assertEqual(self.evaluate()['status'], 'blocked')
+            e['scope'][field] = previous
 
     def test_stale_future_and_different_database_are_rejected(self):
         for value in ['2026-10-01T06:00:00Z', '2026-10-28T06:00:00Z']:

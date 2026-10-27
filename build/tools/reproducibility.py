@@ -26,6 +26,25 @@ def differing_blocks(first, second, block_size=65536):
     return result
 
 
+def file_inventory(scan):
+    # Syft resolves link destinations under its temporary directory source.
+    # Compare those as image paths, while preserving the untouched scan evidence.
+    root = scan['source']['metadata']['path'].rstrip('/')
+    if scan['source']['type'] != 'directory' or not root.startswith('/') or not root:
+        raise ValueError('Reproducibility requires an absolute directory scan source')
+    result = {}
+    for f in scan['files']:
+        path = f['location']['path']
+        if path in result:
+            raise ValueError('Duplicate file paths in reproducibility evidence')
+        metadata = dict(f.get('metadata', {}))
+        link = metadata.get('linkDestination', '')
+        if metadata.get('type') == 'SymbolicLink' and (link == root or link.startswith(root + '/')):
+            metadata['linkDestination'] = link[len(root):] or '/'
+        result[path] = {'digests': f.get('digests', []), 'metadata': metadata}
+    return result
+
+
 def compare(first, second):
     a, b = [read_json(p / 'build-identity.json') for p in (first, second)]
     fields = ('profile', 'hardware_profile', 'architecture', 'version', 'commit',
@@ -39,10 +58,7 @@ def compare(first, second):
     if ma != mb:
         raise ValueError('Installed package input selection is not reproducible')
     scans = [read_json(p / 'sbom.syft.json') for p in (first, second)]
-    files = [{f['location']['path']: {'digests': f.get('digests', []), 'metadata': f.get('metadata', {})}
-              for f in scan['files']} for scan in scans]
-    if any(len(f) != len(s['files']) for f, s in zip(files, scans)):
-        raise ValueError('Duplicate file paths in reproducibility evidence')
+    files = [file_inventory(scan) for scan in scans]
     differences = [{'path': path, 'first': files[0].get(path), 'second': files[1].get(path)}
                    for path in sorted(set(files[0]) | set(files[1])) if files[0].get(path) != files[1].get(path)]
     artifacts = ('outerspace.raw', 'outerspace.efi', 'outerspace.manifest', 'apt-inputs.json',
@@ -56,7 +72,9 @@ def compare(first, second):
                                          for name in ['outerspace.raw', 'outerspace.efi']},
             'evidence': [{name: sha256(p / name) for name in ['build-identity.json', 'build-provenance.json',
                           'sbom.syft.json', 'sbom-evidence.json']} for p in (first, second)],
-            'limits': 'File contents and recorded metadata are compared individually. Disk/UKI hashes also cover '
+            'limits': 'File contents and recorded metadata are compared individually. Syft temporary source prefixes '
+                      'in symlink destinations are normalized to image paths; raw scans are retained unchanged. '
+                      'Disk/UKI hashes also cover '
                       'filesystem allocation, GPT UUIDs, filesystem timestamps and boot metadata. If only those '
                       'hashes differ, differing 64-KiB regions are reported; their metadata causes remain '
                       'unattributed. Do not claim bit-identical builds.'}

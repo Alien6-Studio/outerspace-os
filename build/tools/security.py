@@ -23,6 +23,12 @@ FILES = ('vulnerabilities.grype.json', 'vulnerability-database.json')
 REPORT = 'security-review.json'
 
 
+def exception_scope(identity):
+    return {**{k: identity[k] for k in ['profile', 'hardware_profile', 'architecture', 'components_lock_sha256']},
+            'inputs_lock_sha256': sha256(ROOT / 'build/inputs.lock.json'),
+            'sources_lock_sha256': sha256(ROOT / 'build/sbom/sources.lock.json')}
+
+
 def time(value):
     parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
     if parsed.tzinfo is None:
@@ -65,7 +71,7 @@ def evaluate(scan, database, identity, policy, now):
     if any(db_status.get(k) != database.get(k) for k in ['schemaVersion', 'built', 'from', 'valid']):
         raise ValueError('Scan does not use the recorded vulnerability database')
     exceptions = {}
-    scope = {k: identity[k] for k in ['profile', 'hardware_profile', 'architecture', 'components_lock_sha256']}
+    scope = exception_scope(identity)
     for e in policy['exceptions']:
         if (not re.fullmatch('[a-f0-9]{64}', e.get('finding_key', ''))
                 or e.get('approved_by') not in policy['exception_approvers'] or not e.get('owner')

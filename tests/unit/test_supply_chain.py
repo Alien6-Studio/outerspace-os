@@ -27,6 +27,15 @@ spec.loader.exec_module(apt_inputs)
 
 
 class AptSourceTests(unittest.TestCase):
+    def test_newer_spdx_identifiers_remain_declared_names_in_cyclonedx_16(self):
+        original = {'components': [{'licenses': [{'license': {'id': 'MIT'}},
+                                  {'license': {'id': 'SMAIL-GPL'}}, {'license': {'id': 'Artistic-dist'}}]}]}
+        expected = copy.deepcopy(original)
+        expected['components'][0]['licenses'][1] = {'license': {'name': 'SMAIL-GPL'}}
+        expected['components'][0]['licenses'][2] = {'license': {'name': 'Artistic-dist'}}
+        self.assertEqual(supply_chain.schema_licenses(original), expected)
+        self.assertEqual(original['components'][0]['licenses'][1], {'license': {'id': 'SMAIL-GPL'}})
+
     def test_source_selection_is_version_exact_and_snapshot_bound(self):
         text = 'Package: runc-app\nVersion: 1.3.4\nDirectory: pool/main/r/runc-app\nChecksums-Sha256:\n ' + \
                'a' * 64 + ' 123 runc-app_1.3.4.dsc\n\nPackage: runc-app\nVersion: 1.2.0\n'

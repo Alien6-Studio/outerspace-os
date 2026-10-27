@@ -26,7 +26,26 @@ FILES = ('apt-inputs.json', 'apt-notices.tar', 'apt.sbom.syft.json', 'source-ind
 REPORT = 'supply-chain.json'
 POLICIES = {'inputs.lock.json': ROOT / 'build/inputs.lock.json',
             'apt.sources': ROOT / 'build/apt.sources',
+            'cyclonedx-1.6-licenses.json': ROOT / 'build/sbom/cyclonedx-1.6-licenses.json',
             'sources.lock.json': ROOT / 'build/sbom/sources.lock.json'}
+
+
+def schema_licenses(document):
+    """Preserve newer SPDX identifiers as names when the selected schema lacks them."""
+    supported = set(read_json(POLICIES['cyclonedx-1.6-licenses.json'])['ids'])
+    result = copy.deepcopy(document)
+    def visit(value):
+        if isinstance(value, dict):
+            license = value.get('license')
+            if isinstance(license, dict) and 'id' in license and license['id'] not in supported:
+                license['name'] = license.pop('id')
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+    visit(result)
+    return result
 
 
 def apt_inventory(apt, manifest, native):
@@ -141,7 +160,7 @@ def generate(output):
         '-o', 'cyclonedx-json@1.6'], text=True))
     evidence = read_json(output / 'sbom-evidence.json')
     correspondence = source_correspondence(raw, apt, index, evidence['runtimes'], read_json(ROOT / 'src/components.lock.json'))
-    cdx = compose(converted, {'packages': []}, identity, evidence['runtimes'])
+    cdx = schema_licenses(compose(converted, {'packages': []}, identity, evidence['runtimes']))
     cdx['metadata']['properties'] = [p for p in cdx['metadata']['properties'] if p['name'] != 'outerspace:coverage']
     cdx['metadata']['properties'].append({'name': 'outerspace:coverage', 'value':
         'Final disk scan, preserved installed DPKG metadata and conservative Cargo source closure. '

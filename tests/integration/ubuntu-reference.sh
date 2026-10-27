@@ -4,6 +4,8 @@
 set -euo pipefail
 umask 077
 seed=/mnt/reference
+profile=$(cat "$seed/profile")
+[[ "$profile" == agent || "$profile" == inference ]]
 . /usr/lib/os-release
 [[ "$ID" == ubuntu && "$VERSION_ID" == 24.04 ]]
 [[ $(uname -r) == 6.8.0-147-generic ]]
@@ -36,7 +38,7 @@ for service in containerd kubelet; do
     sed 's/ outerspace-provision.service//g; s/ dfdaemon.service//g' \
         "$seed/$service.service" > "/etc/systemd/system/$service.service"
 done
-sed -i '/^\[Service\]/a Environment=OUTERSPACE_PROFILE=agent' /etc/systemd/system/containerd.service
+sed -i "/^\[Service\]/a Environment=OUTERSPACE_PROFILE=$profile" /etc/systemd/system/containerd.service
 cp "$seed/outerspace-agent-profile.service" /etc/systemd/system/
 cp "$seed/90-outerspace.conf" /etc/sysctl.d/
 cp "$seed/modules.conf" /etc/modules-load.d/reference.conf
@@ -63,5 +65,6 @@ systemctl stop apt-daily.timer apt-daily-upgrade.timer
 systemctl disable apt-daily.timer apt-daily-upgrade.timer
 dpkg-query -W -f='${Package}\t${Version}\n' > /var/lib/outerspace/reference-packages.tsv
 systemctl daemon-reload
-systemctl enable --now outerspace-agent-profile containerd kubelet
+if [[ "$profile" == agent ]]; then systemctl enable --now outerspace-agent-profile; fi
+systemctl enable --now containerd kubelet
 echo OUTERSPACE_UBUNTU_REFERENCE_CONFIGURED

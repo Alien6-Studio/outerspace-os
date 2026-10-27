@@ -139,7 +139,9 @@ class ComparisonLab(native.Lab):
             '--comparison-identity' if identity else '--comparison')
         return json.loads(result.stdout)
 
-    def reference_seed(self, image, cache, architecture):
+    def reference_seed(self, image, cache, architecture, profile='agent'):
+        if profile not in ('agent', 'inference'):
+            raise ValueError('Unsupported reference profile')
         payload = self.state / 'payload'
         payload.mkdir()
         source = ROOT / 'src/image/mkosi.extra'
@@ -158,8 +160,10 @@ class ComparisonLab(native.Lab):
         for name, path in files.items():
             shutil.copyfile(path, payload / name)
         config = (payload / 'containerd.toml').read_text()
-        config += '\n[plugins.\'io.containerd.service.v1.tasks-service\']\n  blockio_config_file = "/run/outerspace/agent-blockio.json"\n'
+        if profile == 'agent':
+            config += '\n[plugins.\'io.containerd.service.v1.tasks-service\']\n  blockio_config_file = "/run/outerspace/agent-blockio.json"\n'
         (payload / 'containerd.toml').write_text(config)
+        (payload / 'profile').write_text(profile + '\n')
         components = json.loads((ROOT / 'src/components.lock.json').read_text())
         # P2P is inactive in this benchmark; don't add it to a standard worker.
         del components['components']['dfdaemon']

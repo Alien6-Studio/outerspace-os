@@ -14,7 +14,8 @@ state = os.statvfs(root / 'var')
 comparison = len(sys.argv) == 3 and sys.argv[2] in ('--comparison', '--comparison-identity')
 if comparison:
     # Explicit benchmark-only path: never grant Ubuntu an OuterSpace image identity.
-    observation = {'comparison': True}
+    observation = {'comparison': True, 'state_capacity_bytes': state.f_blocks * state.f_frsize,
+                   'state_available_bytes': state.f_bavail * state.f_frsize}
     if sys.argv[2] == '--comparison-identity':
         def sha(path):
             with path.open('rb') as stream:
@@ -35,6 +36,10 @@ if comparison:
                           for line in (root / 'proc/stat').read_text().splitlines()),
             'machine_id': (root / 'etc/machine-id').read_text().strip(),
             'boot_id': (root / 'proc/sys/kernel/random/boot_id').read_text().strip(),
+            'numa': {p.name: {'cpulist': (p / 'cpulist').read_text().strip(),
+                              'meminfo': (p / 'meminfo').read_text().strip()}
+                     for p in sorted((root / 'sys/devices/system/node').glob('node[0-9]*'))},
+            'power': {'available': False, 'reason': 'QEMU TCG reference exposes no attributable physical energy counter'},
         }
 else:
     pki = root / 'var/lib/kubelet/pki'
@@ -70,7 +75,7 @@ if len(sys.argv) == 2 or comparison:
              'memory.events', 'pids.max', 'pids.current', 'pids.events', 'cgroup.procs',
              'io.max', 'io.stat', 'io.pressure']
     io_policy = None
-    if comparison or observation['identity']['profile'] == 'agent':
+    if (comparison and (root / 'run/outerspace/agent-blockio.json').exists()) or (not comparison and observation['identity']['profile'] == 'agent'):
         policy = json.loads((root / 'run/outerspace/agent-blockio.json').read_text())
         parameters = policy['Classes']['outerspace-agent-v1'][0]
         device = parameters['Devices'][0]

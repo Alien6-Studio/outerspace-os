@@ -979,6 +979,7 @@ def main():
                 serving = serving_module.Serving(lab, node_name, run, wait_for)
                 serving.prepare()
                 serving.sample('initial')
+                serving.sample('sustained', requests=30, minimum_seconds=60)
                 serving.restart()
                 serving.drain_recover()
             def rotation():
@@ -1052,7 +1053,7 @@ def main():
                         (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
                     if args.cpu_serving:
                         for container in ['verify-model', 'server']:
-                            result = lab.kube('-n', LAB, 'logs', 'deployment/inference', '-c', container,
+                            result = lab.kube('-n', serving_module.NAMESPACE, 'logs', 'deployment/inference', '-c', container,
                                               '--tail=500', '--timestamps', check=False)
                             (output / ('cpu-serving-final-' + container + '.log')).write_text(result.stdout + result.stderr)
                     if args.agent_isolation:

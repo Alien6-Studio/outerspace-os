@@ -42,7 +42,7 @@ HARNESS_INPUTS = ['tests/harness/enrollment.py', 'tests/harness/enrollment-vm.py
                   'src/image/mkosi.extra/etc/containerd/config.toml', 'src/image/mkosi.postinst']
 AGENT_NAMESPACE = 'outerspace-agents-v1'
 AGENT_NODE_LABEL = 'outerspace.sh.node-restriction.kubernetes.io/agent-profile'
-LAB_RENEWAL_DURATION = '4h'
+LAB_RENEWAL_DURATION = '6h'
 
 
 def run(*args, data=None, check=True, env=None, timeout=900):

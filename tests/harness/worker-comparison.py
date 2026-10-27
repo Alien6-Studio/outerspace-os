@@ -336,7 +336,7 @@ def main():
                     lab.reference_seed(image, cache, metadata['architecture'])
                 lab.vm('start', '--config-drive', *(['--ubuntu-reference'] if lab.reference else []))
                 observations[subject] = {'configuration': config, **lab.measure()}
-                observations[subject]['configuration']['client_signing_duration'] = '10m initial bootstrap; 4h renewals (test lab only)'
+                observations[subject]['configuration']['client_signing_duration'] = '10m initial bootstrap; ' + native.LAB_RENEWAL_DURATION + ' renewals (test lab only)'
                 (result_dir / 'observations.json').write_text(json.dumps(observations[subject], indent=2) + '\n')
             finally:
                 try:

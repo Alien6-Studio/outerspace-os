@@ -157,7 +157,7 @@ def main():
                     lab.reference_seed(image, cache, metadata['architecture'], profile='inference')
                 lab.vm('start', '--config-drive', *(['--ubuntu-reference'] if lab.reference else []))
                 observations[subject] = {'configuration': config, **lab.measure()}
-                observations[subject]['configuration']['client_signing_duration'] = '10m bootstrap; 4h renewals (lab only)'
+                observations[subject]['configuration']['client_signing_duration'] = '10m bootstrap; ' + native.LAB_RENEWAL_DURATION + ' renewals (lab only)'
                 (result_dir / 'observations.json').write_text(json.dumps(observations[subject], indent=2) + '\n')
                 if digest(lab.state / 'packaged.raw') != metadata['raw_image_sha256']:
                     raise ValueError('Immutable candidate changed during serving qualification')

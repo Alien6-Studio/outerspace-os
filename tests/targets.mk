@@ -1,5 +1,5 @@
 # Local and CI qualification; none of these tools are installed in the OS.
-.PHONY: check smoke smoke-split enrollment cpu-serving agent-isolation agent-resources agent-admission worker-comparison serving-comparison serving-admission clean-test-cache
+.PHONY: check smoke smoke-split enrollment cpu-serving agent-isolation agent-resources agent-admission agent-phases worker-comparison serving-comparison serving-admission clean-test-cache
 IMAGE_OUTPUT ?= $(OUT_DIR)/$(shell $(PYTHON) build/tools/profiles.py directory --profile agent --hardware cpu)
 SERVING_IMAGE_OUTPUT ?= $(OUT_DIR)/$(shell $(PYTHON) build/tools/profiles.py directory --profile inference --hardware cpu)
 REFERENCE_CACHE ?= $(CURDIR)/.cache/ubuntu-reference
@@ -67,6 +67,15 @@ worker-comparison:
 	docker build --build-arg "BUILDER=$(OUTERSPACE_BUILDER)" -t outerspace-enrollment:dev -f tests/Dockerfile .; \
 	$(PYTHON) tests/harness/worker-comparison.py --image-output "$(IMAGE_OUTPUT)" \
 	    --output "$(OUT_DIR)/worker-comparison" --cache "$(REFERENCE_CACHE)"
+
+# Compare phase collection with an unprofiled execution of the same immutable
+# Agent candidate. The Python gateway and observer are lab workloads, not host services.
+agent-phases:
+	@set -euo pipefail; \
+	$(cleanup_test_images) \
+	docker build --build-arg "BUILDER=$(OUTERSPACE_BUILDER)" -t outerspace-enrollment:dev -f tests/Dockerfile .; \
+	$(PYTHON) tests/harness/agent-phase-benchmark.py --image-output "$(IMAGE_OUTPUT)" \
+	    --output "$(OUT_DIR)/agent-phases"
 
 serving-admission:
 	$(PYTHON) tests/harness/serving-comparison.py --admission-only --output "$(OUT_DIR)/serving-admission"

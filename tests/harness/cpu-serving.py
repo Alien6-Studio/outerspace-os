@@ -218,7 +218,7 @@ class Serving:
             for mount in mounts:
                 expressions.append(c + '.volumeMounts.exists(m, m.name == ' + value(mount['name'])
                     + ' && m.mountPath == ' + value(mount['mountPath'])
-                    + (' && m.readOnly == true' if mount.get('readOnly') else ' && (!has(m.readOnly) || !m.readOnly)')
+                    + (' && has(m.readOnly) && m.readOnly == true' if mount.get('readOnly') else ' && (!has(m.readOnly) || !m.readOnly)')
                     + " && (!has(m.subPath) || m.subPath == '') && (!has(m.subPathExpr) || m.subPathExpr == '') && (!has(m.mountPropagation) || m.mountPropagation == 'None'))")
         name = 'outerspace-cpu-serving-lab-v1'
         return [

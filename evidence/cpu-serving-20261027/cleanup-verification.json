@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "all_containers_including_stopped": [],
+  "kind_cluster_containers": [],
+  "lab_networks": [],
+  "ubuntu_temporary_state_removed": true,
+  "harness_exit_code": 0,
+  "anonymous_volume_cleanup": "Successful harness cleanup inventories the owned kind /var volumes before cluster deletion and removes any remaining volumes by exact ID."
+}

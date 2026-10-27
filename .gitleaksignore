@@ -1,0 +1,17 @@
+# Exact reviewed false positives: public kernel X.509 subject identifiers
+# and Kubernetes Pod/volume IDs in native recovery diagnostics. No access tokens
+# or private key material is exempted. Original checksum-bound logs are retained.
+evidence/cpu-serving-20261027/outerspace/boot-enroll.log:generic-api-key:341
+evidence/cpu-serving-20261027/outerspace/boot-enroll.log:generic-api-key:363
+evidence/cpu-serving-20261027/outerspace/boot-recover.log:generic-api-key:1429
+evidence/cpu-serving-20261027/outerspace/boot-recover.log:generic-api-key:1437
+evidence/cpu-serving-20261027/outerspace/boot-recover.log:generic-api-key:1441
+evidence/cpu-serving-20261027/outerspace/boot-recover.log:generic-api-key:1452
+evidence/cpu-serving-20261027/outerspace/boot-recover.log:generic-api-key:1456
+evidence/cpu-serving-20261027/outerspace/boot-recover.log:generic-api-key:1459
+evidence/cpu-serving-20261027/outerspace/boot-recover.log:generic-api-key:329
+evidence/cpu-serving-20261027/outerspace/boot-recover.log:generic-api-key:351
+evidence/cpu-serving-20261027/ubuntu/boot-enroll.log:generic-api-key:352
+evidence/cpu-serving-20261027/ubuntu/boot-enroll.log:generic-api-key:373
+evidence/cpu-serving-20261027/ubuntu/boot-recover.log:generic-api-key:334
+evidence/cpu-serving-20261027/ubuntu/boot-recover.log:generic-api-key:355

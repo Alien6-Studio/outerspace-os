@@ -1,0 +1,451 @@
+{
+  "status": "passed",
+  "report_sha256": "fcd907a53c6b28f5d9e1a4b93682157d8275bc80589a7f800515e91bd6c556c5",
+  "harness_commit": "f5efaabaa07d4a6fc93c050867a4d403ea31d82a",
+  "source_inputs_verified": 28,
+  "bound_files_verified": 32,
+  "image": {
+    "schema": 1,
+    "profile": "inference",
+    "hardware_profile": "cpu",
+    "architecture": "arm64",
+    "version": "0.1.0-dev.0",
+    "commit": "56a96282b63b27caf66d8e81a8273d05226bb036",
+    "components_lock_sha256": "988e9ac9efff78dbe818d6bfb8bd0161bb9d74c3169d2be1e094c5f87a9c42ec",
+    "host_features": [
+      "containerd",
+      "kubelet",
+      "dm-verity",
+      "cgroup-v2",
+      "apparmor",
+      "ebpf",
+      "optional-dragonfly"
+    ],
+    "raw_image_sha256": "d77cd1a1316f73a75566e1d80cabfc36df0b1534b7add96b3fd2fb45e4c6a3e1",
+    "uki_sha256": "ea48a654990e6a9631a9aa802c637e006cf919650cb7d4a9d1c81276685fa72f",
+    "verity_root_hash": "9aa477aad0876bbed348a5195e3a891d451b90dff1e7816dc4d09c6f0fadc9d3",
+    "manifest_sha256": "8c0a0350609e2f7f120e3dd36f50cbbf86a9dace0074cca7b7eb57e6d502d3cb",
+    "source_archive_sha256": "24b86c592250c0a0367bff1e06d5f205b334057fc86f59c796fd20e479e48b8d"
+  },
+  "subjects": {
+    "outerspace": {
+      "requests": 46,
+      "tokens": 368,
+      "cold_start_seconds": 351.07389741699444,
+      "warm_pod_start_seconds": 93.90129866695497,
+      "phases": {
+        "initial": {
+          "summary": {
+            "requests": 4,
+            "latency_p50_seconds": 2.3832787930150516,
+            "latency_p95_seconds": 2.5678843339846935,
+            "first_token_p50_seconds": 0.8185345840174705,
+            "first_token_p95_seconds": 0.9138114579836838,
+            "generated_tokens": 32,
+            "tokens_per_request_wall_second": 3.2844972764746876,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 9.742780630011111,
+          "memory": {
+            "before": {
+              "current_bytes": 80633856,
+              "lifetime_peak_bytes": 84643840
+            },
+            "after": {
+              "current_bytes": 81207296,
+              "lifetime_peak_bytes": 84643840
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T18:02:54Z",
+            "engine_loaded_at": "2026-10-27T18:03:00.998375697Z",
+            "container_start_to_model_loaded_seconds": 6.998375,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        },
+        "sustained": {
+          "summary": {
+            "requests": 30,
+            "latency_p50_seconds": 2.4965155019890517,
+            "latency_p95_seconds": 2.902595334016951,
+            "first_token_p50_seconds": 0.8623725420038681,
+            "first_token_p95_seconds": 1.184288958000252,
+            "generated_tokens": 240,
+            "tokens_per_request_wall_second": 3.1484933928265506,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 76.2272104099975,
+          "memory": {
+            "before": {
+              "current_bytes": 81211392,
+              "lifetime_peak_bytes": 86323200
+            },
+            "after": {
+              "current_bytes": 81219584,
+              "lifetime_peak_bytes": 86323200
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T18:02:54Z",
+            "engine_loaded_at": "2026-10-27T18:03:00.998375697Z",
+            "container_start_to_model_loaded_seconds": 6.998375,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        },
+        "pod_restart": {
+          "summary": {
+            "requests": 4,
+            "latency_p50_seconds": 2.5977717920031864,
+            "latency_p95_seconds": 2.653185126982862,
+            "first_token_p50_seconds": 0.8981723750184756,
+            "first_token_p95_seconds": 0.9254956259974279,
+            "generated_tokens": 32,
+            "tokens_per_request_wall_second": 3.0551577208738134,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 10.474130504997447,
+          "memory": {
+            "before": {
+              "current_bytes": 80588800,
+              "lifetime_peak_bytes": 84406272
+            },
+            "after": {
+              "current_bytes": 81166336,
+              "lifetime_peak_bytes": 84406272
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T18:07:24Z",
+            "engine_loaded_at": "2026-10-27T18:07:30.554909579Z",
+            "container_start_to_model_loaded_seconds": 6.554909,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        },
+        "drain_recovery": {
+          "summary": {
+            "requests": 4,
+            "latency_p50_seconds": 2.6061732100206427,
+            "latency_p95_seconds": 2.763732543011429,
+            "first_token_p50_seconds": 0.9225675000052433,
+            "first_token_p95_seconds": 0.9502820000052452,
+            "generated_tokens": 32,
+            "tokens_per_request_wall_second": 3.0301777160858863,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 10.560500129999127,
+          "memory": {
+            "before": {
+              "current_bytes": 80584704,
+              "lifetime_peak_bytes": 84267008
+            },
+            "after": {
+              "current_bytes": 81162240,
+              "lifetime_peak_bytes": 84267008
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T18:09:58Z",
+            "engine_loaded_at": "2026-10-27T18:10:04.366252642Z",
+            "container_start_to_model_loaded_seconds": 6.366252,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        },
+        "node_recovery": {
+          "summary": {
+            "requests": 4,
+            "latency_p50_seconds": 2.6680557100044098,
+            "latency_p95_seconds": 2.753574460017262,
+            "first_token_p50_seconds": 0.9572226669988595,
+            "first_token_p95_seconds": 1.0280627929896582,
+            "generated_tokens": 32,
+            "tokens_per_request_wall_second": 2.964923379634577,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 10.792898379993858,
+          "memory": {
+            "before": {
+              "current_bytes": 118149120,
+              "lifetime_peak_bytes": 123686912
+            },
+            "after": {
+              "current_bytes": 118767616,
+              "lifetime_peak_bytes": 123686912
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T18:19:10Z",
+            "engine_loaded_at": "2026-10-27T18:19:17.535008541Z",
+            "container_start_to_model_loaded_seconds": 7.535008,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        }
+      }
+    },
+    "ubuntu": {
+      "requests": 46,
+      "tokens": 368,
+      "cold_start_seconds": 350.94351233402267,
+      "warm_pod_start_seconds": 94.3114697910496,
+      "phases": {
+        "initial": {
+          "summary": {
+            "requests": 4,
+            "latency_p50_seconds": 2.352206708979793,
+            "latency_p95_seconds": 2.3980001260060817,
+            "first_token_p50_seconds": 0.8126063339877874,
+            "first_token_p95_seconds": 0.9067069580196403,
+            "generated_tokens": 32,
+            "tokens_per_request_wall_second": 3.3787140514138483,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 9.471096920984564,
+          "memory": {
+            "before": {
+              "current_bytes": 186077184,
+              "lifetime_peak_bytes": 189841408
+            },
+            "after": {
+              "current_bytes": 186654720,
+              "lifetime_peak_bytes": 189841408
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T19:04:33Z",
+            "engine_loaded_at": "2026-10-27T19:04:42.138193695Z",
+            "container_start_to_model_loaded_seconds": 9.138193,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        },
+        "sustained": {
+          "summary": {
+            "requests": 30,
+            "latency_p50_seconds": 2.402844167983858,
+            "latency_p95_seconds": 2.823935250984505,
+            "first_token_p50_seconds": 0.8361615430039819,
+            "first_token_p95_seconds": 0.8878769589937292,
+            "generated_tokens": 240,
+            "tokens_per_request_wall_second": 3.317349229656499,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 72.34718594999867,
+          "memory": {
+            "before": {
+              "current_bytes": 186658816,
+              "lifetime_peak_bytes": 193540096
+            },
+            "after": {
+              "current_bytes": 186667008,
+              "lifetime_peak_bytes": 193540096
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T19:04:33Z",
+            "engine_loaded_at": "2026-10-27T19:04:42.138193695Z",
+            "container_start_to_model_loaded_seconds": 9.138193,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        },
+        "pod_restart": {
+          "summary": {
+            "requests": 4,
+            "latency_p50_seconds": 2.18144216798828,
+            "latency_p95_seconds": 2.272344710014295,
+            "first_token_p50_seconds": 0.7553858339961153,
+            "first_token_p95_seconds": 0.7901517919963226,
+            "generated_tokens": 32,
+            "tokens_per_request_wall_second": 3.628648444037416,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 8.81875337898964,
+          "memory": {
+            "before": {
+              "current_bytes": 80592896,
+              "lifetime_peak_bytes": 84246528
+            },
+            "after": {
+              "current_bytes": 81166336,
+              "lifetime_peak_bytes": 84246528
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T19:09:05Z",
+            "engine_loaded_at": "2026-10-27T19:09:11.251175325Z",
+            "container_start_to_model_loaded_seconds": 6.251175,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        },
+        "drain_recovery": {
+          "summary": {
+            "requests": 4,
+            "latency_p50_seconds": 2.498086167994188,
+            "latency_p95_seconds": 2.6441117509966716,
+            "first_token_p50_seconds": 0.8582960419880692,
+            "first_token_p95_seconds": 0.988673124986235,
+            "generated_tokens": 32,
+            "tokens_per_request_wall_second": 3.1611835880602914,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 10.122834878973663,
+          "memory": {
+            "before": {
+              "current_bytes": 80592896,
+              "lifetime_peak_bytes": 84537344
+            },
+            "after": {
+              "current_bytes": 81166336,
+              "lifetime_peak_bytes": 84537344
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T19:11:31Z",
+            "engine_loaded_at": "2026-10-27T19:11:36.329998688Z",
+            "container_start_to_model_loaded_seconds": 5.329998,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        },
+        "node_recovery": {
+          "summary": {
+            "requests": 4,
+            "latency_p50_seconds": 2.061088666989235,
+            "latency_p95_seconds": 2.22155020799255,
+            "first_token_p50_seconds": 0.7278896249772515,
+            "first_token_p95_seconds": 0.7862605830014218,
+            "generated_tokens": 32,
+            "tokens_per_request_wall_second": 3.802513075878611,
+            "prompt_tokens": [
+              5,
+              5,
+              5,
+              5
+            ],
+            "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+          },
+          "wall_seconds": 8.415524920012103,
+          "memory": {
+            "before": {
+              "current_bytes": 118091776,
+              "lifetime_peak_bytes": 122855424
+            },
+            "after": {
+              "current_bytes": 118771712,
+              "lifetime_peak_bytes": 122855424
+            }
+          },
+          "model_load": {
+            "container_started_at": "2026-10-27T19:20:45Z",
+            "engine_loaded_at": "2026-10-27T19:20:51.560951956Z",
+            "container_start_to_model_loaded_seconds": 6.560951,
+            "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+          }
+        }
+      }
+    }
+  },
+  "scope": "Independent raw-sample, source, identity, lifecycle and checksum verification; no physical-hardware claim"
+}

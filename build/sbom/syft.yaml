@@ -8,6 +8,7 @@ file:
     selection: all
     digests: [sha256]
 golang:
+  capture-symbols: all
   search-local-mod-cache-licenses: false
   search-local-vendor-licenses: false
   search-remote-licenses: false

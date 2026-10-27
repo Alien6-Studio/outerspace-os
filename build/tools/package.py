@@ -14,6 +14,9 @@ import subprocess
 import uuid
 from profiles import PROFILES, HARDWARE, marker, verify_identity
 from sbom import FILES as SBOM_FILES, REPORT as SBOM_REPORT, verify_inventory
+import supply_chain as distribution
+import security
+import redistribution
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -218,6 +221,9 @@ def main():
         parser.error(f'Cannot package unqualified disk: {error}')
     identity = boot_report['identity']
     supply_chain = verify_inventory(output, identity, output / 'outerspace.manifest', ROOT / 'src/components.lock.json')
+    distribution_inventory = distribution.verify(output, identity, output / 'outerspace.manifest')
+    security_review = security.verify(output, identity)
+    redistribution_review = redistribution.verify(output, identity)
     arch = identity['architecture']
     version = (ROOT / 'VERSION').read_text().strip()
     bundle = output / f'outerspace-{version}-{args.profile}-{args.hardware}-{arch}'
@@ -237,16 +243,27 @@ def main():
         shutil.copyfile(output / name, bundle / name)
     shutil.copyfile(ROOT / 'build/sbom/syft.lock.json', bundle / 'syft.lock.json')
     shutil.copyfile(ROOT / 'build/sbom/syft.yaml', bundle / 'syft.yaml')
+    for name in (*distribution.FILES, distribution.REPORT, *security.FILES, security.REPORT, redistribution.REPORT):
+        shutil.copyfile(output / name, bundle / name)
+    for name, path in distribution.POLICIES.items():
+        shutil.copyfile(path, bundle / name)
+    for name, path in [('grype.lock.json', security.LOCK), ('grype.yaml', security.CONFIG),
+                       ('grype-default-ignore.json', security.DEFAULT_IGNORE),
+                       ('security-policy.json', security.POLICY), ('redistribution-policy.json', redistribution.POLICY)]:
+        shutil.copyfile(path, bundle / name)
     subprocess.run(['zstd', '-q', str(output / 'outerspace-source.tar'), '-o', str(bundle / 'source.tar.zst')], check=True)
     metadata = {'schema': 2, 'identity': identity,
                 'channel': 'development' if '-dev.' in version else 'candidate',
                 'boot_test': 'QEMU UEFI disk boot and state/identity persistence across two power cycles; Secure Boot disabled',
                 'raw_image_sha256': boot_report['image_sha256'],
-                'ubuntu_inputs': 'signed Noble repositories, not snapshot-locked',
+                'ubuntu_inputs': json.loads(distribution.POLICIES['inputs.lock.json'].read_text()),
                 'manifest_sha256': sha256(output / 'outerspace.manifest'),
                 'components_lock_sha256': sha256(ROOT / 'src/components.lock.json'),
                 'host_regression': boot_report['host_regression'],
                 'supply_chain': supply_chain,
+                'distribution_inventory': distribution_inventory,
+                'security_review': security_review,
+                'redistribution_review': redistribution_review,
                 'files': {p.name: sha256(p) for p in sorted(bundle.iterdir())}}
     (bundle / 'build-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
     files = sorted(bundle.iterdir())

@@ -1,11 +1,11 @@
 # Image assembly and candidate packaging. Generated files belong in out/.
-.PHONY: builder build package config-drive
+.PHONY: builder build package security-gate config-drive
 
 builder:
 	docker build -t "$(OUTERSPACE_BUILDER)" -f build/Dockerfile .
 
 build:
-	PYTHON="$(PYTHON)" ./build/build.sh "$(PROFILE)" "$(HARDWARE)"
+	PYTHON="$(PYTHON)" OUTERSPACE_OUTPUT_ROOT="$(OUT_DIR)" ./build/build.sh "$(PROFILE)" "$(HARDWARE)"
 
 package:
 	@set -euo pipefail; \
@@ -19,6 +19,12 @@ package:
 	    --mount "type=bind,src=$(OUT_DIR)/$$directory,dst=/out" \
 	    "$(OUTERSPACE_BUILDER)" python3 /work/build/tools/package.py \
 	    --commit "$$commit" --profile "$(PROFILE)" --hardware "$(HARDWARE)"
+
+security-gate:
+	@set -euo pipefail; \
+	directory=$$($(PYTHON) build/tools/profiles.py directory --profile "$(PROFILE)" --hardware "$(HARDWARE)"); \
+	$(PYTHON) build/tools/security.py --output "$(OUT_DIR)/$$directory" --verify --require-pass; \
+	$(PYTHON) build/tools/redistribution.py --output "$(OUT_DIR)/$$directory" --verify --require-pass
 
 config-drive:
 	@set -euo pipefail; \

@@ -12,6 +12,10 @@ import tarfile
 from package import sha256
 from release import ROOT, validate_release
 from sbom import verify_inventory
+import supply_chain
+import security
+import attestations
+import redistribution
 
 
 def gh_json(*args):
@@ -47,6 +51,12 @@ def verify_bundle(bundle, version, commit, artifact):
         raise ValueError('Exactly one installed package manifest is required')
     if metadata.get('supply_chain') != verify_inventory(bundle, identity, manifests[0], bundle / 'components.lock.json'):
         raise ValueError('Candidate SBOM differs from qualified inventory')
+    if metadata.get('distribution_inventory') != supply_chain.verify(bundle, identity, manifests[0]):
+        raise ValueError('Candidate sources or provenance differ')
+    if metadata.get('security_review') != security.verify(bundle, identity, require_pass=True):
+        raise ValueError('Candidate security review differs')
+    if metadata.get('redistribution_review') != redistribution.verify(bundle, identity, require_pass=True):
+        raise ValueError('Candidate redistribution review differs')
 
 
 def main():
@@ -64,8 +74,8 @@ def main():
     run = gh_json('api', f'repos/{os.environ["GH_REPO"]}/actions/runs/{run_id}')
     if run['conclusion'] != 'success' or run['path'] != '.github/workflows/candidate.yml' or run['event'] != 'workflow_dispatch':
         raise ValueError('Expected a successful Candidate images run')
-    # workflow_dispatch's head_sha can identify the workflow ref rather than the
-    # checked-out tag. The per-architecture inventories bind the built source SHA.
+    if run['head_sha'] != commit or run['head_branch'] != tag:
+        raise ValueError('Candidate workflow and qualified source must be the same tag revision')
     assets = ROOT / 'out/release-assets'
     assets.parent.mkdir(exist_ok=True)
     assets.mkdir(exist_ok=False)
@@ -80,6 +90,10 @@ def main():
                 raise ValueError('Expected exactly one candidate bundle per artifact')
             metadata_path = inventories[0]
             bundle = metadata_path.parent
+            signatures = list(source.rglob('candidate-attestation.jsonl'))
+            if len(signatures) != 1:
+                raise ValueError('Exactly one trusted candidate attestation is required')
+            attestations.verify(bundle / 'SHA256SUMS', signatures[0], commit, tag, run_id)
             verify_bundle(bundle, version, commit, artifact)
             archive = assets / f'outerspace-{version}-{key}.tar'
             with tarfile.open(archive, 'w') as tar:
@@ -88,6 +102,7 @@ def main():
                         raise ValueError('Unexpected bundle entry')
                     tar.add(path, arcname=path.name, recursive=False)
             (assets / f'{archive.name}.sha256').write_text(f'{sha256(archive)}  {archive.name}\n')
+            (assets / f'{archive.name}.attestation.jsonl').write_bytes(signatures[0].read_bytes())
     (assets / 'qualification-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
     if not (ROOT / f'build/release/notes/{version}.md').is_file():
         raise ValueError('Version-specific release notes are required')

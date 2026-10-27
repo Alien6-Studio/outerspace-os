@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from image_fixtures import identity, inventory
 
 BUILD_TOOLS = Path(__file__).resolve().parents[2] / 'build/tools'
@@ -34,7 +35,25 @@ class CandidateIntegrityTests(unittest.TestCase):
         prepare.verify_bundle(self.bundle, '0.1.0-alpha.1', 'a' * 40, {**self.artifact, 'sha256sums': digest or self.digest})
 
     def test_accepts_qualified_exact_bytes(self):
-        self.verify()
+        # These validators have independent boundary tests; this fixture focuses
+        # on the immutable candidate inventory and mandatory release calls.
+        with patch.object(prepare.supply_chain, 'verify', return_value=None) as sources, \
+             patch.object(prepare.security, 'verify', return_value=None) as security, \
+             patch.object(prepare.redistribution, 'verify', return_value=None) as licenses:
+            self.verify()
+        sources.assert_called_once()
+        self.assertTrue(security.call_args.kwargs['require_pass'])
+        self.assertTrue(licenses.call_args.kwargs['require_pass'])
+
+    def test_missing_distribution_review_cannot_promote(self):
+        with self.assertRaisesRegex(ValueError, 'regular file'):
+            self.verify()
+
+    def test_blocked_security_cannot_promote(self):
+        with patch.object(prepare.supply_chain, 'verify', return_value=None), \
+             patch.object(prepare.security, 'verify', side_effect=ValueError('unresolved vulnerability')):
+            with self.assertRaisesRegex(ValueError, 'unresolved vulnerability'):
+                self.verify()
 
     def test_rejects_tampering_after_qualification(self):
         (self.bundle / 'image.raw.zst').write_bytes(b'replacement image')

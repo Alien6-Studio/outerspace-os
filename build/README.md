@@ -70,8 +70,12 @@ Both packaging and promotion require the exact SBOM and recheck its hashes,
 image subject, installed runtime entries and reconstruction from raw inputs.
 Older images must be rebuilt through this pipeline before candidate packaging.
 
-Ubuntu packages use signed Noble update/security repositories. Exact binary
-reproduction additionally requires a pinned package snapshot and build metadata.
+Ubuntu packages use the signed Noble snapshot locked in `inputs.lock.json`.
+Builder identity, full corresponding-source archives, native package source
+metadata and security/redistribution decisions accompany every bundle. Independent
+build comparisons record remaining nondeterminism; bit-identical output is not
+assumed. Candidate promotion requires the signed checksum inventory and passing
+source-bound review gates; see the [patch workflow](security/README.md).
 
 ## Worker configuration
 

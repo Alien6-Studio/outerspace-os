@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "sources": {
+    "containerd": {
+      "repo": "containerd/containerd",
+      "version": "2.3.7",
+      "commit": "6f589cf13dc01a5b493911355427e05b2ff005d7",
+      "url": "https://codeload.github.com/containerd/containerd/tar.gz/6f589cf13dc01a5b493911355427e05b2ff005d7",
+      "sha256": "80ac465c51750299f4778a19fa1a37f9d9d0a82acd9ec6435488008837caf51d",
+      "size": 11836542
+    },
+    "kubelet": {
+      "repo": "kubernetes/kubernetes",
+      "version": "1.36.5",
+      "commit": "ad950d1cc78b0183c476bd4d3f1934c104229727",
+      "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/ad950d1cc78b0183c476bd4d3f1934c104229727",
+      "sha256": "6d2bc7ef75ec9927dd7e6ff3fe47332a1d58b2f6171606e6a63940b02b055122",
+      "size": 39950833
+    },
+    "crictl": {
+      "repo": "kubernetes-sigs/cri-tools",
+      "version": "1.36.0",
+      "commit": "88d8ad9d40f82726fda53c2d271e6172b4c619c9",
+      "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/88d8ad9d40f82726fda53c2d271e6172b4c619c9",
+      "sha256": "0e7559231dd55918dd3a488f9ac833e939ef0f7579492d5528a0346260bcaba7",
+      "size": 7433281
+    },
+    "dfdaemon": {
+      "repo": "dragonflyoss/client",
+      "version": "1.4.9",
+      "commit": "1bdea4a11b7825a3bd727595e540ba2e7cacb151",
+      "url": "https://codeload.github.com/dragonflyoss/client/tar.gz/1bdea4a11b7825a3bd727595e540ba2e7cacb151",
+      "sha256": "5ee3577ee369d2f09424ffd7fe60f04c37cd2cd95a894a22463b25ac0cbaad7c",
+      "size": 483950
+    },
+    "go1.26.9": {
+      "url": "https://go.dev/dl/go1.26.9.src.tar.gz",
+      "sha256": "9735d7dcdb65b35d3fa577f04064737c03b89cf1a2b71e6e69fe2f3c6f9fd4ca",
+      "size": 34162146
+    },
+    "go1.26.8": {
+      "url": "https://go.dev/dl/go1.26.8.src.tar.gz",
+      "sha256": "4e39b98e42f946fa05ac8bc5b71877df97dbdb7cbb1a777b541667ad7117fd2e",
+      "size": 34150120
+    },
+    "go1.26.2": {
+      "url": "https://go.dev/dl/go1.26.2.src.tar.gz",
+      "sha256": "2e91ebb6947a96e9436fb2b3926a8802efe63a6d375dffec4f82aa9dbd6fd43b",
+      "size": 34120738
+    },
+    "go1.24.4": {
+      "url": "https://go.dev/dl/go1.24.4.src.tar.gz",
+      "sha256": "5a86a83a31f9fa81490b8c5420ac384fd3d95a3e71fba665c7b3f95d1dfef2b4",
+      "size": 30788576
+    }
+  },
+  "cargo_git_sources": {
+    "git+https://github.com/IBM/mocktail?rev=860e75e171a8eb818083813dbeed4401d1a40b3b#860e75e171a8eb818083813dbeed4401d1a40b3b": {
+      "commit": "860e75e171a8eb818083813dbeed4401d1a40b3b",
+      "url": "https://codeload.github.com/IBM/mocktail/tar.gz/860e75e171a8eb818083813dbeed4401d1a40b3b",
+      "sha256": "21d9eff4779b1fb1590d24748c9969cc86f50f83e44ab9e2e34bb1769fc33e62",
+      "size": 37151
+    }
+  }
+}

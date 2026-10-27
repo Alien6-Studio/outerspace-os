@@ -1,71 +1,79 @@
-# Per-image software inventory
+# Per-image software and source inventory
 
-Every build scans the completed GPT disk with pinned Syft 1.55.0, outside the
-shipping OS. Root, state and EFI partitions are mounted read-only, without
-executing image code or replaying ext4 journals. A network namespace disables
-remote enrichment. SHA256 checks before and after the scan bind the result to
-the exact disk, UKI, source archive, manifest, profile and architecture.
+The builder uses the Ubuntu snapshot, signed APT indexes, base-image digest and
+mkosi archive in `build/inputs.lock.json`. `build/apt.sources` configures both the
+builder and mkosi, including the security pocket. The CA bootstrap package is
+fetched over HTTPS and checksum-verified before APT runs. The exact builder image
+ID and installed builder package versions accompany each image.
 
-The builder verifies the scanner's archive against
-[`syft.lock.json`](syft.lock.json); it records the installed scanner hash too.
-Scanner updates must change the lock through review and rebuild the builder.
-No floating download, additional host runtime or scanner service is installed.
+Pinned Syft scans the completed GPT disk outside the shipping OS. Root, state and
+EFI partitions are mounted read-only, without replaying ext4 journals or executing
+image code. The scan has no network. Hashes before and after bind it to the exact
+disk, UKI, source revision, profile and architecture. Every external runtime is
+compared with its approved archive and the observed file hash. The scan includes
+kernel modules, firmware files when present and Go function symbols.
 
-## Outputs and enforcement
+`make PROFILE=agent builder build smoke package` and the equivalent Inference
+command preserve:
 
-`make PROFILE=agent builder build smoke package` and the corresponding Inference
-command generate and carry these files in each independently qualified bundle:
+- `sbom.syft.json`, `sbom.scan.cdx.json`, `sbom.cdx.json`, `sbom-evidence.json`:
+  original disk scan, its conversion and the installed-manifest inventory.
+- `apt-inputs.json`, `apt.sbom.syft.json`, `apt-notices.tar`: exact installed
+  binary/source identities, original DPKG metadata, package copyright notices and
+  common license texts, captured before mkosi removes its package database.
+- `source-index.json`, `corresponding-source.tar.zst`: hash-verified Ubuntu source
+  descriptors, original archives and distro patches; runtime source repositories
+  including vendored Go dependencies; Go standard-library source; Cargo registry
+  and explicitly pinned Git dependencies. The archive embeds the exact index.
+- `distribution.sbom.syft.json`, `distribution.sbom.cdx.json`: combined native
+  inventory used by Grype and the distribution's CycloneDX 1.6 inventory. APT
+  source names replace ELF guesses. Runtime dependencies are checked against
+  archived vendor versions and embedded source revisions when available.
+- `build-provenance.json`, `builder-packages.tsv`, `supply-chain.json`: image,
+  input, tool and source bindings. Promotion verifies the source archive's objects
+  and Cargo closure, not only a self-reported checksum.
+- `vulnerabilities.grype.json`, `vulnerability-database.json`,
+  `security-review.json`, `redistribution-review.json`: unabridged findings,
+  exact database hash/date, expiring decisions and notice-review status.
 
-- `sbom.cdx.json`: CycloneDX 1.6 inventory with the raw image SHA256 as its root
-  component, source/profile identity, observed packages/files, exact installed
-  APT manifest and externally installed runtime binaries.
-- `sbom.syft.json`: unmodified native scanner evidence, including file hashes,
-  inferred packages, kernel modules, embedded Go/Rust metadata when available,
-  declared licenses and unknowns. Standard formats can omit scanner details.
-- `sbom.scan.cdx.json`: the scanner's original CycloneDX output, retained so
-  packaging and promotion can reconstruct and verify the final document.
-- `sbom-evidence.json`: exact image identity, scanner/archive/configuration
-  digests, partition layout, verified runtime inputs, coverage and file hashes.
-- `syft.lock.json` and `syft.yaml`: the scanner policy used by this source.
+The upstream Dragonfly binary is stripped. Its Cargo.lock closure is archived and
+inventoried conservatively, including build/test/other-target crates. This does
+not prove which crates are linked, nor that its upstream build used `--locked`.
+CycloneDX composition therefore remains incomplete. Source-declared dependencies
+are marked as such; they are not represented as scanner-observed file contents.
 
-mkosi removes the DPKG database during image cleanup. The complete installed APT
-list therefore comes from its hash-bound package manifest. These components are
-marked `outerspace:inventory-source=mkosi-installed-manifest`; ELF-note package
-inferences remain distinguishable in the raw scan and are not substituted for
-the installed package names. Every non-APT executable in `components.lock.json`
-is checked against its digest-verified upstream archive and against the scan's
-file hashes. The scan also records EFI binaries, firmware files when present,
-and kernel modules; a file hash alone does not establish its origin or license.
+Package creation permits a development bundle with blocked review findings so
+that evidence can be examined. `make PROFILE=agent security-gate`, candidate
+signing and release promotion require passing security and redistribution
+decisions. Inventory generation alone never approves redistribution.
 
-Packaging refuses missing, stale, cross-image, altered or incomplete required
-inventory. Promotion rechecks the same files against the qualified bundle's
-SHA256SUMS without rebuilding or rescanning the candidate. This is checksum-bound
-build evidence, not a cryptographically signed attestation. Workflow and source
-review remain part of the trust boundary.
+The candidate workflow must run at its exact version tag, with workflow and
+checkout at the same commit. GitHub keyless provenance signs `SHA256SUMS`, which
+binds the image, SBOMs, sources, tests and reviews. Promotion verifies the Sigstore
+certificate, transparency proof, digest, repository, workflow, source/signer
+revision, tag and qualified run; self-hosted signers are refused. The public
+attestation is shipped separately. This does not provide Secure Boot or signed
+on-host updates; those remain issue #19.
 
-## Coverage and remaining gates
+Reproducibility is measured by independent builds of the same source and builder:
 
-This implements an inventory increment of issue #9, not its closure. Syft
-extracts many embedded Go dependencies from the approved runtimes. The pinned
-Dragonfly executable exposes no supported embedded dependency metadata; its own
-version, origin and binary digest are recorded, while its transitive dependency
-coverage is explicitly unknown. No full dependency graph is claimed. CycloneDX
-composition remains `incomplete`; coverage always leaves license, vulnerability
-and corresponding-source review pending.
+```sh
+make PROFILE=agent build
+make PROFILE=agent OUT_DIR="$PWD/out/repeated" build
+python3 build/tools/reproducibility.py out/agent-cpu-arm64 \
+  out/repeated/agent-cpu-arm64 --output out/agent-cpu-arm64/reproducibility.json
+```
 
-Declared or inferred licenses are evidence for review, not a redistribution
-decision. The APT manifest does not provide license expressions or package
-dependency edges; installed notices remain in the image and its file inventory.
-Complete corresponding sources/notices, unknown dependency resolution, expiring
-vulnerability exceptions, signed provenance, Ubuntu snapshot locking and
-reproducibility checks remain required work. Generating these files does not
-satisfy the independent `license_review`, `sbom` or `vulnerability_review`
-release gates automatically. Model weights and workload images are separate
-subjects, never silently included in the host inventory.
-Scanner timestamps, generated identifiers and temporary mount paths can also
-differ between scans; byte-for-byte reproducibility of the SBOM is not claimed.
+The comparison rejects changed inputs, records package selection, file-content
+and metadata differences, artifact digests and differing 64-KiB disk/UKI regions.
+It reports remaining nondeterminism instead of promising bit-identical images.
+CI runs it independently for both profiles on native amd64 and arm64 runners.
 
-References: [Syft formats](https://oss.anchore.com/docs/guides/sbom/formats/),
-[configuration](https://oss.anchore.com/docs/reference/syft/configuration/),
-[Go binary discovery](https://oss.anchore.com/docs/capabilities/go/), and
-[CycloneDX 1.6 schema](https://github.com/CycloneDX/specification/blob/1.6/schema/bom-1.6.schema.json).
+No scanner, source downloader or compiler is installed in the OS. Model weights,
+serving containers and Agent workloads remain separate supply-chain subjects.
+See [security patch and review workflow](../security/README.md).
+
+Primary references: [Ubuntu snapshots](https://snapshot.ubuntu.com/),
+[Syft configuration](https://oss.anchore.com/docs/reference/syft/configuration/),
+[Grype database](https://oss.anchore.com/docs/guides/vulnerability/database/),
+[GitHub attestation verification](https://cli.github.com/manual/gh_attestation_verify).

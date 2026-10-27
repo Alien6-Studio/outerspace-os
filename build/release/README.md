@@ -40,7 +40,7 @@ contains pending placeholders, not qualification results.
 | Stage | Audience / expectation | Additional gates |
 | --- | --- | --- |
 | dev | Internal engineering, disposable labs | Tests and build feedback; cannot be released |
-| alpha | Experimental preview, data loss possible | Boot, CRI, config contract, checksums, notes, license/source review |
+| alpha | Experimental preview, data loss possible | Boot, CRI, config contract, signed inventory, notes, license/source, SBOM and vulnerability review |
 | beta | Cluster integration testers | OS node ready, Cilium, real P2P, GC, state/reboot |
 | rc | Frozen production candidate | Bare metal, CIS audit, signed boot, upgrade/rollback, SBOM, vulnerability review |
 | stable | Supported within an explicit matrix | Soak qualification and published support policy |
@@ -82,9 +82,9 @@ cannot waive those minimum gates by changing their descriptions.
 
 Candidates expire after 30 days in Actions storage. If artifacts have expired,
 build a new candidate and repeat qualification. Do not silently rebuild and reuse
-the old evidence. SHA256 inventories are integrity checks, not cryptographic proof
-of the publisher's identity. Signed provenance and trusted boot require separate
-implementation and review before RC.
+the old evidence. SHA256 inventories alone do not authenticate the publisher;
+the candidate workflow signs them and promotion verifies the trusted provenance.
+Trusted boot still requires separate implementation and qualification before RC.
 
 The validator enforces gate status and identity, not the truth of an audit report.
 Repository access and workflow review remain part of release trust. No stable
@@ -98,15 +98,20 @@ evidence and SHA256SUMS. The tar also gets an external checksum; qualification
 evidence accompanies the draft. The [per-image inventory](../sbom/README.md)
 records its coverage gaps and is verified again during promotion. Its generation
 does not automatically pass the SBOM review, license or vulnerability gates.
-RC still requires reviewed dependency coverage, corresponding-source/notice and
-vulnerability evidence, including non-apt upstream binaries.
-The initial apt inputs are signed Noble repositories, not snapshot-locked;
-bit-for-bit reproducibility must not be claimed yet.
+Every public candidate now requires corresponding-source/notice and vulnerability
+review, including non-APT upstream binaries. Sources and original notices ship
+alongside the image. The candidate's SHA256SUMS has GitHub keyless provenance;
+promotion verifies the expected repository, tag, source/workflow commit and run.
+The workflow must be dispatched at that exact tag. Ubuntu repositories are
+snapshot-locked, and independent builds report remaining differences; bit-for-bit
+reproducibility must not be claimed without passing comparisons.
 
 ## Maintenance cadence and ownership
 
-- **Weekly automated checks:** rebuild both architectures from current signed
-  Ubuntu repositories; preserve logs/inventories; run contract and boot tests.
+- **Weekly automated checks:** rebuild both architectures from the approved
+  Ubuntu snapshot; refresh vulnerability data; preserve logs/inventories and
+  reproducibility differences; run contract and boot tests. Snapshot updates
+  require a reviewed input-lock change and whole-image requalification.
   Dependabot proposes Docker base-image and GitHub Actions updates in PRs.
 - **Weekly maintainer review:** Ubuntu security notices, kernel ABI, containerd LTS,
   Kubernetes skew/support, Cilium and Dragonfly releases. The custom component lock

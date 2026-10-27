@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "owner": "Alien6-Studio/outerspace-os maintainers",
+  "blocking_severities": ["Critical", "High", "Unknown"],
+  "database_max_age_hours": 120,
+  "scan_max_age_hours": 120,
+  "exception_max_days": 30,
+  "exception_approvers": ["Coopyrightdmin"],
+  "exceptions": []
+}

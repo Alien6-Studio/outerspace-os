@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "ubuntu_snapshot": "20261027T000000Z",
+  "ubuntu_release": "noble",
+  "ubuntu_components": ["main", "universe"],
+  "ubuntu_suites": ["noble", "noble-updates", "noble-security"],
+  "ubuntu_archive_keyring": "/usr/share/keyrings/ubuntu-archive-keyring.gpg",
+  "builder": "ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac",
+  "bootstrap_ca": {
+    "url": "https://snapshot.ubuntu.com/ubuntu/20261027T000000Z/pool/main/c/ca-certificates/ca-certificates_20260816ubuntu0.24.04.1_all.deb",
+    "sha256": "8a0a754aaafed72cc8efb8c1731808133284a84fbfc76a4fcc73fce9e01b4187"
+  },
+  "mkosi": {
+    "version": "25.3",
+    "url": "https://github.com/systemd/mkosi/archive/refs/tags/v25.3.tar.gz",
+    "sha256": "7b039fb3b34e1680173a7f4af1bc24b475465afe335c8b21c213167734061e35"
+  }
+}

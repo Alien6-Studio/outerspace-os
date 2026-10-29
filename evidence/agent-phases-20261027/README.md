@@ -76,7 +76,8 @@ PSI classes, per-device I/O and bounded PID/start-time identities.
 ## Failure and scope coverage
 
 The profiled arm additionally proves overlapping operations in one scope,
-reused shared-memory state, shared image-cache reads across distinct agents,
+reused shared-memory state, shared image-cache reads across distinct OCI scopes
+under the same logical agent ID,
 background descendants crossing operation boundaries, an actual OOMKilled
 container restart, cancellation after observing the running tool, and loss
 of the required collector. Live tests refuse exporter changes, observer exec,

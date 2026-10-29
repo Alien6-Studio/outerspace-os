@@ -25,15 +25,25 @@ command preserve:
   descriptors, original archives and distro patches; runtime source repositories
   including vendored Go dependencies; Go standard-library source; Cargo registry
   and explicitly pinned Git dependencies. The archive embeds the exact index.
-  Supplemental source archives recover omitted crate notices at the publication
-  commit recorded in each crate's `.cargo_vcs_info.json`; mismatches are rejected.
+  Supplemental source archives recover omitted crate notices. Where present,
+  `.cargo_vcs_info.json` must identify the exact publication commit; mismatches
+  are rejected. For four crates without that metadata, the lock explicitly
+  selects source directories, original notice paths and hashes of Cargo's
+  packaging metadata. Every other published file, including import-library
+  binaries, must match the pinned repository bytes. `Cargo.toml.orig` must match
+  its source manifest. Only individually pinned `Cargo.toml` and `Cargo.lock`
+  files may differ; code, binary and wildcard exemptions are refused. These
+  records say `publication_commit_proven: false`: matching published contents
+  does not establish the upstream publication commit or approve redistribution.
 - `distribution.sbom.syft.json`, `distribution.sbom.cdx.json`: combined native
   inventory used by Grype and the distribution's CycloneDX 1.6 inventory. APT
   source names replace ELF guesses. Runtime dependencies are checked against
   archived vendor versions and embedded source revisions when available.
 - `build-provenance.json`, `builder-packages.tsv`, `supply-chain.json`: image,
   input, tool and source bindings. Promotion verifies the source archive's objects
-  and Cargo closure, not only a self-reported checksum.
+  and Cargo closure, not only a self-reported checksum. It independently repeats
+  supplemental notice checks from the bundled objects and rejects altered notice
+  inventories or content-match records, even when their archive is rehashed.
 - `vulnerabilities.grype.json`, `vulnerability-database.json`,
   `security-review.json`, `redistribution-review.json`: unabridged findings,
   exact database hash/date, expiring decisions and notice-review status.

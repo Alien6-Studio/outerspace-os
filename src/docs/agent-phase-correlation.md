@@ -100,7 +100,8 @@ delivery has a single observation per arm, not a latency-distribution claim.
 
 The enabled arm also exercises concurrent tools in one cgroup, a background
 descendant crossing boundaries, reused tmpfs data, shared cached image reads in
-distinct agents, a real OOM container restart, cancellation and a deliberately
+distinct OCI scopes under the same logical agent ID, a real OOM container
+restart, cancellation and a deliberately
 removed collector. It checks live refusal of counter resets, cgroup migration,
 exporter changes, observer exec, other-tenant Pod access and an agent-emitted
 forged boundary. The final deliberate collector failure remains visible as a

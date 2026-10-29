@@ -42,7 +42,7 @@ HARNESS_INPUTS = ['tests/harness/enrollment.py', 'tests/harness/enrollment-vm.py
                   'src/image/mkosi.extra/etc/containerd/config.toml', 'src/image/mkosi.postinst']
 AGENT_NAMESPACE = 'outerspace-agents-v1'
 AGENT_NODE_LABEL = 'outerspace.sh.node-restriction.kubernetes.io/agent-profile'
-LAB_RENEWAL_DURATION = '6h'
+LAB_RENEWAL_DURATION = '9h'
 
 
 def run(*args, data=None, check=True, env=None, timeout=900):
@@ -1053,6 +1053,9 @@ def main():
                         result = lab.kube(*command, check=False)
                         (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
                     if args.cpu_serving:
+                        for resource in ['pods', 'deployments']:
+                            result = lab.kube('-n', serving_module.NAMESPACE, 'get', resource, '-o', 'json', check=False)
+                            (output / ('enrollment-serving-' + resource + '.json')).write_text(result.stdout)
                         for container in ['verify-model', 'server']:
                             result = lab.kube('-n', serving_module.NAMESPACE, 'logs', 'deployment/inference', '-c', container,
                                               '--tail=500', '--timestamps', check=False)

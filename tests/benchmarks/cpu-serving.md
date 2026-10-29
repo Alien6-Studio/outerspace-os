@@ -47,10 +47,20 @@ tokens, host mounts/namespaces, extra capabilities or privilege escalation. Its
 root and model mount are read-only, seccomp is RuntimeDefault, and actual cgroup
 limits must be two CPUs and 512 MiB. The engine has a 256-token context, one slot,
 two threads and explicit offline/zero-GPU flags. Readiness generates a token.
-Cold image delivery and startup have a bounded twenty-minute allowance under
-TCG, shared by the Deployment controller and rollout wait; the subprocess has
-thirty seconds of cleanup margin. This is a laboratory timeout, not a startup
-performance target. Actual cold/warm timings remain in the raw observations.
+Scheduling, model staging and cold OCI delivery have a fixed sixty-minute budget
+under TCG. Once the server is observed running, token-generation readiness has
+its own twenty-minute budget. Pull retries do not renew either deadline;
+replacement of an observed runtime fails qualification. The Deployment deadline
+covers the combined eighty minutes. A current-generation, available Deployment
+and its token-producing ready Pod are both required. These laboratory limits
+are not startup performance targets, and images are not preloaded to satisfy
+them. Actual cold/warm timings remain in the raw observations.
+
+`enrollment-serving-startup.json` retains each wait's state transitions, fixed
+budgets and observed timings, including failures. Time until Running includes
+scheduling and model staging as well as OCI delivery; it does not distinguish
+network transfer from layer extraction. Final serving Pod/Deployment snapshots
+and init/server logs supplement the node, event and serial diagnostics.
 
 A fail-closed ValidatingAdmissionPolicy protects every Pod in the dedicated
 `outerspace-inference-v1` lab namespace, including resize and ephemeral-container

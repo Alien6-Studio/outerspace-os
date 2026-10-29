@@ -11,7 +11,7 @@ sandboxes, each running CPU, heap, direct-I/O and synthetic provider-wait phases
 - Harness and Agent image source: `b575d80cef331eff89f52f717724efa268c0acba`.
 - Raw disk SHA256: `65e46cc243e96a70bedc07b555dc2fa64fee0e51ed73350f3c38226c64392bbd`.
 - Combined report SHA256: `c6c8ba767505559263a41645a11cf9bdfeb94c2cbfebc3a585eb0c546810b590`.
-- [Immutable dataset](https://github.com/Alien6-Studio/outerspace-os/tree/cd5cc3efa588e32cbd49149faf3a06db57c12acf/evidence/agent-phases-20261027):
+- [Immutable dataset](https://github.com/Alien6-Studio/outerspace-os/tree/a42d7d870e39876896ae9d9d60097035a1d2fafe/evidence/agent-phases-20261027):
   15 files, including both raw boot logs, observations, partial traces,
   QEMU commands, independent verifier and cleanup/secret-scan reviews.
 
@@ -62,7 +62,8 @@ noise limit performance conclusions. There is no physical-efficiency or energy c
 The enabled arm passes live refusal of exporter changes, other-tenant reads,
 observer exec, cgroup writes/counter resets and an agent-forged boundary. It
 retains background descendants across boundaries, overlaps two tools in one
-scope, reuses shared memory, and reads cached image data from distinct agents.
+scope, reuses shared memory, and reads cached image data from distinct OCI
+scopes under the same logical agent ID.
 A real OOMKilled restart creates a new container scope; cancellation observes
 the running tool before teardown. Removing the collector stops subsequent work
 and preserves a deliberately failed/partial trace. The benchmark passes because

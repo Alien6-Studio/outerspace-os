@@ -71,9 +71,10 @@ all 40 packaged files, the raw disk, and 7 bound boot/QEMU evidence files.
 The enrollment report SHA256 is
 `47a25c5fb20edb60b9f62479234ce51e8cf6936ba285af93238c882b223e0b34`. Image construction files under `build/`, `src/image/`
 and `src/components.lock.json` are unchanged between the recorded image and
-harness revisions. The later 20-minute startup allowance changes the laboratory
-wait budget; model/runtime bytes, resource limits and serving protocol remain
-unchanged. Local verification is retained in
+harness revisions. Subsequent startup-budget changes affect the laboratory
+wait, not these historical measurements; model/runtime bytes, resource limits
+and serving protocol remain unchanged. The current budgets and diagnostics are
+documented in the reproduction protocol. Local verification is retained in
 `out/milestone1-final-native-serving-verification.json`.
 
 The [reproduction protocol](../benchmarks/cpu-serving.md) describes the lifecycle,

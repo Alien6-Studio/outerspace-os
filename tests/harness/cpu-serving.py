@@ -15,10 +15,18 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[2]
 NAMESPACE = 'outerspace-inference-v1'
 LAB_NAMESPACE = 'outerspace-enrollment'
-# Cold OCI pull/extraction on native-architecture TCG CI can exceed Kubernetes'
-# default ten-minute Deployment deadline. Keep the controller, kubectl and
-# subprocess budgets consistent; readiness still requires real token generation.
-START_TIMEOUT_SECONDS = 1200
+# A cold OCI delivery on an emulated worker can outlast model startup itself.
+# Bound those waits separately, without preloading the image or resetting a
+# deadline when Kubernetes reports another pull attempt or container restart.
+DELIVERY_TIMEOUT_SECONDS = 3600
+READINESS_TIMEOUT_SECONDS = 1200
+START_TIMEOUT_SECONDS = DELIVERY_TIMEOUT_SECONDS + READINESS_TIMEOUT_SECONDS
+READINESS_PROBE = {
+    'exec': {'command': ['/bin/sh', '-ec',
+        'curl --fail --silent --max-time 50 -H "Content-Type: application/json" '
+        '--data \'{"prompt":"Hello","n_predict":1,"temperature":0,"cache_prompt":false}\' '
+        'http://127.0.0.1:8080/completion | grep -Eq \'"tokens_predicted"[[:space:]]*:[[:space:]]*1([,}])\'']},
+    'periodSeconds': 60, 'timeoutSeconds': 60, 'failureThreshold': 3}
 SERVER_ARGS = ('--model', '/models/model.gguf', '--host', '0.0.0.0', '--port', '8080',
                '--n-gpu-layers', '0', '--threads', '2', '--ctx-size', '256',
                '--batch-size', '32', '--ubatch-size', '32', '--parallel', '1', '--offline')
@@ -143,6 +151,8 @@ def verify_runtime_pod(pod, node, lock):
         raise ValueError('Serving pod lacks the locked image, resource or filesystem controls')
     if server.get('command') or server.get('args') != list(SERVER_ARGS):
         raise ValueError('Serving must use the locked local model and CPU execution settings')
+    if any(server.get('readinessProbe', {}).get(key) != value for key, value in READINESS_PROBE.items()):
+        raise ValueError('Serving readiness must require actual token generation')
 
 
 class Serving:
@@ -360,11 +370,6 @@ class Serving:
     def deployment(self, python_image):
         model = self.lock['model']
         stage = (ROOT / 'tests/integration/model-stage.py').read_text()
-        # curl is in the digest-pinned server image. Readiness requires real token
-        # generation, not merely an open port or loaded model.
-        readiness = ('curl --fail --silent --max-time 50 -H "Content-Type: application/json" '
-                     '--data \'{"prompt":"Hello","n_predict":1,"temperature":0,"cache_prompt":false}\' '
-                     'http://127.0.0.1:8080/completion | grep -Eq \'"tokens_predicted"[[:space:]]*:[[:space:]]*1([,}])\'')
         return {'apiVersion': 'apps/v1', 'kind': 'Deployment',
                 'metadata': {'name': 'inference', 'namespace': self.namespace},
                 'spec': {'replicas': 1, 'progressDeadlineSeconds': START_TIMEOUT_SECONDS,
@@ -391,17 +396,87 @@ class Serving:
                                 'securityContext': self.security(),
                                 'resources': {'requests': {'cpu': '500m', 'memory': '256Mi'},
                                               'limits': {'cpu': '2', 'memory': '512Mi'}},
-                                'readinessProbe': {'exec': {'command': ['/bin/sh', '-ec', readiness]},
-                                                   'periodSeconds': 60, 'timeoutSeconds': 60, 'failureThreshold': 3},
+                                'readinessProbe': copy.deepcopy(READINESS_PROBE),
                                 'volumeMounts': [{'name': 'model', 'mountPath': '/models', 'readOnly': True},
                                                  {'name': 'scratch', 'mountPath': '/tmp'}]}],
                              'volumes': [{'name': 'model', 'emptyDir': {'sizeLimit': '128Mi'}},
                                          {'name': 'scratch', 'emptyDir': {'sizeLimit': '16Mi'}}]}}}}
 
     def ready(self):
-        print('Waiting for model readiness through actual token generation', flush=True)
-        self.lab.kube('-n', self.namespace, 'rollout', 'status', 'deployment/inference',
-                      '--timeout=' + str(START_TIMEOUT_SECONDS) + 's', timeout=START_TIMEOUT_SECONDS + 30)
+        print('Waiting for OCI delivery, then readiness through actual token generation', flush=True)
+        started = time.monotonic()
+        running_at = running_identity = generation = None
+        record = {'status': 'waiting', 'delivery_budget_seconds': DELIVERY_TIMEOUT_SECONDS,
+                  'readiness_budget_seconds': READINESS_TIMEOUT_SECONDS, 'transitions': []}
+        waits = self.observations.setdefault('startup_waits', [])
+        waits.append(record)
+        output = getattr(self.lab, 'results', self.lab.output) / 'enrollment-serving-startup.json'
+        previous = None
+        try:
+            while True:
+                deployment = self.lab.api('-n', self.namespace, 'deployment', 'inference')
+                current_generation = deployment['metadata']['generation']
+                if generation is None:
+                    generation = current_generation
+                    record['deployment_generation'] = generation
+                if generation != current_generation:
+                    raise ValueError('Serving Deployment changed during readiness qualification')
+                status = deployment.get('status', {})
+                restarted = deployment['spec']['template']['metadata'].get('annotations', {}).get('kubectl.kubernetes.io/restartedAt')
+                pods = self.lab.api('-n', self.namespace, 'pods', '-l', 'app=inference')['items']
+                pods = [p for p in pods if not p['metadata'].get('deletionTimestamp')
+                        and p['metadata'].get('annotations', {}).get('kubectl.kubernetes.io/restartedAt') == restarted]
+                pod = pods[0] if len(pods) == 1 else None
+                server = next((s for s in (pod or {}).get('status', {}).get('containerStatuses', [])
+                               if s['name'] == 'server'), {})
+                state = server.get('state', {})
+                now = time.monotonic()
+                transition = {'pod_uid': pod['metadata']['uid'] if pod else None,
+                              'state': state, 'restart_count': server.get('restartCount'),
+                              'ready': server.get('ready', False),
+                              'observed_generation': status.get('observedGeneration')}
+                if transition != previous:
+                    record['transitions'].append({'elapsed_seconds': now - started, **transition})
+                    previous = transition
+                    output.write_text(json.dumps(waits, indent=2) + '\n')
+                    print('Serving startup: ' + json.dumps(transition, sort_keys=True), flush=True)
+                if (now - started >= START_TIMEOUT_SECONDS
+                        or (running_at is None and now - started >= DELIVERY_TIMEOUT_SECONDS)):
+                    raise TimeoutError('Serving OCI delivery exceeded its fixed deadline')
+                if running_at is not None and now - running_at >= READINESS_TIMEOUT_SECONDS:
+                    raise TimeoutError('Serving token-generation readiness exceeded its fixed deadline')
+                if any(c.get('type') == 'Progressing' and c.get('reason') == 'ProgressDeadlineExceeded'
+                       for c in status.get('conditions', [])):
+                    raise RuntimeError('Serving Deployment exceeded its progress deadline')
+                if 'terminated' in state or state.get('waiting', {}).get('reason') == 'CrashLoopBackOff':
+                    raise RuntimeError('Serving runtime failed during startup')
+                if pod:
+                    for init in pod.get('status', {}).get('initContainerStatuses', []):
+                        if init.get('state', {}).get('terminated', {}).get('exitCode', 0) != 0:
+                            raise RuntimeError('Serving model verification failed during startup')
+                if 'running' in state and status.get('observedGeneration', 0) >= generation:
+                    verify_runtime_pod(pod, self.node, self.lock)
+                    identity = (pod['metadata']['uid'], server.get('containerID'), server.get('restartCount'))
+                    if running_at is None:
+                        running_at, running_identity = now, identity
+                        record['server_running_observed_seconds'] = now - started
+                    if identity != running_identity:
+                        raise RuntimeError('Serving runtime was replaced during readiness qualification')
+                    pod_ready = any(c.get('type') == 'Ready' and c.get('status') == 'True'
+                                    for c in pod.get('status', {}).get('conditions', []))
+                    if (server.get('ready') and pod_ready and len(pods) == 1
+                            and all(status.get(k) == 1 for k in
+                                    ['replicas', 'updatedReplicas', 'readyReplicas', 'availableReplicas'])):
+                        record['status'] = 'passed'
+                        record['readiness_wait_seconds'] = now - running_at
+                        return
+                time.sleep(5)
+        except Exception as error:
+            record.update(status='failed', error=str(error))
+            raise
+        finally:
+            record['elapsed_seconds'] = time.monotonic() - started
+            output.write_text(json.dumps(waits, indent=2) + '\n')
 
     def snapshot(self):
         pod = self.lab.api('-n', self.namespace, 'pods', '-l', 'app=inference')['items'][0]

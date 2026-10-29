@@ -117,6 +117,9 @@ class StartupTests(unittest.TestCase):
         self.addCleanup(directory.cleanup)
         self.now = 0
         self.delivery, self.available = 0, 10
+        self.boot_id = 'recovered-boot'
+        self.before_reboot = {'pod_uid': 'pod-1', 'container_id': 'containerd://1',
+                              'restart_count': 0, 'worker': {'boot_id': 'previous-boot'}}
         self.change = lambda deployment, pod: None
         lab = SimpleNamespace(output=Path(directory.name), api=self.api)
         self.scenario = serving.Serving(lab, 'oos-test', None, None)
@@ -132,6 +135,8 @@ class StartupTests(unittest.TestCase):
         self.now += seconds
 
     def api(self, *args):
+        if args[0] == 'node':
+            return {'status': {'nodeInfo': {'bootID': self.boot_id}}}
         deployment = copy.deepcopy(self.deployment)
         ready = self.now >= self.available
         deployment['status'] = {'observedGeneration': 2, 'replicas': 1, 'updatedReplicas': 1,
@@ -219,3 +224,103 @@ class StartupTests(unittest.TestCase):
             self.change = change
             with self.subTest(missing=missing), self.assertRaisesRegex(TimeoutError, 'token-generation readiness'):
                 self.scenario.ready()
+
+    def test_reboot_waits_through_old_running_and_terminated_container(self):
+        self.available = 0
+        def change(deployment, pod):
+            server = pod['status']['containerStatuses'][0]
+            if 5 <= self.now < 15:
+                server.update(state={'terminated': {'containerID': 'containerd://1', 'exitCode': 255,
+                                                    'reason': 'Unknown'}}, ready=False)
+            elif self.now >= 15:
+                server.update(containerID='containerd://2', restartCount=1, ready=self.now >= 25)
+        self.change = change
+        self.scenario.ready(after_reboot=self.before_reboot)
+        self.assertEqual(self.now, 25)
+        record = self.record()
+        self.assertEqual(record['server_running_observed_seconds'], 15)
+        self.assertEqual(record['readiness_wait_seconds'], 10)
+        self.assertEqual(record['recovery_from']['container_id'], 'containerd://1')
+        self.assertEqual(record['recovered_boot_id'], 'recovered-boot')
+        self.assertEqual(record['transitions'][-1]['container_id'], 'containerd://2')
+
+    def test_reboot_requires_a_new_observed_boot(self):
+        self.boot_id = self.before_reboot['worker']['boot_id']
+        with self.assertRaisesRegex(ValueError, 'new worker boot'):
+            self.scenario.ready(after_reboot=self.before_reboot)
+        self.assertEqual(self.now, 0)
+
+    def test_old_reboot_status_cannot_reset_or_satisfy_delivery_deadline(self):
+        self.available = 0
+        def change(deployment, pod):
+            if int(self.now / 5) % 2:
+                pod['status']['containerStatuses'][0]['state'] = {'terminated': {'exitCode': 255, 'reason': 'Unknown'}}
+        self.change = change
+        with self.assertRaisesRegex(TimeoutError, 'OCI delivery'):
+            self.scenario.ready(after_reboot=self.before_reboot)
+        self.assertEqual(self.now, serving.DELIVERY_TIMEOUT_SECONDS)
+
+    def test_reboot_rejects_another_pod_or_extra_or_missing_restart(self):
+        for changed, error in [('pod', 'registered Pod'), ('extra', 'single expected restart'),
+                               ('missing', 'new container identity')]:
+            self.now = 0
+            def change(deployment, pod):
+                server = pod['status']['containerStatuses'][0]
+                server['containerID'] = 'containerd://2'
+                if changed == 'pod':
+                    pod['metadata']['uid'] = 'replacement'
+                elif changed == 'extra':
+                    server['restartCount'] = 2
+            self.change = change
+            with self.subTest(changed=changed), self.assertRaisesRegex(RuntimeError, error):
+                self.scenario.ready(after_reboot=self.before_reboot)
+            self.assertEqual(self.now, 0)
+
+    def test_new_reboot_container_crash_and_previous_oom_remain_fatal(self):
+        for crashed in ['new', 'previous-oom', 'backoff', 'inconsistent-identity']:
+            self.now = 0
+            def change(deployment, pod):
+                server = pod['status']['containerStatuses'][0]
+                server['state'] = {'terminated': {'exitCode': 137, 'reason': 'OOMKilled'}}
+                if crashed == 'new':
+                    server.update(containerID='containerd://2', restartCount=1,
+                                  state={'terminated': {'exitCode': 1, 'reason': 'Error'}})
+                elif crashed == 'backoff':
+                    server['state'] = {'waiting': {'reason': 'CrashLoopBackOff'}}
+                elif crashed == 'inconsistent-identity':
+                    server['state'] = {'terminated': {'containerID': 'containerd://2', 'exitCode': 1, 'reason': 'Error'}}
+            self.change = change
+            with self.subTest(crashed=crashed), self.assertRaisesRegex(RuntimeError, 'runtime failed'):
+                self.scenario.ready(after_reboot=self.before_reboot)
+            self.assertEqual(self.now, 0)
+
+    def test_reboot_new_container_keeps_its_token_readiness_deadline(self):
+        self.available = float('inf')
+        def change(deployment, pod):
+            server = pod['status']['containerStatuses'][0]
+            if self.now < 1500:
+                server['state'] = {'terminated': {'exitCode': 255, 'reason': 'Unknown'}}
+            else:
+                server.update(containerID='containerd://2', restartCount=1)
+        self.change = change
+        with self.assertRaisesRegex(TimeoutError, 'token-generation readiness'):
+            self.scenario.ready(after_reboot=self.before_reboot)
+        self.assertEqual(self.now, 1500 + serving.READINESS_TIMEOUT_SECONDS)
+
+    def test_reboot_does_not_ignore_failed_model_verification(self):
+        def change(deployment, pod):
+            pod['status']['containerStatuses'][0]['state'] = {'terminated': {'exitCode': 255, 'reason': 'Unknown'}}
+            pod['status']['initContainerStatuses'] = [{'name': 'verify-model',
+                'state': {'terminated': {'exitCode': 1}}}]
+        self.change = change
+        with self.assertRaisesRegex(RuntimeError, 'model verification failed'):
+            self.scenario.ready(after_reboot=self.before_reboot)
+
+    def test_reboot_cannot_return_to_previous_container_after_new_start(self):
+        def change(deployment, pod):
+            if self.now < 5:
+                pod['status']['containerStatuses'][0].update(containerID='containerd://2', restartCount=1)
+        self.change = change
+        with self.assertRaisesRegex(RuntimeError, 'previous container'):
+            self.scenario.ready(after_reboot=self.before_reboot)
+        self.assertEqual(self.now, 5)

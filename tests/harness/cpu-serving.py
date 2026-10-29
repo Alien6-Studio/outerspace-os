@@ -402,7 +402,7 @@ class Serving:
                              'volumes': [{'name': 'model', 'emptyDir': {'sizeLimit': '128Mi'}},
                                          {'name': 'scratch', 'emptyDir': {'sizeLimit': '16Mi'}}]}}}}
 
-    def ready(self):
+    def ready(self, after_reboot=None):
         print('Waiting for OCI delivery, then readiness through actual token generation', flush=True)
         started = time.monotonic()
         running_at = running_identity = generation = None
@@ -413,6 +413,14 @@ class Serving:
         output = getattr(self.lab, 'results', self.lab.output) / 'enrollment-serving-startup.json'
         previous = None
         try:
+            if after_reboot is not None:
+                boot = self.lab.api('node', self.node)['status']['nodeInfo']['bootID']
+                if not boot or not after_reboot['worker']['boot_id'] or boot == after_reboot['worker']['boot_id']:
+                    raise ValueError('Serving recovery requires an observed new worker boot')
+                record['recovery_from'] = {key: after_reboot[key] for key in
+                                           ['pod_uid', 'container_id', 'restart_count']}
+                record['recovery_from']['boot_id'] = after_reboot['worker']['boot_id']
+                record['recovered_boot_id'] = boot
             while True:
                 deployment = self.lab.api('-n', self.namespace, 'deployment', 'inference')
                 current_generation = deployment['metadata']['generation']
@@ -432,6 +440,7 @@ class Serving:
                 state = server.get('state', {})
                 now = time.monotonic()
                 transition = {'pod_uid': pod['metadata']['uid'] if pod else None,
+                              'container_id': server.get('containerID'),
                               'state': state, 'restart_count': server.get('restartCount'),
                               'ready': server.get('ready', False),
                               'observed_generation': status.get('observedGeneration')}
@@ -448,14 +457,36 @@ class Serving:
                 if any(c.get('type') == 'Progressing' and c.get('reason') == 'ProgressDeadlineExceeded'
                        for c in status.get('conditions', [])):
                     raise RuntimeError('Serving Deployment exceeded its progress deadline')
-                if 'terminated' in state or state.get('waiting', {}).get('reason') == 'CrashLoopBackOff':
+                previous_epoch = False
+                if after_reboot is not None and pod:
+                    if pod['metadata']['uid'] != after_reboot['pod_uid']:
+                        raise RuntimeError('Serving recovery replaced the registered Pod')
+                    verify_runtime_pod(pod, self.node, self.lock)
+                    count = server.get('restartCount')
+                    if count is not None and count not in [after_reboot['restart_count'], after_reboot['restart_count'] + 1]:
+                        raise RuntimeError('Serving recovery exceeded its single expected restart')
+                    previous_epoch = server.get('containerID') == after_reboot['container_id']
+                    if previous_epoch and running_at is not None:
+                        raise RuntimeError('Serving recovery returned to the previous container')
+                # After a confirmed cold boot, kubelet may still publish the
+                # pre-shutdown container as Running or Terminated while it
+                # reinitializes the sandbox. Only that exact previous identity
+                # is transitional; a failed new container remains fatal.
+                previous_termination = (previous_epoch and 'terminated' in state
+                                        and state['terminated'].get('containerID', after_reboot['container_id']) == after_reboot['container_id']
+                                        and state['terminated'].get('reason') != 'OOMKilled')
+                if (('terminated' in state and not previous_termination)
+                        or state.get('waiting', {}).get('reason') == 'CrashLoopBackOff'):
                     raise RuntimeError('Serving runtime failed during startup')
                 if pod:
                     for init in pod.get('status', {}).get('initContainerStatuses', []):
                         if init.get('state', {}).get('terminated', {}).get('exitCode', 0) != 0:
                             raise RuntimeError('Serving model verification failed during startup')
-                if 'running' in state and status.get('observedGeneration', 0) >= generation:
+                if 'running' in state and not previous_epoch and status.get('observedGeneration', 0) >= generation:
                     verify_runtime_pod(pod, self.node, self.lock)
+                    if after_reboot is not None and (not server.get('containerID')
+                            or server.get('restartCount') != after_reboot['restart_count'] + 1):
+                        raise RuntimeError('Serving recovery lacks its expected new container identity')
                     identity = (pod['metadata']['uid'], server.get('containerID'), server.get('restartCount'))
                     if running_at is None:
                         running_at, running_identity = now, identity
@@ -496,7 +527,8 @@ class Serving:
 
     def sample(self, phase, requests=4, minimum_seconds=0):
         print('Sampling real CPU inference: ' + phase, flush=True)
-        self.ready()
+        previous = self.observations['drain_recovery']['resources_after'] if phase == 'node_recovery' else None
+        self.ready(after_reboot=previous)
         self.wait_for('Verifying model-server egress is denied', lambda:
                       self.lab.kube('-n', self.namespace, 'exec', 'deployment/inference', '--',
                                     'curl', '--silent', '--head', '--connect-timeout', '3', '--max-time', '5',

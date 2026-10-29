@@ -56,8 +56,17 @@ and its token-producing ready Pod are both required. These laboratory limits
 are not startup performance targets, and images are not preloaded to satisfy
 them. Actual cold/warm timings remain in the raw observations.
 
+Cold-node recovery first requires a different observed worker boot ID. Kubelet
+may briefly retain the pre-shutdown container's Running or Terminated status
+while recreating the sandbox. The harness waits only for that exact previous
+container, within the same fixed delivery budget; it cannot satisfy readiness.
+The recovered server must keep the Pod UID, acquire a new container ID and
+increment its restart count exactly once. A new-container crash, OOM, extra
+restart, changed Pod or failed model verifier still fails qualification.
+
 `enrollment-serving-startup.json` retains each wait's state transitions, fixed
-budgets and observed timings, including failures. Time until Running includes
+budgets, container identities and observed timings, including failures. Cold
+recovery also binds the previous container and both boot IDs. Time until Running includes
 scheduling and model staging as well as OCI delivery; it does not distinguish
 network transfer from layer extraction. Final serving Pod/Deployment snapshots
 and init/server logs supplement the node, event and serial diagnostics.

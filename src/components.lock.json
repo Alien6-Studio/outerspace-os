@@ -20,15 +20,15 @@
       }
     },
     "kubelet": {
-      "version": "1.36.5",
+      "version": "1.36.6",
       "artifacts": {
         "amd64": {
-          "url": "https://dl.k8s.io/release/v1.36.5/bin/linux/amd64/kubelet",
-          "sha256": "2127c83a9a6ea4573e176ea42ba7415fadce0f05c998324b7154b4949dd2fdd0"
+          "url": "https://dl.k8s.io/release/v1.36.6/bin/linux/amd64/kubelet",
+          "sha256": "cf8baae869b810d84338f8c7111e2bb32733e992c0c08107cf6692120f5e229f"
         },
         "arm64": {
-          "url": "https://dl.k8s.io/release/v1.36.5/bin/linux/arm64/kubelet",
-          "sha256": "7ed576edb3fe4e6b5f81c9c468aacee2018da38cfca8e428fcb8253014921df7"
+          "url": "https://dl.k8s.io/release/v1.36.6/bin/linux/arm64/kubelet",
+          "sha256": "14c52637849edf6abdcfb2d094c5ff69f257309d6a6cae2f707f9113fab91d39"
         }
       }
     },

@@ -11,11 +11,11 @@
     },
     "kubelet": {
       "repo": "kubernetes/kubernetes",
-      "version": "1.36.5",
-      "commit": "ad950d1cc78b0183c476bd4d3f1934c104229727",
-      "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/ad950d1cc78b0183c476bd4d3f1934c104229727",
-      "sha256": "6d2bc7ef75ec9927dd7e6ff3fe47332a1d58b2f6171606e6a63940b02b055122",
-      "size": 39950833
+      "version": "1.36.6",
+      "commit": "1b2171b110bb2a2542e1322035c6583ec86eb976",
+      "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/1b2171b110bb2a2542e1322035c6583ec86eb976",
+      "sha256": "53f24f30a8d3db882e3965d8296f57552cef170a9972e1c0d5b3f3d363505c68",
+      "size": 39957606
     },
     "crictl": {
       "repo": "kubernetes-sigs/cri-tools",
@@ -52,6 +52,11 @@
       "url": "https://go.dev/dl/go1.24.4.src.tar.gz",
       "sha256": "5a86a83a31f9fa81490b8c5420ac384fd3d95a3e71fba665c7b3f95d1dfef2b4",
       "size": 30788576
+    },
+    "go1.26.10": {
+      "url": "https://go.dev/dl/go1.26.10.src.tar.gz",
+      "sha256": "fd63e883ba2f2bfca93c1646b31ebef63e2b1e4d2b317c9789d976a68d81f36f",
+      "size": 34164741
     }
   },
   "cargo_git_sources": {

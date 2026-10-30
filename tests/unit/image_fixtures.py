@@ -50,6 +50,8 @@ def identity(profile='agent', arch=None, version='0.1.0-alpha.1'):
 
 def qualification(policy):
     evidence = {'schema': 2, 'version': '0.1.0-alpha.1', 'commit': 'a' * 40, 'artifacts': []}
+    evidence['release_notes'] = {field: 'Synthetic test only: ' + field for field in
+                                 ['summary', 'changes', 'install', 'limitations', 'support']}
     for selected in policy['artifacts']:
         subject = identity(selected['profile'], selected['architecture'])
         capabilities = policy['profiles'][selected['profile']]['required_capabilities'][:]

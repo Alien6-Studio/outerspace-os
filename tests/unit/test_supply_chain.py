@@ -278,6 +278,19 @@ class VulnerabilityReviewTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError): self.evaluate()
             e[key] = original
 
+    def test_kernel_decisions_require_exact_image_and_configuration_bindings(self):
+        self.match['artifact']['name'] = 'linux_kernel'
+        decision = self.exception()
+        with self.assertRaisesRegex(ValueError, 'both compiled image and configuration'):
+            self.evaluate()
+        release = security.read_json(security.ROOT / 'build/kernel/kernel.lock.json')['release']
+        decision['binary_sha256'] = {'/usr/lib/modules/' + release + '/vmlinuz': 'a' * 64,
+                                    '/boot/config-' + release: 'b' * 64}
+        self.assertEqual(self.evaluate()['status'], 'passed')
+        decision['binary_sha256']['/boot/../../escape'] = 'c' * 64
+        with self.assertRaisesRegex(ValueError, 'binary binding'):
+            self.evaluate()
+
     def test_changed_dependency_path_or_version_cannot_reuse_exception(self):
         self.exception()
         self.match['artifact']['version'] = '1.0.1'
@@ -301,6 +314,25 @@ class VulnerabilityReviewTests(unittest.TestCase):
     def test_hidden_scanner_ignores_are_rejected(self):
         self.scan['descriptor']['configuration']['ignore'].append({'vulnerability': 'TEST-CVE'})
         with self.assertRaisesRegex(ValueError, 'ignore'): self.evaluate()
+
+    def test_kernel_findings_block_even_when_the_distribution_scan_passes(self):
+        kernel = copy.deepcopy(self.scan)
+        self.scan['matches'] = []
+        result = security.evaluate(self.scan, self.database, self.subject, self.policy, self.now, kernel)
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['decisions'][0]['id'], 'TEST-CVE')
+        kernel['ignoredMatches'] = [kernel['matches'][0]]
+        with self.assertRaisesRegex(ValueError, 'ignore'):
+            security.evaluate(self.scan, self.database, self.subject, self.policy, self.now, kernel)
+
+    def test_kernel_scan_cannot_duplicate_or_use_a_different_database(self):
+        kernel = copy.deepcopy(self.scan)
+        with self.assertRaisesRegex(ValueError, 'Duplicate'):
+            security.evaluate(self.scan, self.database, self.subject, self.policy, self.now, kernel)
+        self.scan['matches'] = []
+        kernel['descriptor']['db']['status']['built'] = '2026-10-27T05:00:00Z'
+        with self.assertRaisesRegex(ValueError, 'recorded'):
+            security.evaluate(self.scan, self.database, self.subject, self.policy, self.now, kernel)
 
     def test_filtering_unfixed_findings_and_unknown_severity_cannot_pass(self):
         self.scan['descriptor']['configuration']['only-fixed'] = True

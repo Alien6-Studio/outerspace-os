@@ -21,6 +21,20 @@ def digest(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def kernel_files(kernel):
+    release = kernel.get('release', '')
+    files = kernel.get('files', {})
+    if not re.fullmatch(r'\d+\.\d+\.\d+-outerspace', release) or not files:
+        raise ValueError('Missing exact reference kernel payload')
+    for name, checksum in files.items():
+        if (not re.fullmatch(r'[A-Za-z0-9_./+-]+', name) or '..' in Path(name).parts
+                or not (name.startswith('usr/lib/modules/' + release + '/')
+                        or name in ['boot/config-' + release, 'boot/vmlinuz-' + release])
+                or not re.fullmatch('[a-f0-9]{64}', checksum)):
+            raise ValueError('Unsafe reference kernel payload')
+    return files
+
+
 def inventory(identity, evidence, components):
     if (evidence.get('identity') != identity or evidence.get('status') != 'inventoried'
             or identity['components_lock_sha256'] != digest(components)):
@@ -43,6 +57,10 @@ def extract(image, evidence_directory, output, components):
     identity = json.loads((evidence_directory / 'build-identity.json').read_text())
     evidence = json.loads((evidence_directory / 'sbom-evidence.json').read_text())
     manifest = inventory(identity, evidence, components)
+    import kernel_build
+    kernel = kernel_build.verify_receipt(evidence_directory, identity['architecture'])
+    manifest['kernel'] = {'release': kernel['release'], 'files': kernel['files']}
+    kernel_records = kernel_files(manifest['kernel'])
     if image.is_symlink() or digest(image) != identity['raw_image_sha256']:
         raise ValueError('Reference extraction requires the qualified disk')
     table = json.loads(subprocess.check_output(['sfdisk', '--json', str(image)], text=True))['partitiontable']
@@ -64,6 +82,19 @@ def extract(image, evidence_directory, output, components):
             if target.is_symlink() or not target.is_file() or digest(target) != runtime['sha256']:
                 raise ValueError('Extracted runtime differs from its qualified inventory')
             target.chmod(0o755)
+        commands = []
+        for name in kernel_records:
+            target = output / 'kernel' / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            commands.append('dump /' + name + ' kernel/' + name)
+        instructions = output / 'kernel-extract.commands'
+        instructions.write_text('\n'.join(commands) + '\n')
+        subprocess.run(['debugfs', '-f', str(instructions), str(root)], cwd=output,
+                       check=True, capture_output=True)
+        instructions.unlink()
+        for name, checksum in kernel_records.items():
+            if digest(output / 'kernel' / name) != checksum:
+                raise ValueError('Extracted kernel differs from the qualified disk')
     (output / 'runtimes.json').write_text(json.dumps(manifest, indent=2) + '\n')
 
 
@@ -80,6 +111,17 @@ def install(source, root, architecture):
         binary = source / Path(record['path']).name
         if binary.is_symlink() or not binary.is_file() or digest(binary) != record['sha256']:
             raise ValueError('Reference runtime payload checksum mismatch')
+    kernel = kernel_files(manifest['kernel']) if 'kernel' in manifest else {}
+    for name, checksum in kernel.items():
+        path = source / 'kernel' / name
+        target = root / name
+        if (path.is_symlink() or not path.is_file() or digest(path) != checksum
+                or target.is_symlink() or not target.resolve().is_relative_to(root.resolve())):
+            raise ValueError('Reference kernel payload checksum or target differs')
+    for name in kernel:
+        target = root / name; target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source / 'kernel' / name, target)
+        target.chmod(0o644)
     destination = root / 'usr/bin'
     destination.mkdir(parents=True, exist_ok=True)
     for record in records:

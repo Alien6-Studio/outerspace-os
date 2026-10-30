@@ -17,9 +17,10 @@ from sbom import read_json, write_json
 
 LOCK = ROOT / 'build/sbom/grype.lock.json'
 CONFIG = ROOT / 'build/sbom/grype.yaml'
+KERNEL_CONFIG = ROOT / 'build/sbom/grype-kernel.yaml'
 POLICY = ROOT / 'build/security/policy.json'
 DEFAULT_IGNORE = ROOT / 'build/sbom/grype-default-ignore.json'
-FILES = ('vulnerabilities.grype.json', 'vulnerability-database.json')
+FILES = ('vulnerabilities.grype.json', 'vulnerability-database.json', 'kernel-vulnerabilities.grype.json')
 REPORT = 'security-review.json'
 
 
@@ -30,7 +31,8 @@ def exception_scope(identity):
             'go_runtime_build_lock_sha256': sha256(ROOT / 'build/runtime/crictl.lock.json'),
             'containerd_build_lock_sha256': sha256(ROOT / 'build/runtime/containerd.lock.json'),
             'kubelet_build_lock_sha256': sha256(ROOT / 'build/runtime/kubelet.lock.json'),
-            'sources_lock_sha256': sha256(ROOT / 'build/sbom/sources.lock.json')}
+            'sources_lock_sha256': sha256(ROOT / 'build/sbom/sources.lock.json'),
+            'kernel_build_lock_sha256': sha256(ROOT / 'build/kernel/kernel.lock.json')}
 
 
 def time(value):
@@ -50,9 +52,7 @@ def finding(match):
     return value
 
 
-def evaluate(scan, database, identity, policy, now):
-    if policy.get('schema') != 1 or not policy.get('owner') or not policy.get('blocking_severities'):
-        raise ValueError('Missing vulnerability review policy')
+def validate_scan(scan, database, policy, now):
     descriptor = scan['descriptor']
     if descriptor['name'] != 'grype' or descriptor['version'] != read_json(LOCK)['version']:
         raise ValueError('Unapproved vulnerability scanner')
@@ -74,8 +74,17 @@ def evaluate(scan, database, identity, policy, now):
     db_status = descriptor.get('db', {}).get('status', {})
     if any(db_status.get(k) != database.get(k) for k in ['schemaVersion', 'built', 'from', 'valid']):
         raise ValueError('Scan does not use the recorded vulnerability database')
+
+
+def evaluate(scan, database, identity, policy, now, kernel_scan=None):
+    if policy.get('schema') != 1 or not policy.get('owner') or not policy.get('blocking_severities'):
+        raise ValueError('Missing vulnerability review policy')
+    for current in [scan] + ([kernel_scan] if kernel_scan is not None else []):
+        validate_scan(current, database, policy, now)
     exceptions = {}
     scope = exception_scope(identity)
+    kernel_release = read_json(ROOT / 'build/kernel/kernel.lock.json')['release']
+    kernel_paths = {'/usr/lib/modules/' + kernel_release + '/vmlinuz', '/boot/config-' + kernel_release}
     for e in policy['exceptions']:
         if (not re.fullmatch('[a-f0-9]{64}', e.get('finding_sha256', ''))
                 or e.get('approved_by') not in policy['exception_approvers'] or not e.get('owner')
@@ -85,7 +94,7 @@ def evaluate(scan, database, identity, policy, now):
             raise ValueError('Unaccountable vulnerability exception')
         binaries = e.get('binary_sha256', {})
         if not isinstance(binaries, dict) or any(
-                not re.fullmatch('/usr/s?bin/[A-Za-z0-9_.-]+', p)
+                not (re.fullmatch('/usr/s?bin/[A-Za-z0-9_.-]+', p) or p in kernel_paths)
                 or not re.fullmatch('[a-f0-9]{64}', digest) for p, digest in binaries.items()):
             raise ValueError('Invalid vulnerability exception binary binding')
         start, expires = time(e['reviewed_at']), time(e['expires_at'])
@@ -96,7 +105,10 @@ def evaluate(scan, database, identity, policy, now):
         if e['finding_sha256'] in exceptions:
             raise ValueError('Duplicate vulnerability exception')
         exceptions[e['finding_sha256']] = e
-    findings = [finding(m) for m in scan['matches']]
+    findings = [finding(m) for current in [scan] + ([kernel_scan] if kernel_scan is not None else [])
+                for m in current['matches']]
+    if len({f['key'] for f in findings}) != len(findings):
+        raise ValueError('Duplicate finding across vulnerability inventories')
     if any(f['severity'] not in ['Critical', 'High', 'Medium', 'Low', 'Negligible', 'Unknown'] for f in findings):
         raise ValueError('Unrecognized vulnerability severity requires review')
     decisions = []
@@ -104,6 +116,9 @@ def evaluate(scan, database, identity, policy, now):
     for f in findings:
         exception = exceptions.get(f['key'])
         if exception:
+            if (f['package'] == 'linux_kernel'
+                    and not kernel_paths.issubset(exception.get('binary_sha256', {}))):
+                raise ValueError('Kernel decision must bind both compiled image and configuration')
             used.add(f['key'])
         blocked = f['severity'] in policy['blocking_severities'] and exception is None
         decisions.append({**f, 'decision': exception['decision'] if exception else
@@ -158,13 +173,19 @@ def scan(output, database_path):
         with (output / FILES[0]).open('w') as stream:
             subprocess.run(['grype', 'sbom:' + str(output / 'distribution.sbom.syft.json'),
                 '--config', str(CONFIG), '-o', 'json'], env=env, stdout=stream, check=True)
+        with (output / FILES[2]).open('w') as stream:
+            subprocess.run(['grype', 'sbom:' + str(output / 'kernel.sbom.syft.json'),
+                '--config', str(KERNEL_CONFIG), '-o', 'json'], env=env, stdout=stream, check=True)
         if sha256(actual) != database['sha256']:
             raise ValueError('Vulnerability database changed during scan')
         write_json(output / FILES[1], database)
-    evaluation = evaluate(read_json(output / FILES[0]), database, identity, read_json(POLICY), datetime.now(timezone.utc))
+    evaluation = evaluate(read_json(output / FILES[0]), database, identity, read_json(POLICY), datetime.now(timezone.utc),
+                          kernel_scan=read_json(output / FILES[2]))
     verify_exception_binaries(output, evaluation)
     report = {'schema': 1, 'identity': identity, 'scanner': receipt,
               'scanner_lock_sha256': sha256(LOCK), 'scanner_config_sha256': sha256(CONFIG),
+              'kernel_scanner_config_sha256': sha256(KERNEL_CONFIG),
+              'kernel_sbom_sha256': sha256(output / 'kernel.sbom.syft.json'),
               'scanner_defaults_sha256': sha256(DEFAULT_IGNORE),
               'policy_sha256': sha256(POLICY), 'sbom_sha256': sha256(output / 'distribution.sbom.syft.json'),
               'files': {n: sha256(output / n) for n in FILES}, 'review': evaluation}
@@ -177,6 +198,8 @@ def verify(directory, identity, require_pass=False, now=None):
     if (report.get('schema') != 1 or report.get('identity') != identity
             or report.get('scanner_lock_sha256') != sha256(LOCK)
             or report.get('scanner_config_sha256') != sha256(CONFIG)
+            or report.get('kernel_scanner_config_sha256') != sha256(KERNEL_CONFIG)
+            or report.get('kernel_sbom_sha256') != sha256(directory / 'kernel.sbom.syft.json')
             or report.get('scanner_defaults_sha256') != sha256(DEFAULT_IGNORE)
             or report.get('policy_sha256') != sha256(POLICY)
             or report.get('sbom_sha256') != sha256(directory / 'distribution.sbom.syft.json')
@@ -187,7 +210,8 @@ def verify(directory, identity, require_pass=False, now=None):
         if path.is_symlink() or not path.is_file() or sha256(path) != digest:
             raise ValueError('Vulnerability evidence integrity failure')
     evaluation = evaluate(read_json(directory / FILES[0]), read_json(directory / FILES[1]), identity,
-                          read_json(POLICY), now or datetime.now(timezone.utc))
+                          read_json(POLICY), now or datetime.now(timezone.utc),
+                          kernel_scan=read_json(directory / FILES[2]))
     if evaluation != report['review']:
         raise ValueError('Vulnerability decision differs from scanner evidence')
     verify_exception_binaries(directory, evaluation)

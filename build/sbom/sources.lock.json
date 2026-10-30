@@ -62,6 +62,13 @@
       "url": "https://static.rust-lang.org/dist/2025-06-26/rust-src-1.88.0.tar.xz",
       "sha256": "d6e7462e5b5e53bde515d8846ffdd4da246b79ba2d7b2872a33b46cc12cf76c7",
       "source_kind": "rust-standard-library"
+    },
+    "linux": {
+      "url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.60.tar.xz",
+      "sha256": "3c2f44ef6acc021a7ad444d9a2e6ec1ef488ff09368793d0004a6080f69d621e",
+      "size": 154827264,
+      "version": "6.18.60",
+      "source_kind": "linux-kernel-source"
     }
   },
   "cargo_git_sources": {

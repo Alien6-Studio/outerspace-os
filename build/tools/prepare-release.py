@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import tarfile
 from package import sha256
-from release import ROOT, validate_release, parse_version
+from release import ROOT, validate_release, parse_version, release_notes
 from sbom import verify_inventory
 import supply_chain
 import security
@@ -106,8 +106,7 @@ def main():
             (assets / f'{archive.name}.sha256').write_text(f'{sha256(archive)}  {archive.name}\n')
             (assets / f'{archive.name}.attestation.jsonl').write_bytes(signatures[0].read_bytes())
     (assets / 'qualification-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
-    if not (ROOT / f'build/release/notes/{version}.md').is_file():
-        raise ValueError('Version-specific release notes are required')
+    (ROOT / 'out/release-notes.txt').write_text(release_notes(evidence))
 
 
 if __name__ == '__main__':

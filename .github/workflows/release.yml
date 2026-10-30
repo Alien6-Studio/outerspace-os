@@ -41,7 +41,7 @@ jobs:
       - name: Create a draft only
         run: |
           version=$(cat VERSION)
-          args=(release create "$TAG" --verify-tag --draft --title "OuterSpace OS $version" --notes-file "build/release/notes/$version.md")
+          args=(release create "$TAG" --verify-tag --draft --title "OuterSpace OS $version" --notes-file "out/release-notes.txt")
           if [[ "$version" == *-* ]]; then args+=(--prerelease); fi
           mapfile -d '' assets < <(find out/release-assets -type f -print0)
           gh "${args[@]}" "${assets[@]}"

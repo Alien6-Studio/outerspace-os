@@ -249,6 +249,7 @@ def main():
         shutil.copyfile(path, bundle / name)
     for name, path in [('grype.lock.json', security.LOCK), ('grype.yaml', security.CONFIG),
                        ('grype-default-ignore.json', security.DEFAULT_IGNORE),
+                       ('grype-kernel.yaml', security.KERNEL_CONFIG),
                        ('security-policy.json', security.POLICY), ('redistribution-policy.json', redistribution.POLICY)]:
         shutil.copyfile(path, bundle / name)
     subprocess.run(['zstd', '-q', str(output / 'outerspace-source.tar'), '-o', str(bundle / 'source.tar.zst')], check=True)

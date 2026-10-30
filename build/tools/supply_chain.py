@@ -15,6 +15,8 @@ from urllib.parse import quote
 import runtime_build
 import go_runtime_build
 import go_dependencies
+import kernel_build
+import kernel_inventory
 
 from profiles import ROOT, sha256
 from sbom import read_json, write_json, verify_inventory, compose
@@ -27,12 +29,15 @@ FILES = ('apt-inputs.json', 'apt-notices.tar', 'apt.sbom.syft.json', 'source-ind
          'corresponding-source.tar.zst', 'distribution.sbom.syft.json', 'distribution.sbom.cdx.json',
          'build-provenance.json', 'builder-packages.tsv', *runtime_build.EVIDENCE_FILES,
          *go_runtime_build.EVIDENCE_FILES, *go_runtime_build.evidence_files('containerd'),
-         *go_runtime_build.evidence_files('kubelet'))
+         *go_runtime_build.evidence_files('kubelet'), *kernel_build.EVIDENCE_FILES,
+         'kernel.sbom.syft.json')
 REPORT = 'supply-chain.json'
 POLICIES = {'inputs.lock.json': ROOT / 'build/inputs.lock.json',
             'apt.sources': ROOT / 'build/apt.sources',
             'cyclonedx-1.6-licenses.json': ROOT / 'build/sbom/cyclonedx-1.6-licenses.json',
             'sources.lock.json': ROOT / 'build/sbom/sources.lock.json',
+            'kernel.lock.json': kernel_build.LOCK,
+            'kernel-release-key.gpg': kernel_build.KEYRING,
             'dragonfly.lock.json': runtime_build.LOCK,
             'crictl.lock.json': go_runtime_build.LOCK,
             'crictl-dependencies.lock.json': go_dependencies.LOCK,
@@ -83,7 +88,7 @@ def apt_inventory(apt, manifest, native):
             raise ValueError('Native APT source identity differs')
 
 
-def compose_native(raw, apt, native, manifest, index, *, built_runtime=False, go_build=None):
+def compose_native(raw, apt, native, manifest, index, *, built_runtime=False, go_build=None, kernel=None):
     apt_inventory(apt, manifest, native)
     result = copy.deepcopy(raw)
     # ELF note guesses are replaced by the signed-package database preserved
@@ -93,6 +98,8 @@ def compose_native(raw, apt, native, manifest, index, *, built_runtime=False, go
     result['artifactRelationships'] = [r for r in result.get('artifactRelationships', [])
                                        if r['parent'] not in removed and r['child'] not in removed]
     result['artifacts'].extend(copy.deepcopy(native['artifacts']))
+    if kernel is not None:
+        result['artifacts'].append(kernel_inventory.artifact(kernel))
     source_builds = {}
     for built in ([go_build] if isinstance(go_build, dict) else go_build or []):
         # Go reports the main package as (devel) without a Git checkout. Keep
@@ -239,6 +246,17 @@ def source_correspondence(raw, apt, index, runtimes, components):
             'rust': index['cargo_relationship']}
 
 
+def kernel_component_inventory(raw, proof):
+    # Preserve the full distribution scan separately. This additional inventory
+    # scans the kernel's upstream identity without treating Ubuntu's backported
+    # APT binaries as unpatched upstream releases.
+    result = copy.deepcopy(raw)
+    result['artifacts'] = [kernel_inventory.artifact(proof)]
+    result['artifactRelationships'] = []
+    result['files'] = [f for f in result['files'] if f['location']['path'].lstrip('/') in proof['files']]
+    return result
+
+
 def provenance(identity, builder, packages):
     if not re.fullmatch(r'sha256:[a-f0-9]{64}', builder):
         raise ValueError('An immutable builder image ID is required')
@@ -260,14 +278,17 @@ def generate(output):
     evidence = read_json(output / 'sbom-evidence.json')
     rust = rust_correspondence(output, identity, raw, evidence['runtimes'], index)
     go_build = all_go_build_correspondence(output, identity, raw, evidence['runtimes'], index)
+    kernel = kernel_inventory.correspondence(output, identity, raw, index)
     write_json(output / 'distribution.sbom.syft.json', compose_native(raw, apt, native, manifest, index,
-                                                                   built_runtime=True, go_build=go_build))
+                                                                   built_runtime=True, go_build=go_build, kernel=kernel))
+    write_json(output / 'kernel.sbom.syft.json', kernel_component_inventory(raw, kernel))
     converted = json.loads(subprocess.check_output(['syft', 'convert',
         str(output / 'distribution.sbom.syft.json'), '--config', str(ROOT / 'build/sbom/syft.yaml'),
         '-o', 'cyclonedx-json@1.6'], text=True))
     correspondence = source_correspondence(raw, apt, index, evidence['runtimes'], read_json(ROOT / 'src/components.lock.json'))
     correspondence['rust_build'] = rust
     correspondence['go_build'] = go_build
+    correspondence['kernel_build'] = kernel
     cdx = schema_licenses(compose(converted, {'packages': []}, identity, evidence['runtimes']))
     cdx['metadata']['properties'] = [p for p in cdx['metadata']['properties'] if p['name'] != 'outerspace:coverage']
     cdx['metadata']['properties'].append({'name': 'outerspace:coverage', 'value':
@@ -310,8 +331,11 @@ def verify(directory, identity, manifest_path):
         raise ValueError('APT snapshot or notices differ')
     evidence = read_json(directory / 'sbom-evidence.json')
     go_build = all_go_build_correspondence(directory, identity, raw, evidence['runtimes'], index)
-    if compose_native(raw, apt, native, manifest, index, built_runtime=True, go_build=go_build) != read_json(directory / 'distribution.sbom.syft.json'):
+    kernel = kernel_inventory.correspondence(directory, identity, raw, index)
+    if compose_native(raw, apt, native, manifest, index, built_runtime=True, go_build=go_build, kernel=kernel) != read_json(directory / 'distribution.sbom.syft.json'):
         raise ValueError('Combined SBOM differs from its source evidence')
+    if kernel_component_inventory(raw, kernel) != read_json(directory / 'kernel.sbom.syft.json'):
+        raise ValueError('Kernel scan inventory differs from its verified image payload')
     p = read_json(directory / 'build-provenance.json')
     if p != provenance(identity, p['builder_image_id'], directory / 'builder-packages.tsv'):
         raise ValueError('Build provenance differs from this image')
@@ -321,6 +345,7 @@ def verify(directory, identity, manifest_path):
     correspondence = source_correspondence(raw, apt, index, evidence['runtimes'], read_json(ROOT / 'src/components.lock.json'))
     correspondence['rust_build'] = rust_correspondence(directory, identity, raw, evidence['runtimes'], index)
     correspondence['go_build'] = go_build
+    correspondence['kernel_build'] = kernel
     if correspondence != report['correspondence']:
         raise ValueError('Runtime/source correspondence differs')
     cdx = read_json(directory / 'distribution.sbom.cdx.json')

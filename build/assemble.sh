@@ -11,6 +11,8 @@ profiles="$profile"
 if [[ "$hardware" == cpu-full-firmware ]]; then profiles+=,full-firmware; fi
 python3 /repo/build/tools/install-components.py fetch /cache/components "$(uname -m)" /repo/src/components.lock.json
 arch=$(python3 -c 'import platform; print({"aarch64":"arm64", "x86_64":"amd64"}[platform.machine()])')
+kernel_path=$(python3 /repo/build/tools/kernel_build.py path --cache /cache --architecture "$arch")
+python3 /repo/build/tools/kernel_build.py export --directory "$kernel_path" --output /out --architecture "$arch"
 python3 /repo/build/tools/runtime_build.py fetch --cache /cache --architecture "$arch"
 unshare --net python3 /repo/build/tools/runtime_build.py prepare --cache /cache --architecture "$arch" --output /out
 runtime_path=$(python3 /repo/build/tools/runtime_build.py path --cache /cache --architecture "$arch")
@@ -27,6 +29,7 @@ kubelet_path=$(python3 /repo/build/tools/go_runtime_build.py path --cache /cache
 mkosi --directory=/repo/src/image --profile="$profiles" --image-version="$(cat /repo/VERSION)" \
     --environment="OUTERSPACE_SOURCE_COMMIT=${OUTERSPACE_SOURCE_COMMIT:?Missing source identity}" \
     --environment="OUTERSPACE_HARDWARE_PROFILE=$hardware" \
+    --environment="OUTERSPACE_KERNEL_BUILD=/work/src/.cache/${kernel_path#/cache/}" \
     --environment="OUTERSPACE_RUNTIME_BUILD=/work/src/.cache/${runtime_path#/cache/}" \
     --environment="OUTERSPACE_GO_RUNTIME_BUILD=/work/src/.cache/${go_runtime_path#/cache/}" \
     --environment="OUTERSPACE_CONTAINERD_BUILD=/work/src/.cache/${containerd_path#/cache/}" \

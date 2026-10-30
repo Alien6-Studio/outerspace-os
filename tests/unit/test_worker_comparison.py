@@ -52,6 +52,33 @@ class ComparisonTests(unittest.TestCase):
                     reference_runtimes.install(source, destination, 'arm64')
                 self.assertFalse(destination.exists())
 
+    def test_reference_kernel_is_verified_before_installing_any_file(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); source = root / 'payload'; source.mkdir()
+            records = []
+            for name, component in reference_runtimes.RUNTIMES.items():
+                (source / name).write_bytes(name.encode())
+                records.append({'path': '/usr/bin/' + name, 'component': component,
+                                'sha256': reference_runtimes.digest(source / name)})
+            release = '6.18.60-outerspace'; name = 'boot/vmlinuz-' + release
+            image = source / 'kernel' / name; image.parent.mkdir(parents=True)
+            image.write_bytes(b'qualified kernel')
+            kernel = {'release': release, 'files': {name: reference_runtimes.digest(image)}}
+            manifest = {'schema': 1, 'identity': {'architecture': 'arm64'},
+                        'runtimes': records, 'kernel': kernel}
+            descriptor = source / 'runtimes.json'; descriptor.write_text(comparison.json.dumps(manifest))
+            reference_runtimes.install(source, root / 'guest', 'arm64')
+            self.assertEqual((root / 'guest' / name).read_bytes(), b'qualified kernel')
+            image.write_bytes(b'replaced kernel')
+            with self.assertRaises(ValueError):
+                reference_runtimes.install(source, root / 'rejected', 'arm64')
+            self.assertFalse((root / 'rejected').exists())
+            for unsafe in ['../../escape', '/boot/vmlinuz-' + release,
+                           'usr/lib/modules/' + release + '/../escape']:
+                kernel['files'] = {unsafe: 'a' * 64}
+                with self.subTest(path=unsafe), self.assertRaises(ValueError):
+                    reference_runtimes.kernel_files(kernel)
+
     def samples(self):
         return [{'uptime_seconds': 100 + 10 * n,
                  'cpu_ticks': [100 * n, 0, 0, 0, 0, 0, 0, 0, 99 * n, 0],

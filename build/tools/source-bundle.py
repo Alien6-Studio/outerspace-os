@@ -14,9 +14,11 @@ import subprocess
 import tarfile
 import tempfile
 import tomllib
+import zipfile
 from urllib.parse import urlsplit
 
 from profiles import ROOT, sha256
+import go_dependencies
 
 LOCK = ROOT / 'build/sbom/sources.lock.json'
 
@@ -80,6 +82,20 @@ def license_evidence(path):
     """Keep declarations and exact notice bytes; never invent license decisions."""
     declarations = []
     notices = []
+    if zipfile.is_zipfile(path):
+        seen = set()
+        with zipfile.ZipFile(path) as archive:
+            for member in archive.infolist():
+                name = PurePosixPath(member.filename)
+                if (name.is_absolute() or '..' in name.parts or '\\' in member.filename
+                        or member.filename in seen):
+                    raise ValueError('Unsafe or duplicate Go source archive path')
+                seen.add(member.filename)
+                if not member.is_dir() and (name.name.upper().startswith(
+                        ('LICENSE', 'LICENCE', 'COPYING', 'NOTICE', 'COPYRIGHT')) or name.name.upper() == 'AUTHORS'):
+                    data = archive.read(member)
+                    notices.append({'path': str(name), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)})
+        return {'declared_licenses': [], 'notices': notices}
     with tarfile.open(path) as tar:
         for member in tar:
             name = PurePosixPath(member.name)
@@ -292,6 +308,7 @@ def go_build_inputs(path):
 
 def collect(cache, apt_inputs=None):
     lock = json.loads(LOCK.read_text())
+    updates = {name: go_dependencies.read_lock(digest) for name, digest in lock.get('go_dependency_updates', {}).items()}
     entries = [{**entry, 'name': name, 'kind': 'runtime-source' if 'commit' in entry
                 else entry.get('source_kind', 'go-standard-library')}
                for name, entry in lock['sources'].items()]
@@ -301,6 +318,8 @@ def collect(cache, apt_inputs=None):
     entries.extend(cargo)
     entries.extend({**e, 'kind': 'supplemental-notice-source'} for e in lock.get('supplemental_sources', []))
     entries.extend(payload_entries(lock.get('supplemental_sources', [])))
+    for config in updates.values():
+        entries.extend(go_dependencies.source_entries(config))
     if apt_inputs:
         for source in apt_inputs['sources']:
             for entry in source['files']:
@@ -310,7 +329,7 @@ def collect(cache, apt_inputs=None):
         list(pool.map(lambda e: fetch(cache, e), unique.values()))
     print('Verified source objects:', len(unique), flush=True)
     for entry in entries:
-        if entry['kind'] != 'ubuntu-source':
+        if entry['kind'] not in ['ubuntu-source', 'go-module-metadata']:
             entry['licenses'] = license_evidence(cache / entry['sha256'])
         if entry['kind'] == 'supplemental-notice-source':
             entry['notice_provenance'] = supplemental_provenance(cache, entry, cargo)
@@ -318,9 +337,14 @@ def collect(cache, apt_inputs=None):
             entry['go_vendor_modules'] = go_vendor_inventory(cache / entry['sha256'])
             if entry['name'] == 'crictl':
                 entry['go_build_inputs'] = go_build_inputs(cache / entry['sha256'])
+                if 'crictl' in updates:
+                    entry['upstream_go_build_inputs'] = entry['go_build_inputs']
+                    entry['upstream_go_vendor_modules'] = entry['go_vendor_modules']
+                    entry['go_build_inputs'] = go_dependencies.build_inputs(updates['crictl'])
+                    entry['go_vendor_modules'] = go_dependencies.vendor_modules(updates['crictl'])
         if entry['kind'] == 'runtime-source' and entry['name'] == 'dfdaemon':
             entry['cargo_lock_sha256'] = hashlib.sha256(archive_file(cache / entry['sha256'], 'Cargo.lock')).hexdigest()
-    return {'schema': 1, 'source_lock_sha256': sha256(LOCK), 'entries': entries,
+    return {'schema': 1, 'source_lock_sha256': sha256(LOCK), 'entries': entries, 'go_dependency_updates': updates,
             'cargo_relationship': 'Archived source lock closure includes target/build/test dependencies. '
                                   'The separate source-build receipt and disk scan identify the compiled runtime inventory.'}
 
@@ -337,8 +361,13 @@ def verify(directory, apt_inputs, lock_path=LOCK):
         raise ValueError('Sources differ from approved source lock')
     entries = index['entries']
     actual = {e['sha256']: e for e in entries}
+    updates = {name: go_dependencies.read_lock(digest) for name, digest in lock.get('go_dependency_updates', {}).items()}
+    if index.get('go_dependency_updates', {}) != updates:
+        raise ValueError('Go dependency update differs from approved source inputs')
+    go_entries = [e for config in updates.values() for e in go_dependencies.source_entries(config)]
     required = (list(lock['sources'].values()) + lock.get('supplemental_sources', [])
                 + payload_entries(lock.get('supplemental_sources', []))
+                + go_entries
                 + [f for s in apt_inputs['sources'] for f in s['files']])
     if any(e['sha256'] not in actual or any(actual[e['sha256']].get(k) != v for k, v in e.items()) for e in required):
         raise ValueError('Corresponding source is incomplete or changed')
@@ -347,6 +376,7 @@ def verify(directory, apt_inputs, lock_path=LOCK):
     supplements = lock.get('supplemental_sources', [])
     proof_objects = {s['sha256'] for s in supplements} | {d for s in supplements for d in s['for_crates']}
     proof_objects.update(e['sha256'] for e in payload_entries(supplements))
+    proof_objects.update(e['sha256'] for e in go_entries if e['kind'] == 'go-module-source')
     with tempfile.TemporaryDirectory(prefix='outerspace-notice-proof-') as temporary, \
             subprocess.Popen(['zstd', '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
         proof_cache = Path(temporary)
@@ -382,10 +412,17 @@ def verify(directory, apt_inputs, lock_path=LOCK):
                                         archive_file(Path(temporary.name), 'Cargo.lock')).hexdigest():
                                     raise ValueError('Runtime Cargo lock digest differs from archived source')
                             elif runtime['name'] in ['containerd', 'kubelet', 'crictl']:
-                                if runtime.get('go_vendor_modules') != go_vendor_inventory(Path(temporary.name)):
+                                updated = runtime['name'] in updates
+                                vendor_key = 'upstream_go_vendor_modules' if updated else 'go_vendor_modules'
+                                if runtime.get(vendor_key) != go_vendor_inventory(Path(temporary.name)):
                                     raise ValueError('Vendored Go source inventory differs')
-                                if runtime['name'] == 'crictl' and runtime.get('go_build_inputs') != go_build_inputs(Path(temporary.name)):
-                                    raise ValueError('Compiled Go input digests differ from archived source')
+                                if runtime['name'] == 'crictl':
+                                    input_key = 'upstream_go_build_inputs' if updated else 'go_build_inputs'
+                                    if runtime.get(input_key) != go_build_inputs(Path(temporary.name)):
+                                        raise ValueError('Compiled Go input digests differ from archived source')
+                                    if updated and (runtime.get('go_build_inputs') != go_dependencies.build_inputs(updates['crictl'])
+                                            or runtime.get('go_vendor_modules') != go_dependencies.vendor_modules(updates['crictl'])):
+                                        raise ValueError('Patched Go source inventory differs from approved update')
                     elif digest not in proof_objects and hashlib.file_digest(stream, 'sha256').hexdigest() != digest:
                         raise ValueError('Source object checksum mismatch')
                     if 'size' in actual[digest] and member.size != actual[digest]['size']:

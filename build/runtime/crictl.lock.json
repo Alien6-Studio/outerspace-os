@@ -26,5 +26,6 @@
       "sha256": "3f4227ce7b206a513e794f1393adb473a07b46e94d18bd15d1c684bbb7319797",
       "size": 63827526
     }
-  }
+  },
+  "dependency_lock_sha256": "c4504ec94e06694281539cc2dbe6e1d66a4d2c0bb2c3e9640138fce7bc3cde1e"
 }

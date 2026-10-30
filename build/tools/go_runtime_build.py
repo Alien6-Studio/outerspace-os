@@ -3,6 +3,7 @@
 # Copyright (C) 2026 OuterSpace OS contributors
 """Compile crictl from locked vendored source with a patched, offline Go toolchain."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -14,6 +15,7 @@ import tempfile
 
 from profiles import ROOT, architecture, sha256
 import runtime_build
+import go_dependencies
 
 LOCK = ROOT / 'build/runtime/crictl.lock.json'
 EVIDENCE_FILES = ('crictl-build.json', 'crictl-LICENSE')
@@ -22,12 +24,15 @@ sources = runtime_build.sources
 
 def read_lock():
     lock = json.loads(LOCK.read_text())
-    upstream = json.loads(sources.LOCK.read_text())['sources']
+    source_lock = json.loads(sources.LOCK.read_text())
+    upstream = source_lock['sources']
     if (lock.get('schema') != 1 or lock.get('component') != 'crictl'
             or lock['source'] != upstream['crictl']
             or lock['go_source'] != upstream[lock['go_version']]
+            or lock.get('dependency_lock_sha256') != source_lock.get('go_dependency_updates', {}).get('crictl')
             or set(lock['toolchains']) != {'amd64', 'arm64'}):
         raise ValueError('Go runtime recipe differs from corresponding-source locks')
+    go_dependencies.read_lock(lock['dependency_lock_sha256'])
     return lock
 
 
@@ -35,6 +40,9 @@ def fetch(cache, arch):
     lock = read_lock()
     sources.fetch(cache / 'source-inputs', lock['source'])
     sources.fetch(cache / 'runtime-tools', lock['toolchains'][arch])
+    config = go_dependencies.read_lock(lock['dependency_lock_sha256'])
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        list(pool.map(lambda e: sources.fetch(cache / 'source-inputs', e), go_dependencies.source_entries(config)))
 
 
 def build_info(text, arch, lock):
@@ -77,6 +85,10 @@ def verify_receipt(directory, arch, *, packaged=False):
             or report.get('recipe_sha256') != sha256(LOCK)
             or report.get('builder_script_sha256') != sha256(Path(__file__))
             or report.get('extraction_script_sha256') != sha256(Path(runtime_build.__file__))
+            or report.get('dependency_script_sha256') != sha256(Path(go_dependencies.__file__))
+            or report.get('dependency_lock_sha256') != lock['dependency_lock_sha256']
+            or report.get('source_inputs') != go_dependencies.build_inputs(
+                go_dependencies.read_lock(lock['dependency_lock_sha256']))
             or report.get('source') != lock['source'] or report.get('go_source') != lock['go_source']
             or report.get('compiler_input') != lock['toolchains'][arch]
             or report.get('license_sha256') != sha256(paths[1])
@@ -100,7 +112,8 @@ def cache_directory(cache, arch):
     if not re.fullmatch('sha256:[a-f0-9]{64}', builder):
         raise ValueError('Go runtime compilation requires an immutable builder image ID')
     subject = {'architecture': arch, 'builder': builder, 'recipe': sha256(LOCK),
-               'script': sha256(Path(__file__)), 'extractor': sha256(Path(runtime_build.__file__))}
+               'script': sha256(Path(__file__)), 'extractor': sha256(Path(runtime_build.__file__)),
+               'dependencies': sha256(Path(go_dependencies.__file__))}
     key = hashlib.sha256(json.dumps(subject, sort_keys=True).encode()).hexdigest()
     return cache / 'go-runtime-builds' / arch / key
 
@@ -120,13 +133,23 @@ def build(cache, output, arch, jobs):
         source, toolchain = work / 'source', work / 'go'
         runtime_build.extract(source_archive, source)
         runtime_build.extract(compiler, toolchain)
-        inputs = {n: sha256(source / n) for n in ['go.mod', 'go.sum', 'vendor/modules.txt']}
+        upstream_inputs = {n: sha256(source / n) for n in ['go.mod', 'go.sum', 'vendor/modules.txt']}
         env = {'PATH': str(toolchain / 'bin') + ':/usr/bin:/bin', 'HOME': str(work), 'LANG': 'C.UTF-8',
                'GOROOT': str(toolchain), 'GOCACHE': str(work / 'cache'), 'GOPATH': str(work / 'gopath'),
                'GOTOOLCHAIN': 'local', 'GOPROXY': 'off', 'GOSUMDB': 'off', 'GOENV': 'off',
                'CGO_ENABLED': '0', 'GOOS': 'linux', 'GOARCH': arch}
         if subprocess.check_output(['go', 'version'], env=env, text=True).strip() != 'go version ' + lock['go_version'] + ' linux/' + arch:
             raise ValueError('Go toolchain version differs from recipe')
+        config = go_dependencies.read_lock(lock['dependency_lock_sha256'])
+        proxy = work / 'proxy'
+        go_dependencies.stage(config, cache / 'source-inputs', source, proxy)
+        # The Go tool verifies module h1 checksums against the frozen go.sum.
+        # A local proxy provides complete module archives without network access.
+        vendor_env = {**env, 'GOPROXY': proxy.as_uri()}
+        subprocess.run(['go', 'mod', 'vendor'], cwd=source, env=vendor_env, check=True)
+        inputs = go_dependencies.build_inputs(config)
+        if inputs != {n: sha256(source / n) for n in inputs}:
+            raise ValueError('Offline vendoring differs from pinned Go dependency update')
         flags = '-X sigs.k8s.io/cri-tools/pkg/version.Version=v' + lock['source']['version']
         binary = output / 'crictl'
         command = ['go', 'build', '-mod=vendor', '-trimpath', '-buildvcs=false', '-p', str(jobs),
@@ -145,9 +168,12 @@ def build(cache, output, arch, jobs):
                   'compiler_input': lock['toolchains'][arch], 'recipe_sha256': sha256(LOCK),
                   'builder_script_sha256': sha256(Path(__file__)),
                   'extraction_script_sha256': sha256(Path(runtime_build.__file__)),
+                  'dependency_script_sha256': sha256(Path(go_dependencies.__file__)),
+                  'dependency_lock_sha256': lock['dependency_lock_sha256'],
                   'builder_image_id': os.environ['OUTERSPACE_BUILDER_ID'],
                   'command': command[:-2] + ['<output>/crictl', './cmd/crictl'],
-                  'source_inputs': inputs, 'binary_sha256': sha256(binary),
+                  'source_inputs': inputs, 'upstream_source_inputs': upstream_inputs,
+                  'binary_sha256': sha256(binary),
                   'license_sha256': sha256(output / 'LICENSE'), 'go_version_m': info, 'build_info': parsed,
                   'reported_version': version}
         (output / 'runtime-build.json').write_text(json.dumps(report, indent=2) + '\n')

@@ -14,6 +14,7 @@ import subprocess
 from urllib.parse import quote
 import runtime_build
 import go_runtime_build
+import go_dependencies
 
 from profiles import ROOT, sha256
 from sbom import read_json, write_json, verify_inventory, compose
@@ -32,7 +33,8 @@ POLICIES = {'inputs.lock.json': ROOT / 'build/inputs.lock.json',
             'cyclonedx-1.6-licenses.json': ROOT / 'build/sbom/cyclonedx-1.6-licenses.json',
             'sources.lock.json': ROOT / 'build/sbom/sources.lock.json',
             'dragonfly.lock.json': runtime_build.LOCK,
-            'crictl.lock.json': go_runtime_build.LOCK}
+            'crictl.lock.json': go_runtime_build.LOCK,
+            'crictl-dependencies.lock.json': go_dependencies.LOCK}
 
 
 def schema_licenses(document):
@@ -157,6 +159,7 @@ def go_build_correspondence(directory, identity, raw, runtimes, index):
     source = next((e for e in index['entries'] if e['kind'] == 'runtime-source' and e['name'] == 'crictl'), {})
     if (not runtime or runtime['sha256'] != receipt['binary_sha256']
             or source.get('sha256') != receipt['source']['sha256']
+            or source.get('upstream_go_build_inputs') != receipt.get('upstream_source_inputs')
             or source.get('go_build_inputs') != receipt.get('source_inputs')):
         raise ValueError('Compiled Go inventory targets another executable or source')
     observed = [p for p in raw['artifacts'] if p['type'] == 'go-module'

@@ -283,3 +283,16 @@ class ProvenanceTests(unittest.TestCase):
         self.assertEqual(len(review['source_archives_without_notice_files']), 1)
         other = redistribution.assess(identity('inference'), apt, index, redistribution.read_json(redistribution.POLICY))
         self.assertNotEqual(review['subject_sha256'], other['subject_sha256'])
+
+    def test_go_metadata_does_not_hide_missing_module_notice(self):
+        index = {'source_lock_sha256': 'b'*64, 'entries': [
+            {'name': 'example.org/module', 'version': 'v1.0.0', 'sha256': 'c'*64,
+             'kind': 'go-module-source', 'licenses': {'notices': []}},
+            {'name': 'example.org/module', 'version': 'v1.0.0', 'sha256': 'd'*64,
+             'kind': 'go-module-metadata'}], 'cargo_relationship': 'declared source closure'}
+        result = redistribution.assess(identity(), {'packages': []}, index, redistribution.read_json(redistribution.POLICY))
+        self.assertEqual([p['sha256'] for p in result['source_archives_without_notice_files']], ['c'*64])
+        index['entries'][0]['licenses']['notices'] = [{'path': 'LICENSE', 'sha256': 'e'*64}]
+        result = redistribution.assess(identity(), {'packages': []}, index, redistribution.read_json(redistribution.POLICY))
+        self.assertEqual(result['source_archives_without_notice_files'], [])
+        self.assertEqual(result['status'], 'review-required')

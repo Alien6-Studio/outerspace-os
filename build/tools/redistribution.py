@@ -29,7 +29,9 @@ def assess(identity, apt, index, reviews):
                           for p in e.get('notice_provenance', {}).values()
                           if p.get('basis') == 'complete-upstream-release-payload-match' and p.get('notices')}
     missing_notices = [{'name': e['name'], 'version': e.get('version'), 'sha256': e['sha256']}
-                       for e in index['entries'] if e['kind'] != 'ubuntu-source'
+                       # Go proxy metadata accompanies its complete module ZIP,
+                       # whose original notices are assessed separately.
+                       for e in index['entries'] if e['kind'] not in ['ubuntu-source', 'go-module-metadata']
                        and e['sha256'] not in (recovered | recovered_payloads) and not e.get('licenses', {}).get('notices')]
     matching = [r for r in reviews['reviews'] if r.get('subject_sha256') == digest]
     if len(matching) > 1:

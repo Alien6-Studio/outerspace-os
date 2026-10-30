@@ -420,5 +420,8 @@
         }
       }
     }
-  ]
+  ],
+  "go_dependency_updates": {
+    "crictl": "c4504ec94e06694281539cc2dbe6e1d66a4d2c0bb2c3e9640138fce7bc3cde1e"
+  }
 }

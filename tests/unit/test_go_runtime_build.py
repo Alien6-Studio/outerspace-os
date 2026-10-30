@@ -46,6 +46,10 @@ class GoRuntimeBuildTests(unittest.TestCase):
                   'recipe_sha256': builder.sha256(builder.LOCK),
                   'builder_script_sha256': builder.sha256(Path(builder.__file__)),
                   'extraction_script_sha256': builder.sha256(Path(builder.runtime_build.__file__)),
+                  'dependency_script_sha256': builder.sha256(Path(builder.go_dependencies.__file__)),
+                  'dependency_lock_sha256': self.lock['dependency_lock_sha256'],
+                  'source_inputs': builder.go_dependencies.build_inputs(
+                      builder.go_dependencies.read_lock(self.lock['dependency_lock_sha256'])),
                   'builder_image_id': 'sha256:' + 'a' * 64,
                   'binary_sha256': builder.sha256(self.root / 'crictl'),
                   'license_sha256': builder.sha256(self.root / 'LICENSE'),
@@ -53,7 +57,8 @@ class GoRuntimeBuildTests(unittest.TestCase):
         path = self.root / 'runtime-build.json'
         path.write_text(json.dumps(report))
         builder.verify(self.root, 'arm64')
-        for key, value in [('compiler_input', {}), ('build_info', {}), ('builder_image_id', 'latest')]:
+        for key, value in [('compiler_input', {}), ('build_info', {}), ('builder_image_id', 'latest'),
+                           ('source_inputs', {}), ('dependency_lock_sha256', 'a' * 64)]:
             changed = copy.deepcopy(report); changed[key] = value
             path.write_text(json.dumps(changed))
             with self.subTest(key=key), self.assertRaises(ValueError):
@@ -62,3 +67,25 @@ class GoRuntimeBuildTests(unittest.TestCase):
         (self.root / 'crictl').write_bytes(b'altered binary')
         with self.assertRaisesRegex(ValueError, 'executable differs'):
             builder.verify(self.root, 'arm64')
+
+    def test_dependency_update_rejects_missing_source_replacement_and_changed_checksum(self):
+        dependencies = builder.go_dependencies
+        original = dependencies.read_lock(self.lock['dependency_lock_sha256'])
+        for change in ['missing-source', 'replacement', 'checksum']:
+            config = copy.deepcopy(original)
+            if change == 'missing-source':
+                name = next(iter(dependencies.vendor_modules(config)))
+                config['modules'] = [m for m in config['modules'] if m['path'] != name]
+            elif change == 'replacement':
+                config['manifests']['vendor/modules.txt'] += '# example.org/local v1.0.0 => ./local\n'
+            else:
+                config['modules'][0]['sum'] = 'h1:changed'
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                dependencies.validate(config)
+
+    def test_go_proxy_paths_reject_traversal_and_escape_uppercase(self):
+        self.assertEqual(builder.go_dependencies.escape('github.com/Microsoft/go-winio'),
+                         'github.com/!microsoft/go-winio')
+        for name in ['../module', '/module', 'module/../other', 'module//other', 'module?query']:
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                builder.go_dependencies.escape(name)

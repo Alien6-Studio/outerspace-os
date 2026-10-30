@@ -39,6 +39,7 @@
       "CGROUP_BPF",
       "CGROUP_CPUACCT",
       "CGROUP_HUGETLB",
+      "CGROUP_NET_CLASSID",
       "CGROUP_PIDS",
       "CGROUP_SCHED",
       "CHECKPOINT_RESTORE",

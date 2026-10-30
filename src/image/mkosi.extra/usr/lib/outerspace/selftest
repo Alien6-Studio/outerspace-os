@@ -15,6 +15,10 @@ printf 'OUTERSPACE_IMAGE_IDENTITY profile=%s hardware=%s architecture=%s commit=
 # Cilium opens ROUTE, XFRM and NETFILTER handles even without IPsec encryption.
 # Check the actual sockets before a full enrollment lab can reach the same error.
 ip xfrm policy >/dev/null || fail 'XFRM netlink interface missing'
+for family in -4 -6; do
+    ip "$family" rule show >/run/outerspace-routing-rules || fail 'policy routing interface missing'
+    grep -q 'lookup local' /run/outerspace-routing-rules || fail 'local routing rule missing'
+done
 ss -H -u -a >/dev/null 2>/run/outerspace-udp-diag.err || fail 'UDP socket diagnostics missing'
 [[ ! -s /run/outerspace-udp-diag.err ]] || fail 'UDP socket diagnostics fell back or reported an error'
 [[ -r /proc/schedstat ]] || fail 'scheduler statistics missing'

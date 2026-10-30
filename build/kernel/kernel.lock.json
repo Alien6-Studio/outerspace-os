@@ -67,7 +67,6 @@
       "FTRACE_SYSCALLS",
       "GENEVE",
       "HARDENED_USERCOPY",
-      "HYPERVISOR_GUEST",
       "IKCONFIG",
       "IKCONFIG_PROC",
       "INET",
@@ -85,6 +84,7 @@
       "IPC_NS",
       "IPV6",
       "IPV6_MULTIPLE_TABLES",
+      "IP_ADVANCED_ROUTER",
       "IP_MULTIPLE_TABLES",
       "IP_NF_FILTER",
       "IP_NF_IPTABLES",
@@ -96,13 +96,12 @@
       "KALLSYMS",
       "KPROBES",
       "KPROBE_EVENTS",
-      "KVM_VIRTIO",
       "LOCK_DOWN_KERNEL_FORCE_NONE",
       "LWTUNNEL",
       "LWTUNNEL_BPF",
       "MEMCG",
       "MODULES",
-      "MODULE_COMPRESS_ZSTD",
+      "MODULE_COMPRESS_NONE",
       "MODULE_UNLOAD",
       "NAMESPACES",
       "NETFILTER",
@@ -156,8 +155,6 @@
       "PROC_FS",
       "RANDOMIZE_BASE",
       "RTC_CLASS",
-      "RTC_DRV_CMOS",
-      "RTC_DRV_PL031",
       "SCHEDSTATS",
       "SCSI",
       "SECCOMP",
@@ -167,12 +164,9 @@
       "SECURITY_DMESG_RESTRICT",
       "SECURITY_LANDLOCK",
       "SECURITY_LOCKDOWN_LSM",
-      "SECURITY_PERF_EVENTS_RESTRICT",
       "SECURITY_YAMA",
       "SERIAL_8250",
       "SERIAL_8250_CONSOLE",
-      "SERIAL_AMBA_PL011",
-      "SERIAL_AMBA_PL011_CONSOLE",
       "SLAB_FREELIST_HARDENED",
       "SLAB_FREELIST_RANDOM",
       "STACKPROTECTOR",
@@ -283,7 +277,18 @@
     "modules": [
       "OVERLAY_FS",
       "BRIDGE_NETFILTER"
-    ]
+    ],
+    "architecture_enable": {
+      "amd64": [
+        "HYPERVISOR_GUEST",
+        "RTC_DRV_CMOS"
+      ],
+      "arm64": [
+        "RTC_DRV_PL031",
+        "SERIAL_AMBA_PL011",
+        "SERIAL_AMBA_PL011_CONSOLE"
+      ]
+    }
   },
   "targets": {
     "arm64": {

@@ -15,6 +15,15 @@ import supply_chain
 
 
 class KernelInventoryTests(unittest.TestCase):
+    def test_kconfig_cannot_silently_drop_a_requested_capability(self):
+        lock = kernel_build.read_lock()
+        values = {'CONFIG_' + name: 'y' for name in [*lock['config']['enable'], *lock['config']['modules'],
+                    *lock['config']['architecture_enable']['arm64']]}
+        kernel_build.validate_configuration(values, lock, 'arm64')
+        values.pop('CONFIG_TUN')
+        with self.assertRaisesRegex(ValueError, 'CONFIG_TUN'):
+            kernel_build.validate_configuration(values, lock, 'arm64')
+
     def test_source_archive_rejects_escape_and_writes_through_links(self):
         cases = [('../escape', None, None), ('linux/escape', '/tmp/outside', None),
                  ('linux/escape', '../../outside', None),

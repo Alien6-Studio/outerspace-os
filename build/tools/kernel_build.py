@@ -117,7 +117,7 @@ def configure(source, build, lock, arch, env):
     command = ['make', '-C', str(source), 'O=' + str(build), 'ARCH=' + target['arch'], 'CC=ccache gcc']
     subprocess.run(command + [lock['config']['base']], env=env, check=True)
     config = [str(source / 'scripts/config'), '--file', str(build / '.config')]
-    for option in lock['config']['enable']:
+    for option in lock['config']['enable'] + lock['config'].get('architecture_enable', {}).get(arch, []):
         subprocess.run(config + ['--enable', option], check=True)
     for option in lock['config']['disable']:
         subprocess.run(config + ['--disable', option], check=True)
@@ -127,8 +127,13 @@ def configure(source, build, lock, arch, env):
         subprocess.run(config + ['--set-str', option, value], check=True)
     subprocess.run(command + ['olddefconfig'], env=env, check=True)
     values = config_values(build / '.config')
-    # Dependencies and architecture can eliminate unavailable options. Essential
-    # host capabilities must survive Kconfig resolution, never just the fragment.
+    validate_configuration(values, lock, arch)
+    return command
+
+
+def validate_configuration(values, lock, arch):
+    # Kconfig silently drops options with missing dependencies. Check every
+    # requested capability, with architecture-specific devices stated explicitly.
     import importlib.util
     spec = importlib.util.spec_from_file_location('prepare_kernel', ROOT / 'build/tools/prepare-kernel.py')
     prepare = importlib.util.module_from_spec(spec); spec.loader.exec_module(prepare)
@@ -136,13 +141,14 @@ def configure(source, build, lock, arch, env):
         'CONFIG_DM_VERITY', 'CONFIG_VIRTIO_BLK', 'CONFIG_VIRTIO_NET', 'CONFIG_OVERLAY_FS',
         'CONFIG_BRIDGE_NETFILTER', 'CONFIG_NAMESPACES', 'CONFIG_MEMCG', 'CONFIG_CGROUP_PIDS',
         'CONFIG_VETH', 'CONFIG_NF_TABLES', 'CONFIG_NF_CONNTRACK'}
+    required.update('CONFIG_' + name for name in [*lock['config']['enable'], *lock['config']['modules'],
+                    *lock['config'].get('architecture_enable', {}).get(arch, [])])
     if any(values.get(name) not in ('y', 'm') for name in required):
         raise ValueError('Resolved kernel configuration lacks a required host capability: ' +
                          ', '.join(sorted(n for n in required if values.get(n) not in ('y', 'm'))))
     excluded = [name for name in lock['config']['disable'] if values.get('CONFIG_' + name) in ('y', 'm')]
     if excluded:
         raise ValueError('Resolved kernel configuration enabled excluded subsystems: ' + ', '.join(excluded))
-    return command
 
 
 def inventory(root):

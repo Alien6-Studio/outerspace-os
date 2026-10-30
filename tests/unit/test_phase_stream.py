@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import Mock
 import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -96,3 +97,22 @@ class PhaseStreamTests(unittest.TestCase):
                 input=payload, text=True, capture_output=True, timeout=3)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(json.loads(result.stdout), json.loads(READY))
+
+    def test_live_stream_cannot_outlive_a_deleted_or_replaced_collector(self):
+        sys.path.insert(0, str(ROOT / 'tests/harness'))
+        import enrollment
+        benchmark = enrollment.load_script('agent-phase-benchmark')
+        for changed in [True, False]:
+            lab = object.__new__(benchmark.PhaseLab)
+            lab.collector = Mock()
+            lab.collector_subject = {'pod_uid': 'original', 'container_id': 'original'}
+            lab.collector_identity = Mock(return_value={'pod_uid': 'replacement', 'container_id': 'replacement'})
+            if not changed:
+                lab.collector_identity.side_effect = RuntimeError('Pod not found')
+            lab.session = Mock(scopes={'scope': self.request}, failed=False)
+            lab.known = {'scope': []}
+            with self.subTest(replacement=changed), self.assertRaises((ValueError, RuntimeError)):
+                lab.observe('scope')
+            self.assertTrue(lab.session.failed)
+            lab.collector.request.assert_not_called()
+            lab.collector.close.assert_called_once()

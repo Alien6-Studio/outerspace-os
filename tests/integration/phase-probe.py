@@ -13,11 +13,14 @@ import os
 from pathlib import Path
 import re
 import resource
+import select
 import sys
 import time
 
 UUID = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 HEX = re.compile(r'[0-9a-f]{64}')
+SCHEMA = 'outerspace.phase-probe.v1'
+MAX_REQUEST_BYTES = 16384
 
 
 def pairs(text):
@@ -52,6 +55,7 @@ def snapshot(root, request):
             any(type(v) is not int or v <= 0 for v in p.values()) for p in known):
         raise ValueError('Unbounded process identity request')
     started = time.monotonic_ns()
+    usage_before = resource.getrusage(resource.RUSAGE_SELF)
     boot = (root / 'proc/sys/kernel/random/boot_id').read_text().strip()
     cgroups = root / 'sys/fs/cgroup'
     parents = list((cgroups / 'kubepods.slice').rglob('*pod' + uid.replace('-', '_') + '.slice'))
@@ -123,13 +127,49 @@ def snapshot(root, request):
     result['finished_monotonic_ns'] = time.monotonic_ns()
     usage = resource.getrusage(resource.RUSAGE_SELF)
     # This script runs in a Linux OCI image; ru_maxrss is KiB there.
-    result['collector'] = {'cpu_seconds': usage.ru_utime + usage.ru_stime,
+    result['collector'] = {'cpu_seconds': usage.ru_utime + usage.ru_stime - usage_before.ru_utime - usage_before.ru_stime,
+                           'process_cpu_seconds': usage.ru_utime + usage.ru_stime,
                            'peak_rss_bytes': usage.ru_maxrss * 1024,
                            'wall_seconds': (time.monotonic_ns() - started) / 1e9}
     return result
 
 
+def stream(root, reader, writer):
+    """No listener or credentials: the authenticated exec owns this channel."""
+    writer.write(json.dumps({'schema': SCHEMA, 'status': 'ready'}) + '\n')
+    writer.flush()
+    sequence = 0
+    while True:
+        # Exit abandoned execs even if the transport never delivers EOF.
+        deadline, line = time.monotonic() + 900, b''
+        while b'\n' not in line:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0 or not select.select([reader], [], [], remaining)[0]:
+                raise TimeoutError('Phase collector idle deadline exceeded')
+            chunk = os.read(reader.fileno(), 4096)
+            if not chunk:
+                if line:
+                    raise ValueError('Truncated phase collector request')
+                return
+            line += chunk
+            if len(line) > MAX_REQUEST_BYTES:
+                raise ValueError('Unbounded phase collector request')
+        if not line.endswith(b'\n') or line.count(b'\n') != 1:
+            raise ValueError('Only one phase request may be in flight')
+        message = json.loads(line)
+        if (set(message) != {'sequence', 'request'} or type(message['sequence']) is not int
+                or message['sequence'] != sequence + 1):
+            raise ValueError('Invalid or replayed phase collector request')
+        sequence = message['sequence']
+        result = {'sequence': sequence, 'observation': snapshot(root, message['request'])}
+        writer.write(json.dumps(result, separators=(',', ':'), allow_nan=False) + '\n')
+        writer.flush()
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2 or len(sys.argv[1]) > 16384:
         raise ValueError('Expected one bounded execution identity')
-    print(json.dumps(snapshot(Path('/host'), json.loads(sys.argv[1])), separators=(',', ':')))
+    if sys.argv[1] == '--stream':
+        stream(Path('/host'), sys.stdin.buffer, sys.stdout)
+    else:
+        print(json.dumps(snapshot(Path('/host'), json.loads(sys.argv[1])), separators=(',', ':')))

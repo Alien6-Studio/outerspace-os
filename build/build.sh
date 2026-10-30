@@ -34,13 +34,23 @@ fi
 builder_id=$(docker image inspect --format '{{.Id}}' "$builder")
 # Compile the kernel in its own tool image. Existing Rust/Go caches retain their
 # original builder identity when only kernel tooling changes.
-docker build --build-arg "BUILDER=$builder" -t outerspace-kernel-builder:local \
-    -f "$source_tree/tree/build/kernel/Dockerfile" "$source_tree/tree"
+kernel_recipe=$("${PYTHON:-python3}" - "$source_tree/tree/build/kernel/Dockerfile" "$builder_id" <<'PYCODE'
+import hashlib, pathlib, sys
+print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes() + sys.argv[2].encode()).hexdigest())
+PYCODE
+)
+kernel_builder="outerspace-kernel-builder:$kernel_recipe"
+# BuildKit's attestations can change an image ID even for fully cached layers.
+# Keep the already built, recipe-specific image instead of re-exporting it.
+if ! docker image inspect "$kernel_builder" >/dev/null 2>&1; then
+    docker build --build-arg "BUILDER=$builder" -t "$kernel_builder" \
+        -f "$source_tree/tree/build/kernel/Dockerfile" "$source_tree/tree"
+fi
 if [[ $(docker image inspect --format '{{.Id}}' "$builder") != "$builder_id" ]]; then
     echo 'Base builder changed during kernel tooling preparation.' >&2
     exit 1
 fi
-kernel_builder_id=$(docker image inspect --format '{{.Id}}' outerspace-kernel-builder:local)
+kernel_builder_id=$(docker image inspect --format '{{.Id}}' "$kernel_builder")
 docker run --rm --mount "type=bind,src=$source_tree/tree,dst=/repo,readonly" \
     --mount "type=bind,src=$repo/.cache,dst=/cache" "$kernel_builder_id" \
     python3 /repo/build/tools/kernel_build.py fetch

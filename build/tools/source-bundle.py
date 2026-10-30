@@ -278,6 +278,18 @@ def go_vendor_inventory(path):
         return modules
 
 
+def go_build_inputs(path):
+    result = {}
+    with tarfile.open(path) as tar:
+        members = tar.getmembers()
+        for name in ['go.mod', 'go.sum', 'vendor/modules.txt']:
+            matches = [m for m in members if PurePosixPath(m.name).parts[1:] == PurePosixPath(name).parts]
+            if len(matches) != 1 or not matches[0].isfile():
+                raise ValueError('Missing or ambiguous root Go build input: ' + name)
+            result[name] = hashlib.file_digest(tar.extractfile(matches[0]), 'sha256').hexdigest()
+    return result
+
+
 def collect(cache, apt_inputs=None):
     lock = json.loads(LOCK.read_text())
     entries = [{**entry, 'name': name, 'kind': 'runtime-source' if 'commit' in entry
@@ -304,6 +316,8 @@ def collect(cache, apt_inputs=None):
             entry['notice_provenance'] = supplemental_provenance(cache, entry, cargo)
         if entry['kind'] == 'runtime-source' and entry['name'] in ['containerd', 'kubelet', 'crictl']:
             entry['go_vendor_modules'] = go_vendor_inventory(cache / entry['sha256'])
+            if entry['name'] == 'crictl':
+                entry['go_build_inputs'] = go_build_inputs(cache / entry['sha256'])
         if entry['kind'] == 'runtime-source' and entry['name'] == 'dfdaemon':
             entry['cargo_lock_sha256'] = hashlib.sha256(archive_file(cache / entry['sha256'], 'Cargo.lock')).hexdigest()
     return {'schema': 1, 'source_lock_sha256': sha256(LOCK), 'entries': entries,
@@ -370,6 +384,8 @@ def verify(directory, apt_inputs, lock_path=LOCK):
                             elif runtime['name'] in ['containerd', 'kubelet', 'crictl']:
                                 if runtime.get('go_vendor_modules') != go_vendor_inventory(Path(temporary.name)):
                                     raise ValueError('Vendored Go source inventory differs')
+                                if runtime['name'] == 'crictl' and runtime.get('go_build_inputs') != go_build_inputs(Path(temporary.name)):
+                                    raise ValueError('Compiled Go input digests differ from archived source')
                     elif digest not in proof_objects and hashlib.file_digest(stream, 'sha256').hexdigest() != digest:
                         raise ValueError('Source object checksum mismatch')
                     if 'size' in actual[digest] and member.size != actual[digest]['size']:

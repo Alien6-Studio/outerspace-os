@@ -3,7 +3,7 @@
 # Copyright (C) 2026 OuterSpace OS contributors
 set -euo pipefail
 # mkosi mounts BuildSources at /work/src; no tooling enters the OS image.
-python3 /work/src/build/tools/install-components.py "$BUILDROOT" "$ARCHITECTURE" /work/src/src/components.lock.json /work/src/.cache/components "${OUTERSPACE_RUNTIME_BUILD:?Missing source runtime build}"
+python3 /work/src/build/tools/install-components.py "$BUILDROOT" "$ARCHITECTURE" /work/src/src/components.lock.json /work/src/.cache/components "${OUTERSPACE_RUNTIME_BUILD:?Missing source runtime build}" "${OUTERSPACE_GO_RUNTIME_BUILD:?Missing Go runtime build}"
 python3 /work/src/build/tools/prepare-kernel.py "$BUILDROOT" "$ARCHITECTURE"
 root="$BUILDROOT"
 install -D -m 0644 /work/src/LICENSE "$root/usr/share/licenses/outerspace/LICENSE"

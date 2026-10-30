@@ -16,6 +16,7 @@ import tarfile
 import tempfile
 from urllib.parse import quote
 import runtime_build
+import go_runtime_build
 
 from profiles import ROOT, architecture, sha256, verify_identity
 
@@ -107,13 +108,14 @@ def verified_runtimes(root, components, architecture, cache, output=None):
     result = []
     for name, version, artifact, member, path, archive in runtime_files(components, architecture):
         if artifact.get('source_build'):
-            if name != 'dfdaemon' or output is None:
+            if name not in ['dfdaemon', 'crictl'] or output is None:
                 raise ValueError('Missing source runtime build evidence')
-            receipt = runtime_build.verify_receipt(output, architecture, packaged=True)
+            builder = runtime_build if name == 'dfdaemon' else go_runtime_build
+            receipt = builder.verify_receipt(output, architecture, packaged=True)
             installed = root / path.lstrip('/')
             if (installed.is_symlink() or not installed.resolve().is_relative_to(root.resolve())
                     or sha256(installed) != receipt['binary_sha256']
-                    or runtime_build.audit_data(installed, architecture) != receipt['dependencies']):
+                    or (name == 'dfdaemon' and runtime_build.audit_data(installed, architecture) != receipt['dependencies'])):
                 raise ValueError('Installed runtime differs from verified source build')
             result.append({'component': name, 'version': version, 'path': path,
                            'sha256': receipt['binary_sha256'], 'artifact': artifact})

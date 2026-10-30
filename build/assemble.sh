@@ -14,11 +14,15 @@ arch=$(python3 -c 'import platform; print({"aarch64":"arm64", "x86_64":"amd64"}[
 python3 /repo/build/tools/runtime_build.py fetch --cache /cache --architecture "$arch"
 unshare --net python3 /repo/build/tools/runtime_build.py prepare --cache /cache --architecture "$arch" --output /out
 runtime_path=$(python3 /repo/build/tools/runtime_build.py path --cache /cache --architecture "$arch")
+python3 /repo/build/tools/go_runtime_build.py fetch --cache /cache --architecture "$arch"
+unshare --net python3 /repo/build/tools/go_runtime_build.py prepare --cache /cache --architecture "$arch" --output /out
+go_runtime_path=$(python3 /repo/build/tools/go_runtime_build.py path --cache /cache --architecture "$arch")
 # mkosi mounts the repository at /work/src in its script sandbox.
 mkosi --directory=/repo/src/image --profile="$profiles" --image-version="$(cat /repo/VERSION)" \
     --environment="OUTERSPACE_SOURCE_COMMIT=${OUTERSPACE_SOURCE_COMMIT:?Missing source identity}" \
     --environment="OUTERSPACE_HARDWARE_PROFILE=$hardware" \
     --environment="OUTERSPACE_RUNTIME_BUILD=/work/src/.cache/${runtime_path#/cache/}" \
+    --environment="OUTERSPACE_GO_RUNTIME_BUILD=/work/src/.cache/${go_runtime_path#/cache/}" \
     --build-sources=/repo \
     --sandbox-tree=/opt/outerspace/sandbox \
     --force \

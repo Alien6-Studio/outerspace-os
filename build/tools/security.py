@@ -27,6 +27,7 @@ def exception_scope(identity):
     return {**{k: identity[k] for k in ['profile', 'hardware_profile', 'architecture', 'components_lock_sha256']},
             'inputs_lock_sha256': sha256(ROOT / 'build/inputs.lock.json'),
             'runtime_build_lock_sha256': sha256(ROOT / 'build/runtime/dragonfly.lock.json'),
+            'go_runtime_build_lock_sha256': sha256(ROOT / 'build/runtime/crictl.lock.json'),
             'sources_lock_sha256': sha256(ROOT / 'build/sbom/sources.lock.json')}
 
 

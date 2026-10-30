@@ -37,7 +37,9 @@ class CIScopeTests(unittest.TestCase):
                         self.assertNotEqual(failed.returncode, 0)
 
     def test_docs_only_can_skip_but_mixed_changes_cannot(self):
-        docs = ['README.md', 'build/README.md', 'src/docs/architecture.md', '.github/ISSUE_TEMPLATE/bug_report.yml']
+        # Both sides of a documentation move must remain documentation-only.
+        docs = ['README.md', 'build/README.md', 'docs/architecture.md',
+                'src/docs/architecture.md', '.github/ISSUE_TEMPLATE/bug_report.yml']
         self.assertFalse(scope.requires_images('pull_request', docs))
         for runtime in ['src/image/mkosi.conf', 'src/components.lock.json', 'tests/targets.mk',
                         'build/targets.mk', '.github/workflows/ci.yml', 'tests/unit/test_release.py', 'VERSION',
@@ -49,7 +51,8 @@ class CIScopeTests(unittest.TestCase):
         for event in ['schedule', 'workflow_dispatch', 'unknown']:
             self.assertTrue(scope.requires_images(event, ['README.md']))
         self.assertTrue(scope.requires_images('push', []))
-        for path in ['src/docs/../image/README.md', '/README.md', 'src/docs/data.json']:
+        for path in ['src/docs/../image/README.md', 'docs/../src/image/README.md',
+                     '/README.md', 'src/docs/data.json', 'docs/data.json']:
             self.assertTrue(scope.requires_images('push', [path]))
 
     def test_git_diff_includes_deletions_renames_and_unusual_names(self):

@@ -31,8 +31,8 @@ seccomp defaults and conservative host configuration. Development UKIs are
 unsigned. Secure Boot, authenticated A/B updates, complete SBOM/vulnerability
 review and independent hardening evidence remain release gates.
 
-The [CIS security target](src/docs/security.md) describes intended controls and
-exceptions. It is not a certification or a completed compliance audit. Likewise,
+The [host controls](docs/security.md) describe the configuration and its limits.
+They are not a certification or a completed compliance audit. Likewise,
 checksums verify file integrity; they do not authenticate a publisher.
 
 Repository protections, private reporting, secret push protection, Dependabot and

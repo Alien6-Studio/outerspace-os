@@ -1,9 +1,8 @@
 name: Distribution checks
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
   schedule:
     - cron: '17 4 * * 1'
@@ -14,6 +13,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   contracts:
+    # Drafts are local work in progress. Ready PRs qualify once before the
+    # protected squash merge; merging does not repeat the entire campaign.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     outputs:
       images: ${{ steps.scope.outputs.images }}
@@ -118,7 +120,7 @@ jobs:
           retention-days: 7
   ci:
     name: ci
-    if: always()
+    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     needs: [contracts, image, agent_phases]
     runs-on: ubuntu-24.04
     steps:

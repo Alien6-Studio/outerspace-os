@@ -8,7 +8,7 @@ collector parses prompts or infers tool boundaries from process names.
 
 ## Contract and authority
 
-[`phase-correlation.py`](../../tests/harness/phase-correlation.py) implements
+[`phase-correlation.py`](../tests/harness/phase-correlation.py) implements
 `outerspace.phase.v1`. A gateway session has a random run UUID, issuer UUID,
 256-bit per-run HMAC key and SHA256 of the applied Agent policy. Kubernetes API
 authentication authorizes the gateway to resolve the node, Pod UID, container ID,
@@ -41,13 +41,21 @@ configuration or exec into other tenants.
 
 ## Accounting semantics
 
-[`phase-probe.py`](../../tests/integration/phase-probe.py) reads the exact container
+[`phase-probe.py`](../tests/integration/phase-probe.py) reads the exact container
 cgroup and descendants through the observer's read-only host mount. It records
 CPU usage/user/system/throttling, current and lifetime-peak memory, anon/file/shmem
 charges, OOM events, CPU/memory/I/O PSI, per-device I/O, process identities and
 collector CPU/RSS/read duration. No Python interpreter or language runtime is
 installed into the host. Observation envelopes retain gateway request timing
 brackets and guest monotonic times; their clock domains are never equated.
+
+[`phase-stream.py`](../tests/harness/phase-stream.py) keeps one authenticated
+Kubernetes exec connection to the collector for the session. Startup is measured
+separately from snapshots. Numbered requests prevent replay; a timeout, lost
+connection or replaced collector fails the session without reconnection. The
+gateway verifies collector identity before and after every observation. Snapshot
+CPU is a delta; cumulative collector CPU includes startup and is never summed
+across samples.
 
 The dataset stores each scope and counter interval once. OpenTelemetry-compatible
 span identities refer to those scopes and deliberately contain no allocated
@@ -123,8 +131,5 @@ Observer, client and idle phase fixtures have a finite twelve-hour lifetime,
 longer than the six-hour job budget; normal harness cleanup removes them. Their
 PID 1 cannot expire after one hour and silently kill an in-flight measurement.
 
-The [2026-10-27 local qualification](../../tests/reports/2026-10-27-agent-phases.md)
-links the complete immutable dataset, independently verified failure cases and
-measured collection overhead.
-The [October 30 delivery report](../../tests/reports/2026-10-30-milestone1.md)
-records the fixture-lifetime correction and parallel CI qualification.
+Implementation acceptance and qualification evidence are tracked in
+[issue #29](https://github.com/Alien6-Studio/outerspace-os/issues/29).

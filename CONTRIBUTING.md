@@ -1,7 +1,7 @@
 # Contributing to OuterSpace OS
 
-Start with the [README](README.md), [architecture](src/docs/architecture.md) and
-[release gates](src/docs/roadmap.md). The current channel is development; use
+Start with the [README](README.md), [architecture](docs/architecture.md) and
+[release gates](build/release/README.md). The current channel is development; use
 disposable infrastructure and describe what you actually tested.
 
 Distribution sources live in `src/`, build and release tooling in `build/`, and
@@ -15,9 +15,12 @@ generated artifacts belong in the ignored `out/` directory.
 - Website sources and generated HTML: branch from `gh-pages` and target
   `gh-pages`. Follow that branch's README; do not add the website to `main`.
 
-Use a focused branch and a descriptive commit, for example
-`fix: preserve worker identity after reboot`. Squash merging keeps one coherent
-change on the target branch. Link the issue when one exists.
+Group a complete ticket or a coherent set of tickets on one branch. Keep the PR
+in draft while implementing and fixing it locally. Mark it ready only when the
+acceptance criteria are implemented and local checks pass. If CI exposes a code
+defect, return the PR to draft, fix the cause locally and push the complete fix.
+Squash merge once, close the implemented issues and delete the merged branch.
+Use version tags only for release candidates and releases.
 
 ## Validate your change
 
@@ -27,18 +30,27 @@ Run the fast checks with Python 3.11+ and Make:
 make check
 ```
 
-For image, runtime, bootstrap or build changes, also use the [build guide](build/README.md):
+Run tests for the behavior changed while developing. Before marking an image,
+runtime, bootstrap or build PR ready, qualify the affected native profiles once
+using the [build guide](build/README.md):
 
 ```sh
 make PROFILE=agent builder build smoke package
 make PROFILE=inference build smoke package
 ```
 
-CI runs contract tests on every pull request. Known documentation-only changes
-skip image builds; unknown paths, runtime changes, scheduled runs and manual runs
-build and smoke-test both architectures. A successful kind network lab does not
-qualify an OuterSpace OS node. Hardware reports should include the commit, image
-checksum, architecture, machine/firmware and commands used.
+Draft PRs do not run distribution jobs. Ready PRs run contract tests; known
+documentation-only changes skip image builds. Runtime and unknown changes run
+the full native qualification on both architectures. Weekly and manual runs
+retain the full campaign; a protected merge does not launch it again. Do not
+rerun a passing campaign unless the code, inputs or an unresolved failure require
+it. Use a failed-job retry only for an identified infrastructure failure.
+
+Keep status and acceptance criteria in GitHub issues and milestones. Attach
+generated evidence to the relevant run or release; do not add progress diaries
+or duplicate roadmaps to the repository. Keep PR validation concise, with the
+commit, image checksum and tested scope. A kind network lab does not qualify an
+OuterSpace OS node; native VM evidence does not qualify physical hardware.
 
 ## Review expectations
 

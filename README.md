@@ -21,6 +21,7 @@ in the [release policy](build/release/README.md).
 | [src/](src/README.md) | OS image configuration, systemd services, cluster integration, runtime locks and upstream notices |
 | [build/](build/README.md) | Builder, image assembly, packaging and release preparation |
 | [tests/](tests/README.md) | Unit tests, QEMU/Kubernetes harness, workloads and benchmark protocols |
+| [docs/](docs/architecture.md) | Architecture and implemented technical contracts |
 
 `out/` contains generated images, bundles, logs and reports. `.cache/` contains
 reusable downloads. Both are excluded from version control.
@@ -49,9 +50,9 @@ qualification gates.
 
 ## Documentation
 
-- [Architecture](src/docs/architecture.md) and [roadmap](src/docs/roadmap.md).
+- [Architecture](docs/architecture.md) and [milestones](https://github.com/Alien6-Studio/outerspace-os/milestones).
 - [Worker configuration and cluster integration](src/cluster/README.md).
-- [Security policy](SECURITY.md) and [hardening profile](src/docs/security.md).
+- [Security policy](SECURITY.md) and [host controls](docs/security.md).
 - [Contributing](CONTRIBUTING.md) and [release process](build/release/README.md).
 
 The [website](https://os.outerspace.sh/) is maintained on the separate

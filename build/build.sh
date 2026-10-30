@@ -13,8 +13,10 @@ if [[ $# -gt 2 || -n $(git -C "$repo" status --porcelain --untracked-files=norma
 fi
 commit=$(git -C "$repo" rev-parse HEAD)
 output="${OUTERSPACE_OUTPUT_ROOT:-$repo/out}/$directory"
-mkdir -p "$output" "$repo/.cache"
+cache=${OUTERSPACE_CACHE_ROOT:-$repo/.cache}
+mkdir -p "$output" "$cache"
 output=$(cd "$output" && pwd)
+cache=$(cd "$cache" && pwd)
 source_tree=$(mktemp -d "${TMPDIR:-/tmp}/outerspace-source.XXXXXX")
 cleanup_source() {
     # Docker Desktop can return before releasing a nested read-only bind mount.
@@ -52,11 +54,11 @@ if [[ $(docker image inspect --format '{{.Id}}' "$builder") != "$builder_id" ]];
 fi
 kernel_builder_id=$(docker image inspect --format '{{.Id}}' "$kernel_builder")
 docker run --rm --mount "type=bind,src=$source_tree/tree,dst=/repo,readonly" \
-    --mount "type=bind,src=$repo/.cache,dst=/cache" "$kernel_builder_id" \
+    --mount "type=bind,src=$cache,dst=/cache" "$kernel_builder_id" \
     python3 /repo/build/tools/kernel_build.py fetch
 docker run --rm --network none --env "OUTERSPACE_KERNEL_BUILDER_ID=$kernel_builder_id" \
     --mount "type=bind,src=$source_tree/tree,dst=/repo,readonly" \
-    --mount "type=bind,src=$repo/.cache,dst=/cache" "$kernel_builder_id" \
+    --mount "type=bind,src=$cache,dst=/cache" "$kernel_builder_id" \
     python3 /repo/build/tools/kernel_build.py prepare
 # Privileges are confined to the disposable Linux builder. No host devices or
 # Docker socket are mounted. mkosi needs mount/user namespaces to assemble an OS.
@@ -66,7 +68,7 @@ docker run --rm --privileged \
     --env "OUTERSPACE_KERNEL_BUILDER_ID=$kernel_builder_id" \
     --mount "type=bind,src=$source_tree/tree,dst=/repo,readonly" \
     --mount "type=bind,src=$source_tree/source.tar,dst=/source.tar,readonly" \
-    --mount "type=bind,src=$repo/.cache,dst=/repo/.cache,readonly" \
+    --mount "type=bind,src=$cache,dst=/repo/.cache,readonly" \
     --mount "type=bind,src=$output,dst=/out" \
-    --mount "type=bind,src=$repo/.cache,dst=/cache" \
+    --mount "type=bind,src=$cache,dst=/cache" \
     "$builder_id" bash /repo/build/assemble.sh "$profile" "$hardware"

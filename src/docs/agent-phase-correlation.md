@@ -113,9 +113,15 @@ partial traces and boot/QEMU logs are retained even after failure. These are
 synthetic native-QEMU measurements, not physical efficiency, energy, production
 endurance or real provider-performance claims. Acceptance requires a completed
 native report; unit tests and the existence of this harness do not qualify #29.
-The Agent CI matrix runs the complete paired scenario on amd64 and arm64 after
-ordinary image, boot, isolation and resource qualification. It retains the raw
-phase datasets and failure traces with each architecture's development artifact.
+The Agent CI benchmark jobs run the complete paired scenario on amd64 and arm64
+in parallel with native image, boot, isolation and resource qualification. Each
+paired benchmark builds and boots its own candidate, then uses that exact image
+for both arms. Its digest is kept separate from the native job's independently
+built candidate. The required `ci` gate checks both job groups; their raw phase
+datasets and failure traces are retained in `outerspace-agent-phases-ARCH-development`.
+Observer, client and idle phase fixtures have a finite twelve-hour lifetime,
+longer than the six-hour job budget; normal harness cleanup removes them. Their
+PID 1 cannot expire after one hour and silently kill an in-flight measurement.
 
 The [2026-10-27 local qualification](../../tests/reports/2026-10-27-agent-phases.md)
 links the complete immutable dataset, independently verified failure cases and

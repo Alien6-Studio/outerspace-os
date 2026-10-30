@@ -85,7 +85,7 @@ class PhaseLab(comparison.ComparisonLab):
     def create(self, name):
         pod = json.loads((ROOT / 'src/cluster/agent/workload-v1.json').read_text())
         pod['metadata']['name'] = name
-        pod['spec']['containers'][0]['command'] = ['/bin/sh', '-ec', 'exec sleep 3600']
+        pod['spec']['containers'][0]['command'] = native.lab_idle_command()
         started = time.monotonic()
         self.apply(pod)
         self.kube('-n', NS, 'wait', '--for=condition=Ready', 'pod/' + name, '--timeout=900s', timeout=930)

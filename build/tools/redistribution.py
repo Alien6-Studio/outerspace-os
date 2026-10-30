@@ -81,7 +81,19 @@ def assess(identity, apt, index, reviews):
                        and e['sha256'] not in (recovered | recovered_payloads) and not e.get('licenses', {}).get('notices')]
     resolved = notice_decisions(identity, index, reviews)
     unresolved = [e for e in missing_notices if e['sha256'] not in resolved]
+    # Identical source archives and original notices may be reviewed together
+    # across CPU profiles/architectures; each image still retains its own subject.
+    materials = {k: subject[k] for k in ['source_lock_sha256', 'apt', 'sources']}
+    materials['apt'] = sorted(materials['apt'], key=lambda p: (p['name'], p['version']))
+    materials['components_lock_sha256'] = identity['components_lock_sha256']
+    materials_digest = hashlib.sha256(json.dumps(materials, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     matching = [r for r in reviews['reviews'] if r.get('subject_sha256') == digest]
+    if identity['hardware_profile'] == 'cpu' and identity['profile'] in ('agent', 'inference'):
+        matching += [r for r in reviews.get('material_reviews', [])
+                     if r.get('materials_sha256') == materials_digest
+                     and r.get('scope') == {'hardware_profile': 'cpu',
+                         'profiles': ['agent', 'inference'], 'architectures': ['amd64', 'arm64']}
+                     and identity['architecture'] in r['scope']['architectures']]
     if len(matching) > 1:
         raise ValueError('Ambiguous redistribution review')
     approval = matching[0] if matching else None
@@ -99,7 +111,8 @@ def assess(identity, apt, index, reviews):
                     or not all(str(u).startswith('https://') for u in resolution['evidence'])):
                 raise ValueError('Missing source-specific notice resolution evidence')
     return {'status': 'passed' if approval else 'review-required', 'subject_sha256': digest,
-            'subject': subject, 'approval': approval, 'source_objects': len(subject['sources']),
+            'subject': subject, 'materials': materials, 'materials_sha256': materials_digest,
+            'approval': approval, 'source_objects': len(subject['sources']),
             'apt_notices': len(apt['packages']), 'source_archives_without_notice_files': missing_notices,
             'resolved_notice_decisions': [resolved[digest] for digest in sorted(resolved)],
             'unresolved_source_notices': unresolved,

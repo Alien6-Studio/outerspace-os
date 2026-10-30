@@ -76,7 +76,7 @@ def validate_scan(scan, database, policy, now):
         raise ValueError('Scan does not use the recorded vulnerability database')
 
 
-def evaluate(scan, database, identity, policy, now, kernel_scan=None):
+def evaluate(scan, database, identity, policy, now, kernel_scan=None, compiled_exceptions=()):
     if policy.get('schema') != 1 or not policy.get('owner') or not policy.get('blocking_severities'):
         raise ValueError('Missing vulnerability review policy')
     for current in [scan] + ([kernel_scan] if kernel_scan is not None else []):
@@ -85,7 +85,7 @@ def evaluate(scan, database, identity, policy, now, kernel_scan=None):
     scope = exception_scope(identity)
     kernel_release = read_json(ROOT / 'build/kernel/kernel.lock.json')['release']
     kernel_paths = {'/usr/lib/modules/' + kernel_release + '/vmlinuz', '/usr/lib/modules/' + kernel_release + '/config'}
-    for e in policy['exceptions']:
+    for e in [*policy['exceptions'], *compiled_exceptions]:
         if (not re.fullmatch('[a-f0-9]{64}', e.get('finding_sha256', ''))
                 or e.get('approved_by') not in policy['exception_approvers'] or not e.get('owner')
                 or e.get('decision') not in ['not-affected', 'accepted-risk']
@@ -129,6 +129,19 @@ def evaluate(scan, database, identity, policy, now, kernel_scan=None):
     return {'status': 'blocked' if any(d['decision'] == 'blocked' for d in decisions) else 'passed',
             'counts': dict(sorted(Counter(d['severity'] for d in decisions).items())),
             'decisions': decisions, 'automatic_ignored_matches': len(scan.get('ignoredMatches', []))}
+
+
+def review(directory, identity, policy, now):
+    import kernel_review
+    import runtime_review
+    scan = read_json(directory / FILES[0])
+    kernel_scan = read_json(directory / FILES[2])
+    compiled = kernel_review.materialize(directory, identity, kernel_scan, policy,
+                                         exception_scope(identity), finding)
+    compiled += runtime_review.materialize(directory, identity, scan, policy,
+                                          exception_scope(identity), finding)
+    return evaluate(scan, read_json(directory / FILES[1]), identity,
+                    policy, now, kernel_scan=kernel_scan, compiled_exceptions=compiled)
 
 
 def verify_exception_binaries(directory, review):
@@ -179,8 +192,7 @@ def scan(output, database_path):
         if sha256(actual) != database['sha256']:
             raise ValueError('Vulnerability database changed during scan')
         write_json(output / FILES[1], database)
-    evaluation = evaluate(read_json(output / FILES[0]), database, identity, read_json(POLICY), datetime.now(timezone.utc),
-                          kernel_scan=read_json(output / FILES[2]))
+    evaluation = review(output, identity, read_json(POLICY), datetime.now(timezone.utc))
     verify_exception_binaries(output, evaluation)
     report = {'schema': 1, 'identity': identity, 'scanner': receipt,
               'scanner_lock_sha256': sha256(LOCK), 'scanner_config_sha256': sha256(CONFIG),
@@ -209,9 +221,7 @@ def verify(directory, identity, require_pass=False, now=None):
         path = directory / name
         if path.is_symlink() or not path.is_file() or sha256(path) != digest:
             raise ValueError('Vulnerability evidence integrity failure')
-    evaluation = evaluate(read_json(directory / FILES[0]), read_json(directory / FILES[1]), identity,
-                          read_json(POLICY), now or datetime.now(timezone.utc),
-                          kernel_scan=read_json(directory / FILES[2]))
+    evaluation = review(directory, identity, read_json(POLICY), now or datetime.now(timezone.utc))
     if evaluation != report['review']:
         raise ValueError('Vulnerability decision differs from scanner evidence')
     verify_exception_binaries(directory, evaluation)

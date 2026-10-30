@@ -36,11 +36,14 @@ class KernelInventoryTests(unittest.TestCase):
     def test_changed_or_additional_module_and_wrong_source_are_rejected(self):
         lock = kernel_build.read_lock()
         name = 'usr/lib/modules/' + lock['release'] + '/vmlinuz'
-        report = {'release': lock['release'], 'source': lock['source'], 'files': {name: 'a' * 64},
+        report = {'release': lock['release'], 'source': lock['source'], 'files': {name: 'a' * 64, 'boot/vmlinuz-' + lock['release']: 'a' * 64,
+                  'boot/config-' + lock['release']: 'b' * 64},
                   'evidence': {'kernel.config': 'b' * 64}}
         index = {'entries': [{'name': 'linux', **lock['source']}]}
-        raw = {'files': [{'location': {'path': '/' + name}, 'metadata': {'type': 'RegularFile'},
-                         'digests': [{'algorithm': 'sha256', 'value': 'a' * 64}]}]}
+        records = {**kernel_inventory.installed_files(report),
+                   'usr/lib/modules/' + lock['release'] + '/initrd': 'c' * 64}
+        raw = {'files': [{'location': {'path': '/' + path}, 'metadata': {'type': 'RegularFile'},
+                         'digests': [{'algorithm': 'sha256', 'value': digest}]} for path, digest in records.items()]}
         with tempfile.TemporaryDirectory() as temporary, patch.object(kernel_build, 'verify_receipt', return_value=report):
             root = Path(temporary); (root / 'kernel-build.json').write_text('synthetic receipt')
             proof = kernel_inventory.correspondence(root, identity(), raw, index)

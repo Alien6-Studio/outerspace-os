@@ -285,7 +285,7 @@ class VulnerabilityReviewTests(unittest.TestCase):
             self.evaluate()
         release = security.read_json(security.ROOT / 'build/kernel/kernel.lock.json')['release']
         decision['binary_sha256'] = {'/usr/lib/modules/' + release + '/vmlinuz': 'a' * 64,
-                                    '/boot/config-' + release: 'b' * 64}
+                                    '/usr/lib/modules/' + release + '/config': 'b' * 64}
         self.assertEqual(self.evaluate()['status'], 'passed')
         decision['binary_sha256']['/boot/../../escape'] = 'c' * 64
         with self.assertRaisesRegex(ValueError, 'binary binding'):

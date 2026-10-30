@@ -86,7 +86,11 @@ def extract(image, evidence_directory, output, components):
         for name in kernel_records:
             target = output / 'kernel' / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            commands.append('dump /' + name + ' kernel/' + name)
+            source_name = name
+            if name.startswith('boot/'):
+                suffix = 'vmlinuz' if name.startswith('boot/vmlinuz-') else 'config'
+                source_name = 'usr/lib/modules/' + kernel['release'] + '/' + suffix
+            commands.append('dump /' + source_name + ' kernel/' + name)
         instructions = output / 'kernel-extract.commands'
         instructions.write_text('\n'.join(commands) + '\n')
         subprocess.run(['debugfs', '-f', str(instructions), str(root)], cwd=output,

@@ -5,6 +5,8 @@ set -euo pipefail
 # mkosi mounts BuildSources at /work/src; no tooling enters the OS image.
 python3 /work/src/build/tools/install-components.py "$BUILDROOT" "$ARCHITECTURE" /work/src/src/components.lock.json /work/src/.cache/components "${OUTERSPACE_RUNTIME_BUILD:?Missing source runtime build}" "${OUTERSPACE_GO_RUNTIME_BUILD:?Missing Go runtime build}" "${OUTERSPACE_CONTAINERD_BUILD:?Missing containerd source build}" "${OUTERSPACE_KUBELET_BUILD:?Missing kubelet source build}"
 python3 /work/src/build/tools/kernel_build.py install --directory "${OUTERSPACE_KERNEL_BUILD:?Missing kernel source build}" --output "$BUILDROOT" --architecture "$(python3 -c 'import sys; sys.path.insert(0,"/work/src/build/tools"); from profiles import architecture; print(architecture(sys.argv[1]))' "$ARCHITECTURE")"
+kernel_release=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["release"])' "$OUTERSPACE_KERNEL_BUILD/kernel-build.json")
+install -D -m 0644 "$OUTERSPACE_KERNEL_BUILD/kernel.config" "$BUILDROOT/usr/lib/modules/$kernel_release/config"
 python3 /work/src/build/tools/prepare-kernel.py "$BUILDROOT" "$ARCHITECTURE"
 root="$BUILDROOT"
 install -D -m 0644 /work/src/LICENSE "$root/usr/share/licenses/outerspace/LICENSE"

@@ -84,7 +84,7 @@ def evaluate(scan, database, identity, policy, now, kernel_scan=None):
     exceptions = {}
     scope = exception_scope(identity)
     kernel_release = read_json(ROOT / 'build/kernel/kernel.lock.json')['release']
-    kernel_paths = {'/usr/lib/modules/' + kernel_release + '/vmlinuz', '/boot/config-' + kernel_release}
+    kernel_paths = {'/usr/lib/modules/' + kernel_release + '/vmlinuz', '/usr/lib/modules/' + kernel_release + '/config'}
     for e in policy['exceptions']:
         if (not re.fullmatch('[a-f0-9]{64}', e.get('finding_sha256', ''))
                 or e.get('approved_by') not in policy['exception_approvers'] or not e.get('owner')

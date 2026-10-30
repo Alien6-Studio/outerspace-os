@@ -5,6 +5,18 @@
 import kernel_build
 from profiles import sha256
 
+def installed_files(report):
+    # mkosi consumes /boot when making the UKI. Preserve the compiled config
+    # beside vmlinuz in /usr, where it remains covered by verity and the SBOM.
+    base = 'usr/lib/modules/' + report['release'] + '/'
+    expected = {p: digest for p, digest in report['files'].items() if p.startswith(base)}
+    if (report['files'].get('boot/vmlinuz-' + report['release']) != expected.get(base + 'vmlinuz')
+            or report['files'].get('boot/config-' + report['release']) != report['evidence']['kernel.config']):
+        raise ValueError('Kernel boot aliases differ from the compiled payload')
+    expected[base + 'config'] = report['evidence']['kernel.config']
+    return expected
+
+
 def correspondence(directory, identity, raw, index):
     report = kernel_build.verify_receipt(directory, identity['architecture'])
     source = kernel_build.read_lock()['source']
@@ -12,17 +24,20 @@ def correspondence(directory, identity, raw, index):
     if len(entries) != 1 or any(entries[0].get(k) != v for k, v in source.items()):
         raise ValueError('Compiled kernel corresponding source is absent or changed')
     files = {f['location']['path']: f for f in raw['files']}
-    for name, digest in report['files'].items():
+    compiled = installed_files(report)
+    for name, digest in compiled.items():
         f = files.get('/' + name, {})
         if (f.get('metadata', {}).get('type') != 'RegularFile'
                 or {'algorithm': 'sha256', 'value': digest} not in f.get('digests', [])):
             raise ValueError('Installed kernel differs from its build receipt: ' + name)
     module_files = {p.lstrip('/') for p, f in files.items()
                     if p.startswith('/usr/lib/modules/') and f.get('metadata', {}).get('type') == 'RegularFile'}
-    if module_files != {p for p in report['files'] if p.startswith('usr/lib/modules/')}:
+    initrd = 'usr/lib/modules/' + report['release'] + '/initrd'
+    if module_files != set(compiled) | {initrd}:
         raise ValueError('Unexpected or missing kernel module payload')
     return {'release': report['release'], 'version': source['version'], 'source_sha256': source['sha256'],
-            'files': report['files'], 'config_sha256': report['evidence']['kernel.config'],
+            'files': compiled, 'generated_initrd': files['/' + initrd]['digests'],
+            'config_sha256': report['evidence']['kernel.config'],
             'receipt_sha256': sha256(directory / 'kernel-build.json')}
 
 

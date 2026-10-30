@@ -16,11 +16,13 @@ import uuid
 import enrollment as native
 
 correlation = native.load_script('phase-correlation')
+transport = native.load_script('phase-stream')
 comparison = native.load_script('worker-comparison')
 ROOT, run, digest, wait_for = native.ROOT, native.run, native.digest, native.wait_for
 NS = native.AGENT_NAMESPACE
 PHASES = ['cpu-burst', 'memory-spike', 'io', 'remote-llm-wait']
 INPUTS = comparison.INPUTS + ['tests/harness/agent-phase-benchmark.py',
+    'tests/harness/phase-stream.py',
     'tests/harness/phase-correlation.py', 'tests/integration/phase-probe.py',
     'tests/integration/agent-phases.sh']
 
@@ -28,6 +30,7 @@ INPUTS = comparison.INPUTS + ['tests/harness/agent-phase-benchmark.py',
 class PhaseLab(comparison.ComparisonLab):
     def initialize(self, enabled):
         self.enabled = enabled
+        self.collector = None
         self.agent_id = str(uuid.uuid4())
         self.tools = {name: str(uuid.uuid4()) for name in PHASES +
                       ['cached-read', 'shared-memory', 'reuse-shared-memory', 'background', 'oom-restart', 'cancellation']}
@@ -52,6 +55,14 @@ class PhaseLab(comparison.ComparisonLab):
                 'agent', 'cpu', expected['architecture'], expected['commit']):
             raise ValueError('Phase worker is not the packaged Agent image')
         self.provider()
+        if enabled:
+            try:
+                self.collector = transport.ProbeStream(['kubectl', '--kubeconfig', self.kubeconfig,
+                    '--request-timeout=30s', '-n', native.LAB, 'exec', '-i', 'probe', '--',
+                    'python3', '-u', '-c', (ROOT / 'tests/integration/phase-probe.py').read_text(), '--stream'])
+            except Exception:
+                self.session.failed = True
+                raise
 
     def provider(self):
         # Known, synthetic remote wait; no claim about provider-executed model work.
@@ -115,9 +126,7 @@ class PhaseLab(comparison.ComparisonLab):
                    'known_processes': self.known[scope]}
         before = time.monotonic_ns()
         try:
-            result = self.kube('-n', native.LAB, 'exec', 'probe', '--', 'python3', '-c',
-                (ROOT / 'tests/integration/phase-probe.py').read_text(), json.dumps(request), timeout=60)
-            observation = json.loads(result.stdout)
+            observation = self.collector.request(request)
             self.session.sample(scope, observation, before, time.monotonic_ns())
             self.known[scope] = observation['processes']
             if observation['status'] != 'observed' and not missing:
@@ -319,6 +328,9 @@ class PhaseLab(comparison.ComparisonLab):
                 self.kube('-n', NS, 'delete', 'pod', name, '--wait=true', '--timeout=90s')
         edges = self.edge_cases() if enabled else None
         return {'worker': self.identity, 'profiled': enabled, 'samples': samples, 'edge_cases': edges,
+                'collector_transport': {'schema': transport.SCHEMA, 'authenticated_channel': 'kubernetes-exec-stdin',
+                    'startup_wall_seconds': self.collector.startup_wall_seconds,
+                    'completed_requests': self.collector.sequence} if enabled else None,
                 'execution_scopes': self.session.scopes,
                 'trace': self.session.report() if enabled else None}
 
@@ -357,7 +369,10 @@ def summarize(observations):
             'pod_lifetime_peak_bytes': correlation.quantiles([int(s['after']['pod_counters']['memory.peak']) for s in resource_samples])}
     collected = [sample['observation']['collector'] for scope in second['trace']['scopes'].values() for sample in scope['samples']]
     result['profiled']['collector'] = {
-        'process_cpu_seconds_total': sum(c['cpu_seconds'] for c in collected),
+        # The process is reused; its cumulative CPU includes startup once.
+        'process_cpu_seconds_total': max(c['process_cpu_seconds'] for c in collected),
+        'snapshot_cpu_seconds_total': sum(c['cpu_seconds'] for c in collected),
+        'startup_wall_seconds': second['collector_transport']['startup_wall_seconds'],
         'peak_rss_bytes': correlation.quantiles([c['peak_rss_bytes'] for c in collected]),
         'read_wall_seconds': correlation.quantiles([c['wall_seconds'] for c in collected])}
     return result
@@ -410,7 +425,11 @@ def main():
                         if (lab.state / name).is_file():
                             shutil.copyfile(lab.state / name, result_dir / name)
                 finally:
-                    lab.cleanup()
+                    try:
+                        if getattr(lab, 'collector', None) is not None:
+                            lab.collector.close()
+                    finally:
+                        lab.cleanup()
     summary = summarize(observations)
     if (commit != run('git', '-C', ROOT, 'rev-parse', 'HEAD').stdout.strip()
             or run('git', '-C', ROOT, 'status', '--porcelain', '--untracked-files=normal').stdout
@@ -422,7 +441,7 @@ def main():
                        for path in sorted((output / mode).iterdir()) if path.is_file()},
         'limits': ['Serial native QEMU TCG VMs; no hardware efficiency or energy claim',
                    'Baseline has the same endpoint benchmark observer but no phase collection or boundaries',
-                   'Profiled durations include gateway correlation, API exec and periodic observer costs',
+                   'Profiled durations include gateway correlation and persistent observer round trips; collector startup is reported separately',
                    'First image delivery has one observation per arm; repeated fresh sandboxes use a cached image',
                    'HTTP wait is synthetic; provider model work and detached unobserved processes remain unknown',
                    'Scope counters include wrappers and descendants; no exact per-tool allocation or private RSS',

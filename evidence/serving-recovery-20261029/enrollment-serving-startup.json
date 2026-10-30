@@ -1,0 +1,318 @@
+[
+  {
+    "status": "passed",
+    "delivery_budget_seconds": 3600,
+    "readiness_budget_seconds": 1200,
+    "transitions": [
+      {
+        "elapsed_seconds": 0.06838662503287196,
+        "pod_uid": "102dab4d-34ed-4f57-991a-01d452104894",
+        "container_id": null,
+        "state": {
+          "waiting": {
+            "reason": "PodInitializing"
+          }
+        },
+        "restart_count": 0,
+        "ready": false,
+        "observed_generation": 1
+      },
+      {
+        "elapsed_seconds": 218.40473325003404,
+        "pod_uid": "102dab4d-34ed-4f57-991a-01d452104894",
+        "container_id": "containerd://7f5c00e02380762c7683c59d5f03b6b06c39315162195f00a4be1a6f27fab747",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:31:33Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": false,
+        "observed_generation": 1
+      },
+      {
+        "elapsed_seconds": 279.34242212504614,
+        "pod_uid": "102dab4d-34ed-4f57-991a-01d452104894",
+        "container_id": "containerd://7f5c00e02380762c7683c59d5f03b6b06c39315162195f00a4be1a6f27fab747",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:31:33Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": true,
+        "observed_generation": 1
+      }
+    ],
+    "deployment_generation": 1,
+    "server_running_observed_seconds": 218.40473325003404,
+    "readiness_wait_seconds": 60.9376888750121,
+    "elapsed_seconds": 279.3427867499413
+  },
+  {
+    "status": "passed",
+    "delivery_budget_seconds": 3600,
+    "readiness_budget_seconds": 1200,
+    "transitions": [
+      {
+        "elapsed_seconds": 0.07144183292984962,
+        "pod_uid": "102dab4d-34ed-4f57-991a-01d452104894",
+        "container_id": "containerd://7f5c00e02380762c7683c59d5f03b6b06c39315162195f00a4be1a6f27fab747",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:31:33Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": true,
+        "observed_generation": 1
+      }
+    ],
+    "deployment_generation": 1,
+    "server_running_observed_seconds": 0.07144183292984962,
+    "readiness_wait_seconds": 0.0,
+    "elapsed_seconds": 0.07180808298289776
+  },
+  {
+    "status": "passed",
+    "delivery_budget_seconds": 3600,
+    "readiness_budget_seconds": 1200,
+    "transitions": [
+      {
+        "elapsed_seconds": 0.0695521249435842,
+        "pod_uid": "102dab4d-34ed-4f57-991a-01d452104894",
+        "container_id": "containerd://7f5c00e02380762c7683c59d5f03b6b06c39315162195f00a4be1a6f27fab747",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:31:33Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": true,
+        "observed_generation": 1
+      }
+    ],
+    "deployment_generation": 1,
+    "server_running_observed_seconds": 0.0695521249435842,
+    "readiness_wait_seconds": 0.0,
+    "elapsed_seconds": 0.06992724991869181
+  },
+  {
+    "status": "passed",
+    "delivery_budget_seconds": 3600,
+    "readiness_budget_seconds": 1200,
+    "transitions": [
+      {
+        "elapsed_seconds": 0.06875850004144013,
+        "pod_uid": null,
+        "container_id": null,
+        "state": {},
+        "restart_count": null,
+        "ready": false,
+        "observed_generation": 2
+      },
+      {
+        "elapsed_seconds": 5.15140687499661,
+        "pod_uid": "23b73040-8dbe-4c5a-9867-2b9541aaf0d3",
+        "container_id": null,
+        "state": {
+          "waiting": {
+            "reason": "PodInitializing"
+          }
+        },
+        "restart_count": 0,
+        "ready": false,
+        "observed_generation": 2
+      },
+      {
+        "elapsed_seconds": 30.542562042013742,
+        "pod_uid": "23b73040-8dbe-4c5a-9867-2b9541aaf0d3",
+        "container_id": "containerd://81a1450835a72db57cb62f29f869ad09c00b6c0e9abffc686b81eeefde87063b",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:35:46Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": false,
+        "observed_generation": 2
+      },
+      {
+        "elapsed_seconds": 96.52813108405098,
+        "pod_uid": "23b73040-8dbe-4c5a-9867-2b9541aaf0d3",
+        "container_id": "containerd://81a1450835a72db57cb62f29f869ad09c00b6c0e9abffc686b81eeefde87063b",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:35:46Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": true,
+        "observed_generation": 2
+      }
+    ],
+    "deployment_generation": 2,
+    "server_running_observed_seconds": 30.542562042013742,
+    "readiness_wait_seconds": 65.98556904203724,
+    "elapsed_seconds": 96.52851233410183
+  },
+  {
+    "status": "passed",
+    "delivery_budget_seconds": 3600,
+    "readiness_budget_seconds": 1200,
+    "transitions": [
+      {
+        "elapsed_seconds": 0.06925320904701948,
+        "pod_uid": "23b73040-8dbe-4c5a-9867-2b9541aaf0d3",
+        "container_id": "containerd://81a1450835a72db57cb62f29f869ad09c00b6c0e9abffc686b81eeefde87063b",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:35:46Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": true,
+        "observed_generation": 2
+      }
+    ],
+    "deployment_generation": 2,
+    "server_running_observed_seconds": 0.06925320904701948,
+    "readiness_wait_seconds": 0.0,
+    "elapsed_seconds": 0.0696169170551002
+  },
+  {
+    "status": "passed",
+    "delivery_budget_seconds": 3600,
+    "readiness_budget_seconds": 1200,
+    "transitions": [
+      {
+        "elapsed_seconds": 0.0718162499833852,
+        "pod_uid": "b8f384bd-9abf-4ce4-a24f-94635477e261",
+        "container_id": null,
+        "state": {
+          "waiting": {
+            "reason": "PodInitializing"
+          }
+        },
+        "restart_count": 0,
+        "ready": false,
+        "observed_generation": 2
+      },
+      {
+        "elapsed_seconds": 30.54354320804123,
+        "pod_uid": "b8f384bd-9abf-4ce4-a24f-94635477e261",
+        "container_id": "containerd://6d0422e44fd84027ec6a010b80301d5b316036365108f59de8c2cbfacdccf62c",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:38:16Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": false,
+        "observed_generation": 2
+      },
+      {
+        "elapsed_seconds": 91.503209291026,
+        "pod_uid": "b8f384bd-9abf-4ce4-a24f-94635477e261",
+        "container_id": "containerd://6d0422e44fd84027ec6a010b80301d5b316036365108f59de8c2cbfacdccf62c",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:38:16Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": true,
+        "observed_generation": 2
+      }
+    ],
+    "deployment_generation": 2,
+    "server_running_observed_seconds": 30.54354320804123,
+    "readiness_wait_seconds": 60.95966608298477,
+    "elapsed_seconds": 91.50361374998465
+  },
+  {
+    "status": "passed",
+    "delivery_budget_seconds": 3600,
+    "readiness_budget_seconds": 1200,
+    "transitions": [
+      {
+        "elapsed_seconds": 0.07024283392820507,
+        "pod_uid": "b8f384bd-9abf-4ce4-a24f-94635477e261",
+        "container_id": "containerd://6d0422e44fd84027ec6a010b80301d5b316036365108f59de8c2cbfacdccf62c",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T16:38:16Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": true,
+        "observed_generation": 2
+      }
+    ],
+    "deployment_generation": 2,
+    "server_running_observed_seconds": 0.07024283392820507,
+    "readiness_wait_seconds": 0.0,
+    "elapsed_seconds": 0.0706524170236662
+  },
+  {
+    "status": "passed",
+    "delivery_budget_seconds": 3600,
+    "readiness_budget_seconds": 1200,
+    "transitions": [
+      {
+        "elapsed_seconds": 0.1376278749667108,
+        "pod_uid": "b8f384bd-9abf-4ce4-a24f-94635477e261",
+        "container_id": "containerd://6d0422e44fd84027ec6a010b80301d5b316036365108f59de8c2cbfacdccf62c",
+        "state": {
+          "terminated": {
+            "containerID": "containerd://6d0422e44fd84027ec6a010b80301d5b316036365108f59de8c2cbfacdccf62c",
+            "exitCode": 255,
+            "finishedAt": "2026-10-29T16:44:34Z",
+            "reason": "Unknown",
+            "startedAt": "2026-10-29T16:38:16Z"
+          }
+        },
+        "restart_count": 0,
+        "ready": false,
+        "observed_generation": 2
+      },
+      {
+        "elapsed_seconds": 25.617789624957368,
+        "pod_uid": "b8f384bd-9abf-4ce4-a24f-94635477e261",
+        "container_id": "containerd://a61a7b3c0f8cab2a667240bbec66b4beb5445cba28d0383b1f2c371c532a34ba",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T17:13:27Z"
+          }
+        },
+        "restart_count": 1,
+        "ready": false,
+        "observed_generation": 2
+      },
+      {
+        "elapsed_seconds": 91.85601420793682,
+        "pod_uid": "b8f384bd-9abf-4ce4-a24f-94635477e261",
+        "container_id": "containerd://a61a7b3c0f8cab2a667240bbec66b4beb5445cba28d0383b1f2c371c532a34ba",
+        "state": {
+          "running": {
+            "startedAt": "2026-10-29T17:13:27Z"
+          }
+        },
+        "restart_count": 1,
+        "ready": true,
+        "observed_generation": 2
+      }
+    ],
+    "recovery_from": {
+      "pod_uid": "b8f384bd-9abf-4ce4-a24f-94635477e261",
+      "container_id": "containerd://6d0422e44fd84027ec6a010b80301d5b316036365108f59de8c2cbfacdccf62c",
+      "restart_count": 0,
+      "boot_id": "a49efcc9-6738-4c29-bed3-bbe6dbcef380"
+    },
+    "recovered_boot_id": "1c2711d0-d985-4e43-a5fd-f2c09eb723b6",
+    "deployment_generation": 2,
+    "server_running_observed_seconds": 25.617789624957368,
+    "readiness_wait_seconds": 66.23822458297946,
+    "elapsed_seconds": 91.85665420792066
+  }
+]

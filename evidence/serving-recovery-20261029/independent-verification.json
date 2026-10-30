@@ -1,0 +1,311 @@
+{
+  "status": "passed-outerspace-only",
+  "harness_commit": "3aae7a5509bd83835143eb2421aef4ec9ffe5219",
+  "image": {
+    "schema": 1,
+    "profile": "inference",
+    "hardware_profile": "cpu",
+    "architecture": "arm64",
+    "version": "0.1.0-dev.0",
+    "commit": "c80dc98d492b4cd228b20ca8d0602427fa2977b6",
+    "components_lock_sha256": "8d800e6071f4bd31c750cdc598c2f73f760879cc4a0d204b4f9af3322f1c0993",
+    "host_features": [
+      "containerd",
+      "kubelet",
+      "dm-verity",
+      "cgroup-v2",
+      "apparmor",
+      "ebpf",
+      "optional-dragonfly"
+    ],
+    "raw_image_sha256": "d37e550741e85d65a3b72d402fd9762391743be2973ac6ccbdd7b62579c9678b",
+    "uki_sha256": "d8c8a04510c83f189108bd0f25cd42986fca11084d3bc2ec77fa13065e866a66",
+    "verity_root_hash": "cb091945804e789803c1ae1ba48d7e264bfbb4fbbc526a03257f65c2acc9bf98",
+    "manifest_sha256": "8c0a0350609e2f7f120e3dd36f50cbbf86a9dace0074cca7b7eb57e6d502d3cb",
+    "source_archive_sha256": "f42f094825ae11812cd4efde3a5b75d6456d7d2966df152149f1b757b28c4129"
+  },
+  "source_inputs_sha256": {
+    "tests/harness/enrollment.py": "1874d27b82367c23a9df5d1624882d4c783ee44a4589cff615d0865e97303531",
+    "tests/harness/enrollment-vm.py": "ef398f1bdae717967df6045e9435187e097d37d755ed136b2e7d58ea2801831c",
+    "tests/integration/node-probe.py": "3772750dff9aadb9285f0a1348d299eb3d9c554b6f54db9c2d258bb7dd967565",
+    "tests/integration/cpu-smoke.py": "3958fe711bd26c9ef6fe3fa354c98fdbab1fda81ccc2cd85dc6b52321a30e533",
+    "tests/harness/cpu-serving.py": "350a4bc97094b079ace81e7992bbffe8695610b2f892f6fbad601a737bb14d7c",
+    "tests/integration/serving-client.py": "4cfde13b520a784c19489b3921489acca3dda537d5c559e19589f57b5f81175a",
+    "tests/integration/model-stage.py": "10b04c3c451cc6069750f809500c9b64c13eb0788232225b2647a1d2dc3060d6",
+    "tests/benchmarks/cpu-serving.lock.json": "7e2554902fc38a78d564323057d17bc07ef24e6f7676481877e284c29deef01b",
+    "tests/integration/agent-isolation.sh": "0316e4e01e40c10f868b3616ddca78810d385dce08611eace760ae8380c59cb8",
+    "src/cluster/agent/profile-v1.json": "d020f0c61ba2705aec88ca6918a9b2b9e8be55fd98a7921ed7f69cb199c826c9",
+    "tests/integration/agent-resources.sh": "02ad6b58642e01fda0a5fa04f5d440d2937fcba90b1d99eb2359d7444489066b",
+    "src/image/mkosi.extra/etc/outerspace/kubelet.yaml": "25a29e993882bce2393d8c57e9f65f0901d5aa2b4a055430564ab714313f33b3",
+    "src/cluster/agent/workload-v1.json": "ef428dddb11e28a058876bd0f33379ca5638f5289eb9afb0a84c9b8c06b790e1",
+    "src/image/mkosi.extra/usr/share/outerspace/apparmor/agent-v1": "0a44f626d0c9b6c611d962f660ef9ceed948fe498e0447fbd00a0286aa08524f",
+    "src/image/mkosi.extra/usr/lib/systemd/system/outerspace-agent-profile.service": "089808f113dcd5ca6f7a9a689007bad55e353ecdade80a76890f96602cdc4825",
+    "src/image/mkosi.extra/usr/lib/outerspace/agent-io": "c4ecef345f14371017902bd84d3803768b206078213e2e8308163814dc12f61a",
+    "src/image/mkosi.extra/usr/lib/systemd/system/containerd.service": "d7a65af217e8ef1ad67282164c2806fc2291beceb8f8cc034ca7ba752c4621d6",
+    "src/image/mkosi.extra/etc/containerd/config.toml": "9d08be22804c35ba65e0abb9a2e61c49fba8ed80f630327b39ed6a3ea5d7ed8d",
+    "src/image/mkosi.postinst": "ae09307f813021a928274354ad10a326b4ebf982498b8e56f9c69b83df025415",
+    "tests/harness/worker-comparison.py": "c839101bdf9411d86b8d43aab0f00d347ec398b2072dbe75925d2c3dbb9ccc94",
+    "tests/integration/ubuntu-reference.sh": "18700edf39b030c0c623a7fe3a235794269f6246cd7a03acef13c9e3f758e097",
+    "tests/benchmarks/ubuntu-reference.lock.json": "d4a97d2b9d5ce6af3abd3ddc183a92e208d1a323564132c82e6738c83374c710",
+    "src/image/mkosi.extra/usr/lib/systemd/system/kubelet.service": "a0a0c1cfe174242021b05d8a82cede4fdef2ce1f21b8c43c2d0cb853d603c173",
+    "src/image/mkosi.extra/etc/modules-load.d/outerspace.conf": "fcaf07413a456d658640930cef56ed4d13330123e3b522c481021613c64755e3",
+    "src/image/mkosi.extra/etc/sysctl.d/90-outerspace.conf": "78cae24b9bc4258fd4abb32328ff8936f3d809987b038f2de3f4daecd08a2315",
+    "src/components.lock.json": "8d800e6071f4bd31c750cdc598c2f73f760879cc4a0d204b4f9af3322f1c0993",
+    "build/tools/install-components.py": "a91f39d32b63f7433c4bced621d5a3409a7c67c9fd6d5cbe53aa788204688b7c",
+    "tests/harness/serving-comparison.py": "0ebdf87c0f6d9c10180488dc33ca9e52e9def37bf8c880e2ab3e5a7ac76fb997"
+  },
+  "observations_sha256": "cac05e17323d111bb539131133874378c74c1ebc443a074ed08a3a6ac8c480dd",
+  "cpu_serving": {
+    "requests": 46,
+    "tokens": 368,
+    "cold_start_seconds": 280.58302441693377,
+    "warm_pod_start_seconds": 96.56967845803592,
+    "phases": {
+      "initial": {
+        "summary": {
+          "requests": 4,
+          "latency_p50_seconds": 1.9023834590334445,
+          "latency_p95_seconds": 1.991186625964474,
+          "first_token_p50_seconds": 0.6502626250148751,
+          "first_token_p95_seconds": 0.7133144589606673,
+          "generated_tokens": 32,
+          "tokens_per_request_wall_second": 4.168927638419828,
+          "prompt_tokens": [
+            5,
+            5,
+            5,
+            5
+          ],
+          "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+        },
+        "wall_seconds": 7.675874628999736,
+        "memory": {
+          "before": {
+            "current_bytes": 80637952,
+            "lifetime_peak_bytes": 83795968
+          },
+          "after": {
+            "current_bytes": 81215488,
+            "lifetime_peak_bytes": 83795968
+          }
+        },
+        "model_load": {
+          "container_started_at": "2026-10-29T16:31:33Z",
+          "engine_loaded_at": "2026-10-29T16:31:39.729950913Z",
+          "container_start_to_model_loaded_seconds": 6.72995,
+          "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+        }
+      },
+      "sustained": {
+        "summary": {
+          "requests": 30,
+          "latency_p50_seconds": 2.0374435010016896,
+          "latency_p95_seconds": 2.305962083977647,
+          "first_token_p50_seconds": 0.7011363750207238,
+          "first_token_p95_seconds": 0.9145195010351017,
+          "generated_tokens": 240,
+          "tokens_per_request_wall_second": 3.855565262366246,
+          "prompt_tokens": [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+        },
+        "wall_seconds": 62.24800594500266,
+        "memory": {
+          "before": {
+            "current_bytes": 81219584,
+            "lifetime_peak_bytes": 84672512
+          },
+          "after": {
+            "current_bytes": 81227776,
+            "lifetime_peak_bytes": 84692992
+          }
+        },
+        "model_load": {
+          "container_started_at": "2026-10-29T16:31:33Z",
+          "engine_loaded_at": "2026-10-29T16:31:39.729950913Z",
+          "container_start_to_model_loaded_seconds": 6.72995,
+          "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+        }
+      },
+      "pod_restart": {
+        "summary": {
+          "requests": 4,
+          "latency_p50_seconds": 1.8804323749500327,
+          "latency_p95_seconds": 1.959991417999845,
+          "first_token_p50_seconds": 0.629566415969748,
+          "first_token_p95_seconds": 0.6925952510209754,
+          "generated_tokens": 32,
+          "tokens_per_request_wall_second": 4.201210108073654,
+          "prompt_tokens": [
+            5,
+            5,
+            5,
+            5
+          ],
+          "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+        },
+        "wall_seconds": 7.616890753037296,
+        "memory": {
+          "before": {
+            "current_bytes": 80596992,
+            "lifetime_peak_bytes": 84090880
+          },
+          "after": {
+            "current_bytes": 81100800,
+            "lifetime_peak_bytes": 84090880
+          }
+        },
+        "model_load": {
+          "container_started_at": "2026-10-29T16:35:46Z",
+          "engine_loaded_at": "2026-10-29T16:35:51.738184215Z",
+          "container_start_to_model_loaded_seconds": 5.738184,
+          "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+        }
+      },
+      "drain_recovery": {
+        "summary": {
+          "requests": 4,
+          "latency_p50_seconds": 1.891139333951287,
+          "latency_p95_seconds": 1.9145943349576555,
+          "first_token_p50_seconds": 0.6495982499909587,
+          "first_token_p95_seconds": 0.6641874579945579,
+          "generated_tokens": 32,
+          "tokens_per_request_wall_second": 4.20844659346257,
+          "prompt_tokens": [
+            5,
+            5,
+            5,
+            5
+          ],
+          "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+        },
+        "wall_seconds": 7.603794878988992,
+        "memory": {
+          "before": {
+            "current_bytes": 80588800,
+            "lifetime_peak_bytes": 84385792
+          },
+          "after": {
+            "current_bytes": 81162240,
+            "lifetime_peak_bytes": 84385792
+          }
+        },
+        "model_load": {
+          "container_started_at": "2026-10-29T16:38:16Z",
+          "engine_loaded_at": "2026-10-29T16:38:22.053441076Z",
+          "container_start_to_model_loaded_seconds": 6.053441,
+          "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+        }
+      },
+      "node_recovery": {
+        "summary": {
+          "requests": 4,
+          "latency_p50_seconds": 3.9588608359918,
+          "latency_p95_seconds": 4.986876378010493,
+          "first_token_p50_seconds": 1.3272461259621195,
+          "first_token_p95_seconds": 1.645591251028236,
+          "generated_tokens": 32,
+          "tokens_per_request_wall_second": 1.933982450446199,
+          "prompt_tokens": [
+            5,
+            5,
+            5,
+            5
+          ],
+          "scope": "Single emulated VM; observations, not hardware or comparative performance claims"
+        },
+        "wall_seconds": 16.54622117400868,
+        "memory": {
+          "before": {
+            "current_bytes": 118136832,
+            "lifetime_peak_bytes": 121757696
+          },
+          "after": {
+            "current_bytes": 118759424,
+            "lifetime_peak_bytes": 121757696
+          }
+        },
+        "model_load": {
+          "container_started_at": "2026-10-29T17:13:27Z",
+          "engine_loaded_at": "2026-10-29T17:13:39.202679543Z",
+          "container_start_to_model_loaded_seconds": 12.202679,
+          "scope": "Includes container startup; raw engine logs retain finer load diagnostics"
+        }
+      }
+    }
+  },
+  "startup_waits": {
+    "status": "passed",
+    "waits": 8,
+    "delivery_to_running_seconds": [
+      218.40473325003404,
+      0.07144183292984962,
+      0.0695521249435842,
+      30.542562042013742,
+      0.06925320904701948,
+      30.54354320804123,
+      0.07024283392820507,
+      25.617789624957368
+    ],
+    "token_readiness_seconds": [
+      60.9376888750121,
+      0.0,
+      0.0,
+      65.98556904203724,
+      0.0,
+      60.95966608298477,
+      0.0,
+      66.23822458297946
+    ]
+  },
+  "files_sha256": {
+    "boot-enroll.log": "5622dcc83b67f4c2e6bdbe34d7c1bdb1f947cc82f331f17c6e73340c4e91b8d1",
+    "boot-recover.log": "d13e2f3b3c4f4644599cfeef45dae7abced1c03fe25fcc1b77acd1ea1d728f66",
+    "cpu-serving-drain_recovery.log": "83048d642e9a7591931713854db9e0e4246bdba8e676caf463cd8241d787467b",
+    "cpu-serving-initial.log": "37e75ac50dd0c2d2550dcaa4b66b5fdf19117b272d30063aa9c4c70ef029533e",
+    "cpu-serving-node_recovery.log": "138ef30f14cc5a1abf7f77085a913c21d522e5f5084cd23561edf1c9d557229b",
+    "cpu-serving-pod_restart.log": "30463ecfae3593ebb6b17d8630d44288a91b11422612545cd8f2fabf0c15b970",
+    "cpu-serving-sustained.log": "e5d34feacec668fd0abc52bd4e4c07b4038040ee1cfccc0036544f1fa2b885b0",
+    "dnsmasq.log": "70d64ab3f751296f146f2e2c8191610136d061b7854518565ac3e8b1fa734e12",
+    "enrollment-serving-startup.json": "eb514c2e0f84109bdca74fb180ad808c2683e60cb7fca872284f6c599a0eac16",
+    "events.json": "6097457ca986a5a2281103e73707a4f61d4ba1afc1c4e722186c28473456de11",
+    "final-server.log": "138ef30f14cc5a1abf7f77085a913c21d522e5f5084cd23561edf1c9d557229b",
+    "final-verify-model.log": "16bfbe536ff5538329f1d6b31155e90de25d0c5d7b5272c674c66f5173a78328",
+    "nodes.json": "663b516adbeeefbd9dd3e24528b2f42ceeac792541eda7a26001cf753343be71",
+    "observations.json": "cac05e17323d111bb539131133874378c74c1ebc443a074ed08a3a6ac8c480dd",
+    "pods.json": "ee54019c34aafc8066f616940c0489c8d8c1393e4d82bf1548681424b8809571",
+    "qemu-command-enroll.json": "e47206e67979969ba5d983c8f92b7aeba2b86f44db1a5402af77c87bd42af76c",
+    "qemu-command-recover.json": "d7c485d80c54829ee9fa141ef64d29c2cd5ad5fcc53c016bdd5b95d18d7c090b"
+  },
+  "scope": "All five OuterSpace serving phases and fixed cold-recovery regression passed. Ubuntu subsequently timed out waiting for its worker; this is NOT a completed new matched comparison. Prior immutable matched dataset remains separate. No additional native or phase benchmark rerun required by this focused fix."
+}

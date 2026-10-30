@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "checked_at_utc": "2026-10-30T08:24:37.185627+00:00",
+  "native_exit_code": 2,
+  "qualification_passed": false,
+  "remaining_owned_containers_including_stopped": [],
+  "remaining_kind_labelled_containers": [],
+  "remaining_owned_networks": [],
+  "remaining_temporary_lab_directories": [],
+  "inventoried_volume_ids": [
+    "2c5e79037e5d999e8c2da9f1f44e70c4785650aef4b6c00bcd6f9fe322a9131e",
+    "5d4224cee1f74427677abb0f9b718b1dc3ba2953ab15e65e7a6d3f2e05a021fb",
+    "70160a479554229c0ee9cb4383ee07bd038234fc2fc483f987fa0e810496db5b",
+    "78610592bd807348999d55a7c3a46517240e7b2bd7c47bc91a056628c7a99278"
+  ],
+  "remaining_inventoried_volumes": [],
+  "volume_inventory_sha256": "5738cd8954be6f8770a491e9bf39a40c12a19429be5a5adb5179f43b6a3117d1",
+  "volume_cleanup_basis": "Exact /var volume IDs inventoried from owned kind containers while the lab was running, then checked absent from the Docker volume inventory.",
+  "cleanup_source_sha256": "1874d27b82367c23a9df5d1624882d4c783ee44a4589cff615d0865e97303531"
+}

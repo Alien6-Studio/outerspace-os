@@ -99,10 +99,6 @@ The read-only observer scans each measured Pod's processes and cgroups. Its work
 also grows with the population and remains included in whole-guest CPU totals;
 differences between stages do not isolate an Agent's CPU cost.
 
-The [2026-10-27 local arm64 report](../reports/2026-10-27-agent-baseline.md)
-records a complete fresh pair at all four stages, the measured totals and
-launch observations, exact source/image identities and retained raw evidence.
-
 Storage layouts differ: Ubuntu keeps a writable root, expanded to 12 GiB,
 where `/var` resides; OuterSpace uses a verity root and separate state. The
 Ubuntu root partition is relabeled for the identical I/O policy in this

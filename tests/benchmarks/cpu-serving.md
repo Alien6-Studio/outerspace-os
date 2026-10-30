@@ -143,9 +143,3 @@ bounded load interval. They establish no production endurance, model quality,
 physical-machine support, power savings, GPU support or multi-node migration.
 Architecture-specific acceptance comes from completed reports, never from the
 existence of a harness or the results of the other architecture.
-
-The [2026-10-27 local qualification](../reports/2026-10-27-cpu-serving.md)
-links the complete matched Ubuntu dataset, raw logs and final native-harness
-verification, with exact source/image identities and observed limits.
-The [October 30 delivery report](../reports/2026-10-30-milestone1.md) records the
-later focused recovery fix and keeps its evidence separate from that comparison.

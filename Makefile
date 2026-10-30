@@ -13,7 +13,7 @@ include tests/targets.mk
 
 .PHONY: local-awake
 local-awake:
-	@if [ "$$(uname -s)" = Darwin ]; then /usr/bin/caffeinate -i -w "$$PPID" >/dev/null 2>&1 & fi
+	@if [ "$$(uname -s)" = Darwin ]; then /usr/bin/caffeinate -i -s -w "$$PPID" >/dev/null 2>&1 & fi
 
 # Keep local VMs and their certificate timers running while make owns the job.
 # The assertion ends with make; Linux runners require no power-management change.

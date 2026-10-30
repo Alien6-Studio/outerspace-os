@@ -126,3 +126,5 @@ PID 1 cannot expire after one hour and silently kill an in-flight measurement.
 The [2026-10-27 local qualification](../../tests/reports/2026-10-27-agent-phases.md)
 links the complete immutable dataset, independently verified failure cases and
 measured collection overhead.
+The [October 30 delivery report](../../tests/reports/2026-10-30-milestone1.md)
+records the fixture-lifetime correction and parallel CI qualification.

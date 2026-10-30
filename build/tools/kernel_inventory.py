@@ -32,11 +32,10 @@ def correspondence(directory, identity, raw, index):
             raise ValueError('Installed kernel differs from its build receipt: ' + name)
     module_files = {p.lstrip('/') for p, f in files.items()
                     if p.startswith('/usr/lib/modules/') and f.get('metadata', {}).get('type') == 'RegularFile'}
-    initrd = 'usr/lib/modules/' + report['release'] + '/initrd'
-    if module_files != set(compiled) | {initrd}:
+    if module_files != set(compiled):
         raise ValueError('Unexpected or missing kernel module payload')
     return {'release': report['release'], 'version': source['version'], 'source_sha256': source['sha256'],
-            'files': compiled, 'generated_initrd': files['/' + initrd]['digests'],
+            'files': compiled,
             'config_sha256': report['evidence']['kernel.config'],
             'receipt_sha256': sha256(directory / 'kernel-build.json')}
 

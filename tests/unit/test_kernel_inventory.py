@@ -40,10 +40,11 @@ class KernelInventoryTests(unittest.TestCase):
                   'boot/config-' + lock['release']: 'b' * 64},
                   'evidence': {'kernel.config': 'b' * 64}}
         index = {'entries': [{'name': 'linux', **lock['source']}]}
-        records = {**kernel_inventory.installed_files(report),
-                   'usr/lib/modules/' + lock['release'] + '/initrd': 'c' * 64}
+        records = kernel_inventory.installed_files(report)
         raw = {'files': [{'location': {'path': '/' + path}, 'metadata': {'type': 'RegularFile'},
                          'digests': [{'algorithm': 'sha256', 'value': digest}]} for path, digest in records.items()]}
+        raw['files'].append({'location': {'path': '/usr/lib/modules/' + lock['release'] + '/initrd'},
+                             'metadata': {'type': 'Directory'}})
         with tempfile.TemporaryDirectory() as temporary, patch.object(kernel_build, 'verify_receipt', return_value=report):
             root = Path(temporary); (root / 'kernel-build.json').write_text('synthetic receipt')
             proof = kernel_inventory.correspondence(root, identity(), raw, index)

@@ -234,6 +234,8 @@ class VulnerabilityReviewTests(unittest.TestCase):
         self.now = datetime(2026, 10, 27, 12, tzinfo=timezone.utc)
         self.subject = identity('agent', 'arm64')
         self.policy = security.read_json(security.POLICY)
+        # Synthetic October 27 evidence must not inherit real, dated image approvals.
+        self.policy['exceptions'] = []
         self.database = {'built': '2026-10-27T06:00:00Z', 'valid': True, 'sha256': 'd'*64,
                          'from': 'https://example.invalid/db', 'schemaVersion': 'v6'}
         self.match = {'artifact': {'name': 'library', 'version': '1.0.0', 'type': 'go-module',
@@ -249,7 +251,7 @@ class VulnerabilityReviewTests(unittest.TestCase):
         return security.evaluate(self.scan, self.database, self.subject, self.policy, self.now)
 
     def exception(self):
-        self.policy['exceptions'] = [{'finding_key': security.finding(self.match)['key'],
+        self.policy['exceptions'] = [{'finding_sha256': security.finding(self.match)['key'],
             'scope': security.exception_scope(self.subject),
             'reviewed_at': '2026-10-27T11:00:00Z', 'expires_at': '2026-11-03T11:00:00Z',
             'approved_by': 'Coopyrightdmin', 'owner': 'synthetic test owner', 'decision': 'not-affected',

@@ -1,10 +1,697 @@
 {
   "schema": 1,
   "owner": "Alien6-Studio/outerspace-os maintainers",
-  "blocking_severities": ["Critical", "High", "Unknown"],
+  "blocking_severities": [
+    "Critical",
+    "High",
+    "Unknown"
+  ],
   "database_max_age_hours": 120,
   "scan_max_age_hours": 120,
   "exception_max_days": 30,
-  "exception_approvers": ["Coopyrightdmin"],
-  "exceptions": []
+  "exception_approvers": [
+    "Coopyrightdmin"
+  ],
+  "exceptions": [
+    {
+      "finding_sha256": "8fadc91246fa64935535900a56fcc086f4b1d090eb2e468e639ba1d7f0b0bef7",
+      "advisory": "GO-2026-4887",
+      "package": "github.com/docker/docker",
+      "version": "v28.5.2+incompatible",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/crictl": "e536dca5b3f68b1648b946ac63bd44867e2d27b55f03403809e70696909dd8ea"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The affected code is the Docker daemon AuthZ server. The exact crictl executable contains only github.com/docker/docker/api/types/time from the Docker module; no daemon or authorization package is compiled. The verified binary digest binds this decision to that dependency traversal.",
+      "evidence": [
+        "https://pkg.go.dev/vuln/GO-2026-4887",
+        "https://github.com/moby/moby/security/advisories/GHSA-x744-4wpc-v9h2"
+      ],
+      "verified_facts": {
+        "compiled_docker_packages": [
+          "github.com/docker/docker/api/types/time"
+        ]
+      }
+    },
+    {
+      "finding_sha256": "b0ee6a77848bf40bbb46dbbba3d2820f6e39964bea2bab3f47e4b0caa7a0c35c",
+      "advisory": "CVE-2025-31133",
+      "package": "runc",
+      "version": "1.3.4-0ubuntu1~24.04.1",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b",
+        "/usr/sbin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "Canonical distinguishes source runc (old Go library) from runc-app (actual executable). Noble runc-app is fixed in 1.3.3-0ubuntu1~24.04.2; the preserved signed-package inventory contains runc binary 1.3.4 from runc-app. The scanner direct-name match is against source runc, with an unknown version range.",
+      "evidence": [
+        "https://ubuntu.com/security/CVE-2025-31133"
+      ],
+      "verified_facts": {
+        "name": "runc",
+        "version": "1.3.4-0ubuntu1~24.04.1",
+        "source": "runc-app",
+        "source_version": "1.3.4-0ubuntu1~24.04.1"
+      }
+    },
+    {
+      "finding_sha256": "b377e635d520d638c102f2a8e6f42f972b19d8ceef98924872b7f8b8177ceceb",
+      "advisory": "CVE-2025-52565",
+      "package": "runc",
+      "version": "1.3.4-0ubuntu1~24.04.1",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b",
+        "/usr/sbin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "Canonical distinguishes source runc (old Go library) from runc-app (actual executable). Noble runc-app is fixed in 1.3.3-0ubuntu1~24.04.2; the preserved signed-package inventory contains runc binary 1.3.4 from runc-app. The scanner direct-name match is against source runc, with an unknown version range.",
+      "evidence": [
+        "https://ubuntu.com/security/CVE-2025-52565"
+      ],
+      "verified_facts": {
+        "name": "runc",
+        "version": "1.3.4-0ubuntu1~24.04.1",
+        "source": "runc-app",
+        "source_version": "1.3.4-0ubuntu1~24.04.1"
+      }
+    },
+    {
+      "finding_sha256": "13c5d533a2ff23c4e00d788102e10319f68a156c3b470e6c2d6afd3e244157bb",
+      "advisory": "CVE-2025-52881",
+      "package": "runc",
+      "version": "1.3.4-0ubuntu1~24.04.1",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b",
+        "/usr/sbin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "Canonical distinguishes source runc (old Go library) from runc-app (actual executable). Noble runc-app is fixed in 1.3.3-0ubuntu1~24.04.2; the preserved signed-package inventory contains runc binary 1.3.4 from runc-app. The scanner direct-name match is against source runc, with an unknown version range.",
+      "evidence": [
+        "https://ubuntu.com/security/CVE-2025-52881"
+      ],
+      "verified_facts": {
+        "name": "runc",
+        "version": "1.3.4-0ubuntu1~24.04.1",
+        "source": "runc-app",
+        "source_version": "1.3.4-0ubuntu1~24.04.1"
+      }
+    },
+    {
+      "finding_sha256": "bae9ff5b2ce0b11e68f1e6bcb7040d19fc37b5255ab1b7268080a2d846d58568",
+      "advisory": "GO-2026-4971",
+      "package": "stdlib",
+      "version": "go1.24.4",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The official advisory affects Windows Dial/LookupPort behavior. The exact signed Ubuntu executable was extracted from the verified image: it is an ARM64 ELF binary with GOOS=linux and GOARCH=arm64. The /usr/sbin/runc finding refers to the same /usr/bin/runc executable.",
+      "evidence": [
+        "https://pkg.go.dev/vuln/GO-2026-4971"
+      ],
+      "verified_facts": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "ELF_machine": 183
+      }
+    },
+    {
+      "finding_sha256": "35c01e049d9af58a36d5d2c3432bb24d1664bd48493bfcd6e43f07e5b64d7711",
+      "advisory": "GO-2026-4971",
+      "package": "stdlib",
+      "version": "go1.24.4",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/pidfd-kill": "a0cf90d4b75a7ba8f851a2715fd33081041baaad81b67efe0d2beff7869282bb"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The official advisory affects Windows Dial/LookupPort behavior. The exact signed Ubuntu executable was extracted from the verified image: it is an ARM64 ELF binary with GOOS=linux and GOARCH=arm64. The /usr/sbin/runc finding refers to the same /usr/bin/runc executable.",
+      "evidence": [
+        "https://pkg.go.dev/vuln/GO-2026-4971"
+      ],
+      "verified_facts": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "ELF_machine": 183
+      }
+    },
+    {
+      "finding_sha256": "c56d4e76308970dfb17e9ba89ec329b9cf495ffcf3dc2278a423b2b3881c7174",
+      "advisory": "GO-2026-4971",
+      "package": "stdlib",
+      "version": "go1.24.4",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/sbin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The official advisory affects Windows Dial/LookupPort behavior. The exact signed Ubuntu executable was extracted from the verified image: it is an ARM64 ELF binary with GOOS=linux and GOARCH=arm64. The /usr/sbin/runc finding refers to the same /usr/bin/runc executable.",
+      "evidence": [
+        "https://pkg.go.dev/vuln/GO-2026-4971"
+      ],
+      "verified_facts": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "ELF_machine": 183
+      }
+    },
+    {
+      "finding_sha256": "caea39946e88d61854ba30293bcbd3dd5944f5df6728e5649b48b663c06cc169",
+      "advisory": "GHSA-3v94-mw7p-v465",
+      "package": "hickory-proto",
+      "version": "0.25.2",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/dfdaemon": "6f66263642cd2280614721bc0c755faca75f93f90b1634c6af2a1adbde2c8e82"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The affected NSEC3 closest-encloser loop requires DNSSEC validation. The exact dfdaemon compiler receipt has neither dnssec-ring nor dnssec-aws-lc-rs in hickory-proto or hickory-resolver. The DNSSEC validation implementation is not compiled into this byte-bound binary.",
+      "evidence": [
+        "https://github.com/hickory-dns/hickory-dns/security/advisories/GHSA-3v94-mw7p-v465"
+      ],
+      "verified_facts": {
+        "compiled_features": {
+          "hickory-proto@0.25.2": [
+            "futures-io",
+            "std",
+            "tokio"
+          ],
+          "hickory-resolver@0.25.2": [
+            "default",
+            "system-config",
+            "tokio"
+          ]
+        }
+      }
+    },
+    {
+      "finding_sha256": "c3bb59bf728afe7805a664a20625048266dc6c175f2136d79cf7f49969489011",
+      "advisory": "GHSA-5j98-2g5x-46v6",
+      "package": "hickory-resolver",
+      "version": "0.25.2",
+      "scope": {
+        "profile": "agent",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/dfdaemon": "6f66263642cd2280614721bc0c755faca75f93f90b1634c6af2a1adbde2c8e82"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The affected Resolver::lookup/lookup_ip handling of DNSSEC failures requires DNSSEC validation. The exact dfdaemon compiler receipt has neither dnssec-ring nor dnssec-aws-lc-rs in hickory-proto or hickory-resolver. The DNSSEC validation implementation is not compiled into this byte-bound binary.",
+      "evidence": [
+        "https://github.com/hickory-dns/hickory-dns/security/advisories/GHSA-5j98-2g5x-46v6"
+      ],
+      "verified_facts": {
+        "compiled_features": {
+          "hickory-proto@0.25.2": [
+            "futures-io",
+            "std",
+            "tokio"
+          ],
+          "hickory-resolver@0.25.2": [
+            "default",
+            "system-config",
+            "tokio"
+          ]
+        }
+      }
+    },
+    {
+      "finding_sha256": "8fadc91246fa64935535900a56fcc086f4b1d090eb2e468e639ba1d7f0b0bef7",
+      "advisory": "GO-2026-4887",
+      "package": "github.com/docker/docker",
+      "version": "v28.5.2+incompatible",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/crictl": "e536dca5b3f68b1648b946ac63bd44867e2d27b55f03403809e70696909dd8ea"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The affected code is the Docker daemon AuthZ server. The exact crictl executable contains only github.com/docker/docker/api/types/time from the Docker module; no daemon or authorization package is compiled. The verified binary digest binds this decision to that dependency traversal.",
+      "evidence": [
+        "https://pkg.go.dev/vuln/GO-2026-4887",
+        "https://github.com/moby/moby/security/advisories/GHSA-x744-4wpc-v9h2"
+      ],
+      "verified_facts": {
+        "compiled_docker_packages": [
+          "github.com/docker/docker/api/types/time"
+        ]
+      }
+    },
+    {
+      "finding_sha256": "b0ee6a77848bf40bbb46dbbba3d2820f6e39964bea2bab3f47e4b0caa7a0c35c",
+      "advisory": "CVE-2025-31133",
+      "package": "runc",
+      "version": "1.3.4-0ubuntu1~24.04.1",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b",
+        "/usr/sbin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "Canonical distinguishes source runc (old Go library) from runc-app (actual executable). Noble runc-app is fixed in 1.3.3-0ubuntu1~24.04.2; the preserved signed-package inventory contains runc binary 1.3.4 from runc-app. The scanner direct-name match is against source runc, with an unknown version range.",
+      "evidence": [
+        "https://ubuntu.com/security/CVE-2025-31133"
+      ],
+      "verified_facts": {
+        "name": "runc",
+        "version": "1.3.4-0ubuntu1~24.04.1",
+        "source": "runc-app",
+        "source_version": "1.3.4-0ubuntu1~24.04.1"
+      }
+    },
+    {
+      "finding_sha256": "b377e635d520d638c102f2a8e6f42f972b19d8ceef98924872b7f8b8177ceceb",
+      "advisory": "CVE-2025-52565",
+      "package": "runc",
+      "version": "1.3.4-0ubuntu1~24.04.1",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b",
+        "/usr/sbin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "Canonical distinguishes source runc (old Go library) from runc-app (actual executable). Noble runc-app is fixed in 1.3.3-0ubuntu1~24.04.2; the preserved signed-package inventory contains runc binary 1.3.4 from runc-app. The scanner direct-name match is against source runc, with an unknown version range.",
+      "evidence": [
+        "https://ubuntu.com/security/CVE-2025-52565"
+      ],
+      "verified_facts": {
+        "name": "runc",
+        "version": "1.3.4-0ubuntu1~24.04.1",
+        "source": "runc-app",
+        "source_version": "1.3.4-0ubuntu1~24.04.1"
+      }
+    },
+    {
+      "finding_sha256": "13c5d533a2ff23c4e00d788102e10319f68a156c3b470e6c2d6afd3e244157bb",
+      "advisory": "CVE-2025-52881",
+      "package": "runc",
+      "version": "1.3.4-0ubuntu1~24.04.1",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b",
+        "/usr/sbin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "Canonical distinguishes source runc (old Go library) from runc-app (actual executable). Noble runc-app is fixed in 1.3.3-0ubuntu1~24.04.2; the preserved signed-package inventory contains runc binary 1.3.4 from runc-app. The scanner direct-name match is against source runc, with an unknown version range.",
+      "evidence": [
+        "https://ubuntu.com/security/CVE-2025-52881"
+      ],
+      "verified_facts": {
+        "name": "runc",
+        "version": "1.3.4-0ubuntu1~24.04.1",
+        "source": "runc-app",
+        "source_version": "1.3.4-0ubuntu1~24.04.1"
+      }
+    },
+    {
+      "finding_sha256": "bae9ff5b2ce0b11e68f1e6bcb7040d19fc37b5255ab1b7268080a2d846d58568",
+      "advisory": "GO-2026-4971",
+      "package": "stdlib",
+      "version": "go1.24.4",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The official advisory affects Windows Dial/LookupPort behavior. The exact signed Ubuntu executable was extracted from the verified image: it is an ARM64 ELF binary with GOOS=linux and GOARCH=arm64. The /usr/sbin/runc finding refers to the same /usr/bin/runc executable.",
+      "evidence": [
+        "https://pkg.go.dev/vuln/GO-2026-4971"
+      ],
+      "verified_facts": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "ELF_machine": 183
+      }
+    },
+    {
+      "finding_sha256": "35c01e049d9af58a36d5d2c3432bb24d1664bd48493bfcd6e43f07e5b64d7711",
+      "advisory": "GO-2026-4971",
+      "package": "stdlib",
+      "version": "go1.24.4",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/pidfd-kill": "a0cf90d4b75a7ba8f851a2715fd33081041baaad81b67efe0d2beff7869282bb"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The official advisory affects Windows Dial/LookupPort behavior. The exact signed Ubuntu executable was extracted from the verified image: it is an ARM64 ELF binary with GOOS=linux and GOARCH=arm64. The /usr/sbin/runc finding refers to the same /usr/bin/runc executable.",
+      "evidence": [
+        "https://pkg.go.dev/vuln/GO-2026-4971"
+      ],
+      "verified_facts": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "ELF_machine": 183
+      }
+    },
+    {
+      "finding_sha256": "c56d4e76308970dfb17e9ba89ec329b9cf495ffcf3dc2278a423b2b3881c7174",
+      "advisory": "GO-2026-4971",
+      "package": "stdlib",
+      "version": "go1.24.4",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/sbin/runc": "4dc400fbfdb9d64049cde25d751bf8520edb70a85afb67f595dcd5e35116c42b"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The official advisory affects Windows Dial/LookupPort behavior. The exact signed Ubuntu executable was extracted from the verified image: it is an ARM64 ELF binary with GOOS=linux and GOARCH=arm64. The /usr/sbin/runc finding refers to the same /usr/bin/runc executable.",
+      "evidence": [
+        "https://pkg.go.dev/vuln/GO-2026-4971"
+      ],
+      "verified_facts": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "ELF_machine": 183
+      }
+    },
+    {
+      "finding_sha256": "caea39946e88d61854ba30293bcbd3dd5944f5df6728e5649b48b663c06cc169",
+      "advisory": "GHSA-3v94-mw7p-v465",
+      "package": "hickory-proto",
+      "version": "0.25.2",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/dfdaemon": "6f66263642cd2280614721bc0c755faca75f93f90b1634c6af2a1adbde2c8e82"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The affected NSEC3 closest-encloser loop requires DNSSEC validation. The exact dfdaemon compiler receipt has neither dnssec-ring nor dnssec-aws-lc-rs in hickory-proto or hickory-resolver. The DNSSEC validation implementation is not compiled into this byte-bound binary.",
+      "evidence": [
+        "https://github.com/hickory-dns/hickory-dns/security/advisories/GHSA-3v94-mw7p-v465"
+      ],
+      "verified_facts": {
+        "compiled_features": {
+          "hickory-proto@0.25.2": [
+            "futures-io",
+            "std",
+            "tokio"
+          ],
+          "hickory-resolver@0.25.2": [
+            "default",
+            "system-config",
+            "tokio"
+          ]
+        }
+      }
+    },
+    {
+      "finding_sha256": "c3bb59bf728afe7805a664a20625048266dc6c175f2136d79cf7f49969489011",
+      "advisory": "GHSA-5j98-2g5x-46v6",
+      "package": "hickory-resolver",
+      "version": "0.25.2",
+      "scope": {
+        "profile": "inference",
+        "hardware_profile": "cpu",
+        "architecture": "arm64",
+        "components_lock_sha256": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "inputs_lock_sha256": "9b4c4196dbb3440cffed8bccaf14d1a9c607975049c66fc6b0bfd118161895f5",
+        "runtime_build_lock_sha256": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
+        "go_runtime_build_lock_sha256": "e67068e05292c7c5b544e5ae298706fe81c59b6d65b4ccbb54a73228bde31970",
+        "containerd_build_lock_sha256": "c7bebf8ebe157b06f5fce52aeb6194a78d7537d31932dcaf11ac364b98978154",
+        "kubelet_build_lock_sha256": "63adc4be771c0fed8edda09491f32aea4b9433f45957360c1612c60aa2f58414",
+        "sources_lock_sha256": "76dd04688366ece2f5acb4a9fc9a7612c6535856f4c97403df19c51dc2242857"
+      },
+      "binary_sha256": {
+        "/usr/bin/dfdaemon": "6f66263642cd2280614721bc0c755faca75f93f90b1634c6af2a1adbde2c8e82"
+      },
+      "reviewed_at": "2026-10-30T16:43:46+00:00",
+      "expires_at": "2026-11-13T16:43:46+00:00",
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "decision": "not-affected",
+      "rationale": "The affected Resolver::lookup/lookup_ip handling of DNSSEC failures requires DNSSEC validation. The exact dfdaemon compiler receipt has neither dnssec-ring nor dnssec-aws-lc-rs in hickory-proto or hickory-resolver. The DNSSEC validation implementation is not compiled into this byte-bound binary.",
+      "evidence": [
+        "https://github.com/hickory-dns/hickory-dns/security/advisories/GHSA-5j98-2g5x-46v6"
+      ],
+      "verified_facts": {
+        "compiled_features": {
+          "hickory-proto@0.25.2": [
+            "futures-io",
+            "std",
+            "tokio"
+          ],
+          "hickory-resolver@0.25.2": [
+            "default",
+            "system-config",
+            "tokio"
+          ]
+        }
+      }
+    }
+  ]
 }

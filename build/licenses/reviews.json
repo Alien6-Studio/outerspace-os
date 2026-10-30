@@ -1,5 +1,31 @@
 {
   "schema": 1,
-  "approvers": ["Coopyrightdmin"],
-  "reviews": []
+  "approvers": [
+    "Coopyrightdmin"
+  ],
+  "reviews": [],
+  "notice_decisions": [
+    {
+      "name": "http-serde",
+      "version": "2.1.1",
+      "source_sha256": "0f056c8559e3757392c8d091e796416e4649d8e49e88b8d76df6c002f05027fd",
+      "scope": {
+        "hardware_profile": "cpu"
+      },
+      "decision": "select-declared-license",
+      "declared_license": "Apache-2.0 OR MIT",
+      "selected_license": "Apache-2.0",
+      "approved_by": "Coopyrightdmin",
+      "approved_at": "2026-10-30T16:43:46+00:00",
+      "rationale": "The maintainer selected Apache-2.0 from the Apache-2.0 OR MIT grant in the original http-serde 2.1.1 manifest. Preserve the original source archive and author attribution and distribute the complete Apache-2.0 text. The archive has no LICENSE/NOTICE file; this source-specific selection does not approve redistribution of the entire image.",
+      "evidence": [
+        "https://gitlab.com/kornelski/http-serde/-/blob/c2403fb3d64bc0db31a05ca5d340ff82686163b1/Cargo.toml",
+        "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      ],
+      "distributed_license": {
+        "path": "kubelet-LICENSE",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      }
+    }
+  ]
 }

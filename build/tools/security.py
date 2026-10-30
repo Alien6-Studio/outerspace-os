@@ -77,20 +77,25 @@ def evaluate(scan, database, identity, policy, now):
     exceptions = {}
     scope = exception_scope(identity)
     for e in policy['exceptions']:
-        if (not re.fullmatch('[a-f0-9]{64}', e.get('finding_key', ''))
+        if (not re.fullmatch('[a-f0-9]{64}', e.get('finding_sha256', ''))
                 or e.get('approved_by') not in policy['exception_approvers'] or not e.get('owner')
                 or e.get('decision') not in ['not-affected', 'accepted-risk']
                 or len(e.get('rationale', '')) < 40 or not e.get('evidence')
                 or not all(str(u).startswith('https://') for u in e['evidence'])):
             raise ValueError('Unaccountable vulnerability exception')
+        binaries = e.get('binary_sha256', {})
+        if not isinstance(binaries, dict) or any(
+                not re.fullmatch('/usr/s?bin/[A-Za-z0-9_.-]+', p)
+                or not re.fullmatch('[a-f0-9]{64}', digest) for p, digest in binaries.items()):
+            raise ValueError('Invalid vulnerability exception binary binding')
         start, expires = time(e['reviewed_at']), time(e['expires_at'])
         if not start <= now < expires or expires - start > timedelta(days=policy['exception_max_days']):
             raise ValueError('Expired, future or overlong vulnerability exception')
         if e.get('scope') != scope:
             continue
-        if e['finding_key'] in exceptions:
+        if e['finding_sha256'] in exceptions:
             raise ValueError('Duplicate vulnerability exception')
-        exceptions[e['finding_key']] = e
+        exceptions[e['finding_sha256']] = e
     findings = [finding(m) for m in scan['matches']]
     if any(f['severity'] not in ['Critical', 'High', 'Medium', 'Low', 'Negligible', 'Unknown'] for f in findings):
         raise ValueError('Unrecognized vulnerability severity requires review')
@@ -109,6 +114,20 @@ def evaluate(scan, database, identity, policy, now):
     return {'status': 'blocked' if any(d['decision'] == 'blocked' for d in decisions) else 'passed',
             'counts': dict(sorted(Counter(d['severity'] for d in decisions).items())),
             'decisions': decisions, 'automatic_ignored_matches': len(scan.get('ignoredMatches', []))}
+
+
+def verify_exception_binaries(directory, review):
+    bindings = [d['exception']['binary_sha256'] for d in review['decisions']
+                if d.get('exception') and d['exception'].get('binary_sha256')]
+    if not bindings:
+        return
+    files = read_json(directory / 'distribution.sbom.syft.json')['files']
+    for binding in bindings:
+        for path, digest in binding.items():
+            matches = [f for f in files if f['location']['path'] == path]
+            if (len(matches) != 1 or matches[0]['metadata']['type'] != 'RegularFile'
+                    or [d['value'] for d in matches[0].get('digests', []) if d['algorithm'] == 'sha256'] != [digest]):
+                raise ValueError('Vulnerability exception does not apply to these executable bytes')
 
 
 def scanner_receipt(identity):
@@ -143,6 +162,7 @@ def scan(output, database_path):
             raise ValueError('Vulnerability database changed during scan')
         write_json(output / FILES[1], database)
     evaluation = evaluate(read_json(output / FILES[0]), database, identity, read_json(POLICY), datetime.now(timezone.utc))
+    verify_exception_binaries(output, evaluation)
     report = {'schema': 1, 'identity': identity, 'scanner': receipt,
               'scanner_lock_sha256': sha256(LOCK), 'scanner_config_sha256': sha256(CONFIG),
               'scanner_defaults_sha256': sha256(DEFAULT_IGNORE),
@@ -170,6 +190,7 @@ def verify(directory, identity, require_pass=False, now=None):
                           read_json(POLICY), now or datetime.now(timezone.utc))
     if evaluation != report['review']:
         raise ValueError('Vulnerability decision differs from scanner evidence')
+    verify_exception_binaries(directory, evaluation)
     receipt, lock = report['scanner'], read_json(LOCK)
     if (receipt['version'] != lock['version'] or receipt['architecture'] != identity['architecture']
             or receipt['artifact'] != lock['artifacts'][identity['architecture']]

@@ -367,6 +367,58 @@
           ]
         }
       }
+    },
+    {
+      "name": "eira-fransham/crunchy",
+      "commit": "313e516a63d460ae504131ecbbd36aa971df6c83",
+      "url": "https://codeload.github.com/eira-fransham/crunchy/tar.gz/313e516a63d460ae504131ecbbd36aa971df6c83",
+      "sha256": "375fdf2fb648db5e8c5fb9cf981d437c4ff3a1ccd19c39bfaa1ca6ed6b3f3b8f",
+      "size": 3342,
+      "for_crates": [
+        "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
+      ],
+      "notice_backfills": {
+        "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7": {
+          "publication_commit": "1bf90cf2d0a8cfcb2c5592275a23ab028dff6468",
+          "source_directory": ".",
+          "packaging_files": {
+            "Cargo.toml": "5238a96db3efb623481ac00afca51748372d99e472bc4943f2d1762ad4cc6cf0"
+          },
+          "notice_paths": [
+            "LICENSE"
+          ],
+          "evidence": [
+            "https://github.com/eira-fransham/crunchy/pull/7",
+            "https://github.com/eira-fransham/crunchy/issues/6#issuecomment-1564403942"
+          ]
+        }
+      }
+    },
+    {
+      "name": "rustls/rustls-platform-verifier",
+      "commit": "669ace0a801ef4be8e0e23d9c534849497ee5782",
+      "url": "https://codeload.github.com/rustls/rustls-platform-verifier/tar.gz/669ace0a801ef4be8e0e23d9c534849497ee5782",
+      "sha256": "0368e30a89fef6f3f8c8bbe1e663204901fc660ff447390678b670ec761cf05a",
+      "size": 138402,
+      "for_crates": [
+        "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
+      ],
+      "release_payload_matches": {
+        "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f": {
+          "artifact": {
+            "name": "rustls-platform-verifier-android-release-0.3.3",
+            "url": "https://github.com/rustls/rustls-platform-verifier/releases/download/v/0.3.3/android-artifacts.tar",
+            "sha256": "e5847a5c55cc401c4a12f899d34aafd4416383c57492a50fafaffcfa3561ef9e",
+            "size": 30720
+          },
+          "release_url": "https://github.com/rustls/rustls-platform-verifier/releases/tag/v/0.3.3",
+          "source_directory": "android-release-support",
+          "notice_paths": [
+            "LICENSE-APACHE",
+            "LICENSE-MIT"
+          ]
+        }
+      }
     }
   ]
 }

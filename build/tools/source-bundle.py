@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 from pathlib import Path, PurePosixPath
+import posixpath
 import re
 import subprocess
 import tarfile
@@ -99,12 +100,14 @@ def license_evidence(path):
     return {'declared_licenses': sorted(set(declarations)), 'notices': notices}
 
 
-def archive_inventory(path):
+def archive_inventory(path, *, flat=False, allow_internal_links=False):
     """Hash regular files under one archive root without extracting paths."""
     files, seen, roots = {}, set(), set()
     with tarfile.open(path) as tar:
         for member in tar:
             name = PurePosixPath(member.name)
+            if flat and str(name) == '.' and member.isdir():
+                continue
             if name.is_absolute() or '..' in name.parts or not name.parts:
                 raise ValueError('Unsafe notice source archive path')
             roots.add(name.parts[0])
@@ -113,39 +116,104 @@ def archive_inventory(path):
             seen.add(str(name))
             if member.isdir():
                 continue
-            if not member.isfile() or len(name.parts) < 2:
+            relative = str(name if flat else PurePosixPath(*name.parts[1:]))
+            if member.issym() and allow_internal_links and not flat:
+                target = posixpath.normpath(str(name.parent / member.linkname))
+                if PurePosixPath(member.linkname).is_absolute() or not target.startswith(name.parts[0] + '/'):
+                    raise ValueError('Notice source link escapes its archive')
+                files[relative] = {'link': target}
+                continue
+            if not member.isfile() or (not flat and len(name.parts) < 2):
                 raise ValueError('Notice content matching requires regular files')
-            relative = str(PurePosixPath(*name.parts[1:]))
             files[relative] = {'sha256': hashlib.file_digest(tar.extractfile(member), 'sha256').hexdigest(),
                                'bytes': member.size}
-    if len(roots) != 1 or not files:
+    if (not flat and len(roots) != 1) or not files:
         raise ValueError('Notice source archive requires one nonempty root')
     return files
+
+
+def payload_entries(supplements):
+    return [{**config['artifact'], 'kind': 'supplemental-release-payload', 'for_crates': [digest]}
+            for supplement in supplements for digest, config in supplement.get('release_payload_matches', {}).items()]
+
+
+def release_payload_provenance(cache, supplement, config, digest):
+    artifact = config['artifact']
+    if (not config.get('release_url', '').startswith('https://github.com/' + supplement['name'] + '/releases/tag/')
+            or not artifact['url'].startswith('https://github.com/' + supplement['name'] + '/releases/download/')):
+        raise ValueError('Release payload must identify its upstream release')
+    published = archive_inventory(cache / digest)
+    payload = archive_inventory(cache / artifact['sha256'], flat=True)
+    if published != payload:
+        raise ValueError('Published crate differs from the complete upstream release payload')
+    source = archive_inventory(cache / supplement['sha256'], allow_internal_links=True)
+    prefix = PurePosixPath(config['source_directory'])
+    if prefix.is_absolute() or '..' in prefix.parts or str(prefix) != config['source_directory']:
+        raise ValueError('Unsafe release source directory')
+    names = {'Cargo.toml.orig'} | {name for name in published if name.startswith('src/')}
+    if 'Cargo.toml.orig' not in published or len(names) < 2:
+        raise ValueError('Release payload requires its original manifest and Rust sources')
+    matched = {}
+    for name in sorted(names):
+        target = str(prefix / ('Cargo.toml' if name == 'Cargo.toml.orig' else name))
+        if source.get(target) != published[name]:
+            raise ValueError('Release manifest or Rust source differs from its source revision')
+        matched[name] = {'source_path': target, **published[name]}
+    notices = config['notice_paths']
+    recognized = {str(PurePosixPath(n['path']).relative_to(PurePosixPath(n['path']).parts[0]))
+                  for n in license_evidence(cache / supplement['sha256'])['notices']}
+    if not notices or len(notices) != len(set(notices)) or not set(notices) <= recognized:
+        raise ValueError('Release payload requires explicit original notice files')
+    return {'basis': 'complete-upstream-release-payload-match', 'commit': supplement['commit'],
+            'release_url': config['release_url'], 'payload_sha256': artifact['sha256'],
+            'published_files': published, 'matched_source_files': matched,
+            'generated_payload_build_proven': False,
+            'notices': {name: source[name] for name in notices}}
 
 
 def supplemental_provenance(cache, supplement, cargo):
     """Distinguish publication metadata from complete published-file matching."""
     crates = {e['sha256']: e for e in cargo}
     content_matches = supplement.get('content_matches', {})
-    if not set(content_matches) <= set(supplement['for_crates']):
+    backfills = supplement.get('notice_backfills', {})
+    payloads = supplement.get('release_payload_matches', {})
+    configured = list(content_matches) + list(backfills) + list(payloads)
+    if (not set(configured) <= set(supplement['for_crates']) or len(set(configured)) != len(configured)):
         raise ValueError('Content match refers to an unknown supplemental crate')
     result = {}
     source_files = None
     for digest in supplement['for_crates']:
         if digest not in crates:
             raise ValueError('Supplemental notice refers to an unknown crate')
-        if digest not in content_matches:
+        if digest in payloads:
+            manifest = tomllib.loads(archive_file(cache / digest, 'Cargo.toml').decode())['package']
+            if (manifest.get('name'), manifest.get('version')) != (crates[digest]['name'], crates[digest]['version']):
+                raise ValueError('Release payload manifest differs from Cargo lock identity')
+            result[digest] = release_payload_provenance(cache, supplement, payloads[digest], digest)
+            continue
+        if digest not in content_matches and digest not in backfills:
             vcs = json.loads(archive_file(cache / digest, '.cargo_vcs_info.json'))
             if vcs['git']['sha1'] != supplement['commit']:
                 raise ValueError('Supplemental notice source is not the crate publication revision')
             result[digest] = {'basis': 'cargo-vcs-publication-commit', 'commit': supplement['commit']}
             continue
-        config = content_matches[digest]
+        config = backfills[digest] if digest in backfills else content_matches[digest]
         prefix = PurePosixPath(config['source_directory'])
         if prefix.is_absolute() or '..' in prefix.parts or str(prefix) != config['source_directory']:
             raise ValueError('Unsafe crate source directory')
         files = archive_inventory(cache / digest)
-        if '.cargo_vcs_info.json' in files:
+        publication = None
+        if digest in backfills:
+            if '.cargo_vcs_info.json' not in files:
+                raise ValueError('A later notice requires original publication metadata')
+            vcs = json.loads(archive_file(cache / digest, '.cargo_vcs_info.json'))
+            commit = config.get('publication_commit', '')
+            if (not re.fullmatch('[a-f0-9]{40}', commit) or vcs['git']['sha1'] != commit
+                    or commit == supplement['commit'] or not config.get('evidence')
+                    or not all(str(u).startswith('https://') for u in config['evidence'])):
+                raise ValueError('Later notice does not preserve the original publication revision')
+            publication = {'commit': commit, **files['.cargo_vcs_info.json']}
+        elif '.cargo_vcs_info.json' in files:
             raise ValueError('Content matching cannot override crate publication metadata')
         # Only Cargo packaging metadata may differ. Its exact bytes must be
         # reviewed and pinned individually; no code/binary/glob exceptions.
@@ -166,7 +234,7 @@ def supplemental_provenance(cache, supplement, cargo):
             source_files = archive_inventory(cache / supplement['sha256'])
         matched = {}
         for name, record in files.items():
-            if name in generated:
+            if name in generated or (publication is not None and name == '.cargo_vcs_info.json'):
                 continue
             target = str(prefix / ('Cargo.toml' if name == 'Cargo.toml.orig' else name))
             if source_files.get(target) != record:
@@ -181,6 +249,9 @@ def supplemental_provenance(cache, supplement, cargo):
                           'publication_commit_proven': False, 'matched_files': matched,
                           'packaging_files': {name: files[name] for name in generated},
                           'notices': {name: source_files[name] for name in notices}}
+        if publication is not None:
+            result[digest].update(basis='published-files-match-with-later-notice',
+                                  publication_metadata=publication, notice_evidence=config['evidence'])
     return result
 
 
@@ -217,6 +288,7 @@ def collect(cache, apt_inputs=None):
     cargo = cargo_inventory(cache / lock['sources']['dfdaemon']['sha256'], lock.get('cargo_git_sources', {}))
     entries.extend(cargo)
     entries.extend({**e, 'kind': 'supplemental-notice-source'} for e in lock.get('supplemental_sources', []))
+    entries.extend(payload_entries(lock.get('supplemental_sources', [])))
     if apt_inputs:
         for source in apt_inputs['sources']:
             for entry in source['files']:
@@ -252,6 +324,7 @@ def verify(directory, apt_inputs, lock_path=LOCK):
     entries = index['entries']
     actual = {e['sha256']: e for e in entries}
     required = (list(lock['sources'].values()) + lock.get('supplemental_sources', [])
+                + payload_entries(lock.get('supplemental_sources', []))
                 + [f for s in apt_inputs['sources'] for f in s['files']])
     if any(e['sha256'] not in actual or any(actual[e['sha256']].get(k) != v for k, v in e.items()) for e in required):
         raise ValueError('Corresponding source is incomplete or changed')
@@ -259,6 +332,7 @@ def verify(directory, apt_inputs, lock_path=LOCK):
     cargo_lock = None
     supplements = lock.get('supplemental_sources', [])
     proof_objects = {s['sha256'] for s in supplements} | {d for s in supplements for d in s['for_crates']}
+    proof_objects.update(e['sha256'] for e in payload_entries(supplements))
     with tempfile.TemporaryDirectory(prefix='outerspace-notice-proof-') as temporary, \
             subprocess.Popen(['zstd', '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
         proof_cache = Path(temporary)

@@ -24,9 +24,13 @@ def assess(identity, apt, index, reviews):
     digest = hashlib.sha256(json.dumps(subject, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     recovered = {digest for e in index['entries'] if e['kind'] == 'supplemental-notice-source'
                  and e.get('licenses', {}).get('notices') for digest in e['for_crates']}
+    recovered_payloads = {p['payload_sha256'] for e in index['entries']
+                          if e['kind'] == 'supplemental-notice-source' and e.get('licenses', {}).get('notices')
+                          for p in e.get('notice_provenance', {}).values()
+                          if p.get('basis') == 'complete-upstream-release-payload-match' and p.get('notices')}
     missing_notices = [{'name': e['name'], 'version': e.get('version'), 'sha256': e['sha256']}
                        for e in index['entries'] if e['kind'] != 'ubuntu-source'
-                       and e['sha256'] not in recovered and not e.get('licenses', {}).get('notices')]
+                       and e['sha256'] not in (recovered | recovered_payloads) and not e.get('licenses', {}).get('notices')]
     matching = [r for r in reviews['reviews'] if r.get('subject_sha256') == digest]
     if len(matching) > 1:
         raise ValueError('Ambiguous redistribution review')

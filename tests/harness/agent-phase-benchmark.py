@@ -57,12 +57,25 @@ class PhaseLab(comparison.ComparisonLab):
         self.provider()
         if enabled:
             try:
+                self.collector_subject = self.collector_identity()
                 self.collector = transport.ProbeStream(['kubectl', '--kubeconfig', self.kubeconfig,
                     '--request-timeout=30s', '-n', native.LAB, 'exec', '-i', 'probe', '--',
                     'python3', '-u', '-c', (ROOT / 'tests/integration/phase-probe.py').read_text(), '--stream'])
             except Exception:
                 self.session.failed = True
                 raise
+
+    def collector_identity(self):
+        pod = self.api('-n', native.LAB, 'pod', 'probe')
+        states = pod.get('status', {}).get('containerStatuses', [])
+        if (pod['metadata'].get('deletionTimestamp') or pod['spec'].get('nodeName') != self.node
+                or pod['status'].get('phase') != 'Running' or len(states) != 1
+                or states[0].get('name') != 'probe' or not states[0].get('ready')
+                or not states[0].get('state', {}).get('running')
+                or states[0].get('restartCount') != 0
+                or pod['spec']['containers'][0]['image'] != native.PYTHON_IMAGE):
+            raise ValueError('Trusted phase collector is not the original ready execution')
+        return {'pod_uid': pod['metadata']['uid'], 'container_id': states[0]['containerID']}
 
     def provider(self):
         # Known, synthetic remote wait; no claim about provider-executed model work.
@@ -126,7 +139,13 @@ class PhaseLab(comparison.ComparisonLab):
                    'known_processes': self.known[scope]}
         before = time.monotonic_ns()
         try:
+            # An API deletion may precede process termination. A still-open
+            # exec must never keep sampling a retired or replaced collector.
+            if self.collector_identity() != self.collector_subject:
+                raise ValueError('Trusted phase collector execution changed')
             observation = self.collector.request(request)
+            if self.collector_identity() != self.collector_subject:
+                raise ValueError('Trusted phase collector changed during the observation')
             self.session.sample(scope, observation, before, time.monotonic_ns())
             self.known[scope] = observation['processes']
             if observation['status'] != 'observed' and not missing:
@@ -134,6 +153,7 @@ class PhaseLab(comparison.ComparisonLab):
             return observation
         except Exception:
             self.session.failed = True
+            self.collector.close()
             raise
 
     def common(self, name):

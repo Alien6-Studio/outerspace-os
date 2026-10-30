@@ -11,11 +11,11 @@
     },
     "kubelet": {
       "repo": "kubernetes/kubernetes",
-      "version": "1.36.5",
-      "commit": "ad950d1cc78b0183c476bd4d3f1934c104229727",
-      "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/ad950d1cc78b0183c476bd4d3f1934c104229727",
-      "sha256": "6d2bc7ef75ec9927dd7e6ff3fe47332a1d58b2f6171606e6a63940b02b055122",
-      "size": 39950833
+      "version": "1.36.6",
+      "commit": "1b2171b110bb2a2542e1322035c6583ec86eb976",
+      "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/1b2171b110bb2a2542e1322035c6583ec86eb976",
+      "sha256": "53f24f30a8d3db882e3965d8296f57552cef170a9972e1c0d5b3f3d363505c68",
+      "size": 39957606
     },
     "crictl": {
       "repo": "kubernetes-sigs/cri-tools",
@@ -52,6 +52,11 @@
       "url": "https://go.dev/dl/go1.24.4.src.tar.gz",
       "sha256": "5a86a83a31f9fa81490b8c5420ac384fd3d95a3e71fba665c7b3f95d1dfef2b4",
       "size": 30788576
+    },
+    "go1.26.10": {
+      "url": "https://go.dev/dl/go1.26.10.src.tar.gz",
+      "sha256": "fd63e883ba2f2bfca93c1646b31ebef63e2b1e4d2b317c9789d976a68d81f36f",
+      "size": 34164741
     }
   },
   "cargo_git_sources": {
@@ -281,6 +286,82 @@
       "for_crates": [
         "3268f3d866458b787f390cf61f4bbb563b922d091359f9608842999eaee3943c"
       ]
+    },
+    {
+      "name": "tokio-rs/valuable",
+      "commit": "e89de8805f524aefafdbcc1fcd1b20ecfd0d22b6",
+      "url": "https://codeload.github.com/tokio-rs/valuable/tar.gz/e89de8805f524aefafdbcc1fcd1b20ecfd0d22b6",
+      "sha256": "2e3cf5745afacfd52045971842e8abfed252d914693543770a87cfa0d2b84675",
+      "size": 41917,
+      "for_crates": [
+        "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
+      ],
+      "content_matches": {
+        "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d": {
+          "source_directory": "valuable",
+          "packaging_files": {
+            "Cargo.toml": "995a2454b4e3e583124d60b694e106ebd193b9742df3e050a6f49e5801b3597b",
+            "Cargo.lock": "fea5e41d2befef0b42734010a85f95548b5255ff1e4ee2dd2e6827adb8fe5f3e"
+          },
+          "notice_paths": [
+            "LICENSE"
+          ]
+        }
+      }
+    },
+    {
+      "name": "getsentry/symbolic",
+      "commit": "032b134a3f45316bf37accd29712d832557e55af",
+      "url": "https://codeload.github.com/getsentry/symbolic/tar.gz/032b134a3f45316bf37accd29712d832557e55af",
+      "sha256": "30133491d5d577c226d314291ca5ce4668ede02527a044089727921d9a54030a",
+      "size": 2477468,
+      "for_crates": [
+        "1cccfffbc6bb3bb2d3a26cd2077f4d055f6808d266f9d4d158797a4c60510dfe"
+      ],
+      "content_matches": {
+        "1cccfffbc6bb3bb2d3a26cd2077f4d055f6808d266f9d4d158797a4c60510dfe": {
+          "source_directory": "symbolic-common",
+          "packaging_files": {
+            "Cargo.toml": "2f41830db977392f3dca9f147ea27e9ba78d796544bdca7c3c88824d68666c23"
+          },
+          "notice_paths": [
+            "LICENSE"
+          ]
+        }
+      }
+    },
+    {
+      "name": "retep998/winapi-rs",
+      "commit": "9497609ef44cc9bcd16cd2411c0ee6ccaf5483aa",
+      "url": "https://codeload.github.com/retep998/winapi-rs/tar.gz/9497609ef44cc9bcd16cd2411c0ee6ccaf5483aa",
+      "sha256": "a31a5a37536489a2f6136bdbc32a0c6d2d454150c528c081e40fec6c438ca70e",
+      "size": 8126403,
+      "for_crates": [
+        "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6",
+        "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
+      ],
+      "content_matches": {
+        "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6": {
+          "source_directory": "i686",
+          "packaging_files": {
+            "Cargo.toml": "9652222664ffc7e2a26fdcdebdce0917a455b39d8fbcbf451bf0b011a3067bf7"
+          },
+          "notice_paths": [
+            "LICENSE-APACHE",
+            "LICENSE-MIT"
+          ]
+        },
+        "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f": {
+          "source_directory": "x86_64",
+          "packaging_files": {
+            "Cargo.toml": "a88605a11db5def9b6cf73398e83b3edb72228cb43ea935729fac5cd33cec22c"
+          },
+          "notice_paths": [
+            "LICENSE-APACHE",
+            "LICENSE-MIT"
+          ]
+        }
+      }
     }
   ]
 }

@@ -42,7 +42,15 @@ HARNESS_INPUTS = ['tests/harness/enrollment.py', 'tests/harness/enrollment-vm.py
                   'src/image/mkosi.extra/etc/containerd/config.toml', 'src/image/mkosi.postinst']
 AGENT_NAMESPACE = 'outerspace-agents-v1'
 AGENT_NODE_LABEL = 'outerspace.sh.node-restriction.kubernetes.io/agent-profile'
-LAB_RENEWAL_DURATION = '4h'
+LAB_RENEWAL_DURATION = '9h'
+# Keep fixture PID 1 alive beyond any bounded CI job. A one-hour sleep can
+# exit normally during a long ARM run and kill an in-flight observer exec.
+# The harness owns teardown; this finite fallback is not a workload budget.
+LAB_WORKLOAD_LIFETIME_SECONDS = 12 * 60 * 60
+
+
+def lab_idle_command():
+    return ['sleep', str(LAB_WORKLOAD_LIFETIME_SECONDS)]
 
 
 def run(*args, data=None, check=True, env=None, timeout=900):
@@ -310,7 +318,7 @@ nodes:
 
     def extend_renewal_lifetime(self):
         # Short initial certificates trigger a real renewal promptly; renewed
-        # certificates must outlast the entire 120-minute CI job, including
+        # certificates must outlast the entire bounded CI job, including
         # their earliest 70%-lifetime renewal point. A second natural renewal
         # must not race the strict byte-for-byte cold-boot persistence check.
         name = 'kube-controller-manager-' + self.control_plane
@@ -364,9 +372,9 @@ nodes:
                 container['volumeMounts'] = [{'name': 'host', 'mountPath': '/host', 'readOnly': True,
                                               'mountPropagation': 'HostToContainer'}]
             return obj
-        self.apply(pod('probe', node, ['sleep', '3600'], root=True),
+        self.apply(pod('probe', node, lab_idle_command(), root=True),
                    pod('cpu', node, ['python3', '-u', '-c', (ROOT / 'tests/integration/cpu-smoke.py').read_text()]),
-                   pod('client', LAB + '-worker', ['sleep', '3600']),
+                   pod('client', LAB + '-worker', lab_idle_command()),
                    {'apiVersion': 'v1', 'kind': 'Service', 'metadata': {'name': 'cpu', 'namespace': LAB},
                     'spec': {'selector': {'app': 'cpu'}, 'ports': [{'port': 8080}]}},
                    {'apiVersion': 'networking.k8s.io/v1', 'kind': 'NetworkPolicy',
@@ -980,6 +988,7 @@ def main():
                 serving = serving_module.Serving(lab, node_name, run, wait_for)
                 serving.prepare()
                 serving.sample('initial')
+                serving.sample('sustained', requests=30, minimum_seconds=60)
                 serving.restart()
                 serving.drain_recover()
             def rotation():
@@ -1052,8 +1061,11 @@ def main():
                         result = lab.kube(*command, check=False)
                         (output / ('enrollment-' + name + '.json')).write_text(result.stdout)
                     if args.cpu_serving:
+                        for resource in ['pods', 'deployments']:
+                            result = lab.kube('-n', serving_module.NAMESPACE, 'get', resource, '-o', 'json', check=False)
+                            (output / ('enrollment-serving-' + resource + '.json')).write_text(result.stdout)
                         for container in ['verify-model', 'server']:
-                            result = lab.kube('-n', LAB, 'logs', 'deployment/inference', '-c', container,
+                            result = lab.kube('-n', serving_module.NAMESPACE, 'logs', 'deployment/inference', '-c', container,
                                               '--tail=500', '--timestamps', check=False)
                             (output / ('cpu-serving-final-' + container + '.log')).write_text(result.stdout + result.stderr)
                     if args.agent_isolation:

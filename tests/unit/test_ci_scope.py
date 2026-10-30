@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
 import importlib.util
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from unittest.mock import patch
 
@@ -14,6 +16,26 @@ spec.loader.exec_module(scope)
 
 
 class CIScopeTests(unittest.TestCase):
+    def test_required_gate_includes_native_and_parallel_phase_jobs(self):
+        workflow = (Path(__file__).resolve().parents[2] / '.github/workflows/ci.yml').read_text()
+        gate = workflow.split('  ci:\n', 1)[1]
+        self.assertIn('needs: [contracts, image, agent_phases]', gate)
+        script = textwrap.dedent(gate.split('        run: |\n', 1)[1])
+        for required in ['true', 'false']:
+            expected = 'success' if required == 'true' else 'skipped'
+            values = {'CONTRACTS': 'success', 'IMAGES_REQUIRED': required,
+                      'IMAGE_RESULT': expected, 'PHASE_RESULT': expected}
+            passed = subprocess.run(['bash', '-e', '-c', script], env={**os.environ, **values})
+            self.assertEqual(passed.returncode, 0)
+            for key in ['CONTRACTS', 'IMAGE_RESULT', 'PHASE_RESULT']:
+                for result in ['success', 'failure', 'cancelled', 'skipped']:
+                    if result == values[key]:
+                        continue
+                    with self.subTest(required=required, job=key, result=result):
+                        changed = {**values, key: result}
+                        failed = subprocess.run(['bash', '-e', '-c', script], env={**os.environ, **changed})
+                        self.assertNotEqual(failed.returncode, 0)
+
     def test_docs_only_can_skip_but_mixed_changes_cannot(self):
         docs = ['README.md', 'build/README.md', 'src/docs/architecture.md', '.github/ISSUE_TEMPLATE/bug_report.yml']
         self.assertFalse(scope.requires_images('pull_request', docs))

@@ -9,7 +9,7 @@ import re
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 spec = importlib.util.spec_from_file_location('enrollment', Path(__file__).resolve().parents[2] / 'tests/harness/enrollment.py')
 enrollment = importlib.util.module_from_spec(spec)
@@ -70,6 +70,26 @@ class EnrollmentEvidenceTests(unittest.TestCase):
         # Kubernetes may rotate with 30% of certificate lifetime remaining.
         earliest_renewal = config.duration_seconds(enrollment.LAB_RENEWAL_DURATION) * 0.7
         self.assertGreater(earliest_renewal, max(map(int, timeouts)) * 60)
+
+    def test_observer_client_and_phase_worker_outlive_the_bounded_job(self):
+        maximum_job = max(map(int, re.findall(r'^\s+timeout-minutes:\s*(\d+)\s*$',
+            (enrollment.ROOT / '.github/workflows/ci.yml').read_text(), re.MULTILINE))) * 60
+        lab = object.__new__(enrollment.Lab)
+        lab.apply, lab.wait_workloads = Mock(), Mock()
+        lab.workloads('test-worker')
+        pods = {obj['metadata']['name']: obj for call in lab.apply.call_args_list
+                for obj in call.args if obj['kind'] == 'Pod'}
+        phases = enrollment.load_script('agent-phase-benchmark')
+        phase_lab = object.__new__(phases.PhaseLab)
+        phase_lab.apply, phase_lab.kube, phase_lab.register = Mock(), Mock(), Mock()
+        phase_lab.create('phase-worker')
+        pods['phase-worker'] = phase_lab.apply.call_args.args[0]
+        for name in ['probe', 'client', 'phase-worker']:
+            command = pods[name]['spec']['containers'][0]['command']
+            with self.subTest(pod=name):
+                self.assertEqual(command[0], 'sleep')
+                self.assertGreater(int(command[1]), maximum_job)
+                self.assertLessEqual(int(command[1]), 24 * 60 * 60)
 
     def test_pressure_events_can_be_recorded_on_the_container_below_the_pod_limit(self):
         before = {'path': 'pod', 'files': {'cpu.max': '50000 100000', 'memory.max': '134217728',

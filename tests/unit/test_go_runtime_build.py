@@ -89,3 +89,74 @@ class GoRuntimeBuildTests(unittest.TestCase):
         for name in ['../module', '/module', 'module/../other', 'module//other', 'module?query']:
             with self.subTest(name=name), self.assertRaises(ValueError):
                 builder.go_dependencies.escape(name)
+
+    def test_containerd_requires_all_three_targets_and_pinned_build_tags(self):
+        self.lock = builder.read_lock('containerd')
+        module = builder.COMPONENTS['containerd']['module']
+        report = {'schema': 1, 'architecture': 'arm64', 'source': self.lock['source'],
+                  'go_source': self.lock['go_source'], 'compiler_input': self.lock['toolchains']['arm64'],
+                  'recipe_sha256': builder.sha256(builder.recipe_path('containerd')),
+                  'builder_script_sha256': builder.sha256(Path(builder.__file__)),
+                  'extraction_script_sha256': builder.sha256(Path(builder.runtime_build.__file__)),
+                  'dependency_script_sha256': builder.sha256(Path(builder.go_dependencies.__file__)),
+                  'dependency_lock_sha256': self.lock['dependency_lock_sha256'],
+                  'source_inputs': builder.go_dependencies.build_inputs(builder.go_dependencies.read_lock(
+                      self.lock['dependency_lock_sha256'], 'containerd')),
+                  'builder_image_id': 'sha256:' + 'a' * 64, 'additional_binaries': {}}
+        for name in builder.COMPONENTS['containerd']['binaries']:
+            (self.root / name).write_bytes(name.encode())
+            info = (self.info.replace('sigs.k8s.io/cri-tools', module).replace('cmd/crictl', 'cmd/' + name)
+                    + '\tbuild\t-tags=' + ','.join(builder.build_tags('containerd', name)) + '\n')
+            record = {'sha256': builder.sha256(self.root / name), 'go_version_m': info,
+                      'build_info': builder.build_info(info, 'arm64', self.lock, name)}
+            if name == 'containerd':
+                report.update(binary_sha256=record['sha256'], go_version_m=info, build_info=record['build_info'])
+            else:
+                report['additional_binaries'][name] = record
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                builder.build_info(info.replace('static_build', 'unapproved'), 'arm64', self.lock, name)
+        (self.root / 'LICENSE').write_text('Synthetic notice')
+        report['license_sha256'] = builder.sha256(self.root / 'LICENSE')
+        path = self.root / 'runtime-build.json'
+        path.write_text(json.dumps(report))
+        builder.verify(self.root, 'arm64', component='containerd')
+        for name in ['ctr', 'containerd-shim-runc-v2']:
+            changed = copy.deepcopy(report)
+            del changed['additional_binaries'][name]
+            path.write_text(json.dumps(changed))
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'missing an executable'):
+                builder.verify(self.root, 'arm64', component='containerd')
+        path.write_text(json.dumps(report))
+        (self.root / 'ctr').write_bytes(b'changed')
+        with self.assertRaisesRegex(ValueError, 'executable differs'):
+            builder.verify(self.root, 'arm64', component='containerd')
+
+    def test_historical_module_metadata_must_be_pinned_without_conflicting_proxy_bytes(self):
+        dependencies = builder.go_dependencies
+        lock = builder.read_lock('containerd')
+        original = dependencies.read_lock(lock['dependency_lock_sha256'], 'containerd')
+        self.assertTrue(original['graph_metadata'])
+        for change in ['checksum', 'url', 'duplicate', 'path', 'zip']:
+            config = copy.deepcopy(original)
+            record = config['graph_metadata'][0]
+            if change == 'checksum':
+                record['go_mod_sum'] = 'h1:changed'
+            elif change == 'url':
+                record['files']['mod']['url'] = 'https://example.invalid/go.mod'
+            elif change == 'duplicate':
+                config['graph_metadata'].append(copy.deepcopy(record))
+            elif change == 'path':
+                record['path'] = '../escape'
+            else:
+                record['files']['zip'] = record['files']['mod']
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                dependencies.validate(config)
+        config = copy.deepcopy(original)
+        record = copy.deepcopy(config['modules'][0])
+        record['files'] = {'mod': record['files']['mod']}
+        config['graph_metadata'].append(record)
+        before = dependencies.source_entries(config)
+        record['files']['mod']['sha256'] = 'a' * 64
+        with self.assertRaisesRegex(ValueError, 'Conflicting'):
+            dependencies.source_entries(config)
+        self.assertEqual(len(before), len(dependencies.source_entries(original)))

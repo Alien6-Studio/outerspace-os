@@ -154,6 +154,56 @@ class SupplementalNoticeTests(unittest.TestCase):
             config.clear()
             config.update(before)
 
+    def metadata_notice(self, original, later):
+        self.manifest = original
+        self.packaging = b'# normalized\n' + original
+        self.crate_files = [('library-1.0.0/Cargo.toml', self.packaging),
+                            ('library-1.0.0/Cargo.toml.orig', original),
+                            ('library-1.0.0/src/lib.rs', b'pub fn library() {}\n')]
+        self.replace_crate(self.crate_files)
+        config = self.later_notice()
+        config['packaging_files']['Cargo.toml'] = hashlib.sha256(self.packaging).hexdigest()
+        self.supplement.update(self.object([
+            ('repo/library/Cargo.toml', later), self.repo_files[1], self.repo_files[2]]))
+        config['metadata_changes'] = {'Cargo.toml.orig': {
+            'published_sha256': hashlib.sha256(original).hexdigest(),
+            'upstream_sha256': hashlib.sha256(later).hexdigest()}}
+        return config
+
+    def test_notice_with_dev_metadata_preserves_both_manifests_and_matches_code(self):
+        original = self.manifest + b'\n[dev-dependencies]\nrand="0.8"\n'
+        self.metadata_notice(original, original.replace(b'"0.8"', b'"0.9"'))
+        proof = self.prove()[self.crate['sha256']]
+        self.assertEqual(proof['basis'], 'later-notice-with-metadata-differences')
+        self.assertEqual(set(proof['matched_files']), {'src/lib.rs'})
+        change = proof['metadata_changes']['Cargo.toml.orig']
+        self.assertNotEqual(change['published']['sha256'], change['upstream']['sha256'])
+
+    def test_metadata_cannot_hide_changed_runtime_build_dependencies_or_license(self):
+        original = self.manifest + b'\n[dependencies]\nserde="1"\n[build-dependencies]\ncc="1"\n'
+        later = [original.replace(b'serde="1"', b'serde="2"'),
+                 original.replace(b'cc="1"', b'cc="2"'),
+                 original.replace(b'license="MIT"', b'license="GPL-3.0-only"')]
+        for value in later:
+            with self.subTest(manifest=value):
+                # Each case needs a fresh content-match fixture before adding
+                # the later-notice mechanism.
+                self.setUp()
+                self.metadata_notice(original, value)
+                with self.assertRaisesRegex(ValueError, 'runtime/build metadata'):
+                    self.prove()
+
+    def test_metadata_cannot_exempt_code_or_unpinned_bytes(self):
+        original = self.manifest + b'\n[dev-dependencies]\nrand="0.8"\n'
+        config = self.metadata_notice(original, original.replace(b'"0.8"', b'"0.9"'))
+        config['metadata_changes']['src/lib.rs'] = {'published_sha256': 'a'*64, 'upstream_sha256': 'b'*64}
+        with self.assertRaisesRegex(ValueError, 'Only an original Cargo'):
+            self.prove()
+        del config['metadata_changes']['src/lib.rs']
+        config['metadata_changes']['Cargo.toml.orig']['upstream_sha256'] = 'a'*64
+        with self.assertRaisesRegex(ValueError, 'reviewed byte identities'):
+            self.prove()
+
     def release_payload(self):
         self.replace_crate(self.crate_files + [('library-1.0.0/maven/component.aar', b'generated payload')])
         files = [(name.split('/', 1)[1], content) for name, content in self.crate_files]

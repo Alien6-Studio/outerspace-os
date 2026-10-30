@@ -10,12 +10,14 @@
       ],
       "artifacts": {
         "amd64": {
-          "url": "https://github.com/containerd/containerd/releases/download/v2.3.7/containerd-2.3.7-linux-amd64.tar.gz",
-          "sha256": "09a1b669ac6d21e7e24c3c33a9805b48987ba5845e8d88f039c47013a0c0025c"
+          "source_build": true,
+          "url": "https://codeload.github.com/containerd/containerd/tar.gz/6f589cf13dc01a5b493911355427e05b2ff005d7",
+          "sha256": "80ac465c51750299f4778a19fa1a37f9d9d0a82acd9ec6435488008837caf51d"
         },
         "arm64": {
-          "url": "https://github.com/containerd/containerd/releases/download/v2.3.7/containerd-2.3.7-linux-arm64.tar.gz",
-          "sha256": "e08530c6c8a23c612606da5d2832aed9bed8fc7f8c1b41df0f148a701b931d69"
+          "source_build": true,
+          "url": "https://codeload.github.com/containerd/containerd/tar.gz/6f589cf13dc01a5b493911355427e05b2ff005d7",
+          "sha256": "80ac465c51750299f4778a19fa1a37f9d9d0a82acd9ec6435488008837caf51d"
         }
       }
     },

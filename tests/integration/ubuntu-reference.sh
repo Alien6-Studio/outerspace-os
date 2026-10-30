@@ -15,8 +15,8 @@ apt-get update
 apt-get install -y --no-install-recommends runc=1.3.4-0ubuntu1~24.04.1 \
     linux-modules-extra-6.8.0-147-generic=6.8.0-147.147 conntrack ethtool
 architecture=$(dpkg --print-architecture)
-[[ "$architecture" != amd64 ]] || architecture=x86-64
-python3 "$seed/install-components.py" / "$architecture" "$seed/components.lock.json" "$seed/cache"
+python3 "$seed/reference-runtimes.py" install --root / --architecture "$architecture" \
+    --source "$seed/runtimes"
 install -d /var/lib/outerspace /var/lib/kubelet /etc/containerd /usr/lib/outerspace \
     /usr/share/outerspace/apparmor
 cp "$seed/containerd.toml" /etc/containerd/config.toml

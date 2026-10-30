@@ -63,7 +63,8 @@ def extract_binaries(archive, destination, allowed):
         raise ValueError(f"Missing binaries: {set(allowed) - installed}")
 
 
-def install(root, architecture, lockfile, cache=None, runtime_directory=None, go_runtime_directory=None):
+def install(root, architecture, lockfile, cache=None, runtime_directory=None, go_runtime_directory=None,
+            containerd_directory=None):
     arch = ARCHES[architecture]
     lock = json.loads(lockfile.read_text())
     destination = root / "usr/bin"
@@ -75,17 +76,23 @@ def install(root, architecture, lockfile, cache=None, runtime_directory=None, go
                 import runtime_build
                 import go_runtime_build
                 builders = {'dfdaemon': (runtime_build, runtime_directory),
-                            'crictl': (go_runtime_build, go_runtime_directory)}
+                            'crictl': (go_runtime_build, go_runtime_directory),
+                            'containerd': (go_runtime_build, containerd_directory)}
                 if name not in builders or builders[name][1] is None:
                     raise ValueError('Missing approved source runtime build')
                 builder, directory = builders[name]
-                report = builder.verify(directory, arch)
+                report = builder.verify(directory, arch, **({'component': name} if name != 'dfdaemon' else {}))
                 if (component['version'] != report['source']['version']
                         or artifact != {'source_build': True, 'url': report['source']['url'],
                                         'sha256': report['source']['sha256']}):
                     raise ValueError('Source runtime differs from component lock')
-                shutil.copyfile(directory / name, destination / name)
-                (destination / name).chmod(0o755)
+                names = [name] + sorted(report.get('additional_binaries', {}))
+                expected = {PurePosixPath(p).name for p in component.get('binaries', [name])}
+                if set(names) != expected:
+                    raise ValueError('Source runtime executable list differs from component lock')
+                for executable in names:
+                    shutil.copyfile(directory / executable, destination / executable)
+                    (destination / executable).chmod(0o755)
                 licenses = root / 'usr/share/licenses' / name
                 licenses.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(directory / 'LICENSE', licenses / 'LICENSE')
@@ -116,4 +123,5 @@ if __name__ == "__main__":
     else:
         install(Path(sys.argv[1]), sys.argv[2], Path(sys.argv[3]), Path(sys.argv[4]),
                 Path(sys.argv[5]) if len(sys.argv) > 5 else None,
-                Path(sys.argv[6]) if len(sys.argv) > 6 else None)
+                Path(sys.argv[6]) if len(sys.argv) > 6 else None,
+                Path(sys.argv[7]) if len(sys.argv) > 7 else None)

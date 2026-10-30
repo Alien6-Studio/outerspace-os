@@ -52,10 +52,12 @@ def fetch(cache, arch):
         list(pool.map(lambda e: sources.fetch(cache / 'runtime-tools', e), lock['targets'][arch]['tools'].values()))
 
 
-def extract(archive, destination, prefix=None):
+def extract(archive, destination, prefix=None, *, directory_links=False):
     """Extract only regular source files and directories under one known root."""
     destination.mkdir(parents=True, exist_ok=False)
-    seen, roots = set(), set()
+    if directory_links and prefix is not None:
+        raise ValueError('Directory aliases require the complete source archive')
+    seen, roots, aliases = set(), set(), []
     with tarfile.open(archive) as tar:
         for member in tar:
             path = PurePosixPath(member.name)
@@ -78,7 +80,15 @@ def extract(archive, destination, prefix=None):
                     if (PurePosixPath(member.linkname).is_absolute()
                             or not linked.startswith(path.parts[0] + '/')):
                         raise ValueError('Build source link escapes its approved archive')
-                    content = tar.getmember(linked)
+                    try:
+                        content = tar.getmember(linked)
+                    except KeyError:
+                        if not directory_links:
+                            raise ValueError('Build source link has no archived target') from None
+                        content = None
+                    if directory_links and (content is None or content.isdir()):
+                        aliases.append((target, destination / PurePosixPath(*PurePosixPath(linked).parts[1:])))
+                        continue
                     if not content.isfile():
                         raise ValueError('Build source link must target a regular archived file')
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -89,6 +99,21 @@ def extract(archive, destination, prefix=None):
                 raise ValueError('Unsupported build source entry: ' + str(archive) + ':' + member.name)
     if len(roots) != 1:
         raise ValueError('Build source must have a single archive root')
+    # Materialize directory aliases only after ordinary files are extracted.
+    # No symlink is created, and cycles/dangling aliases cannot escape or hang.
+    while aliases:
+        pending = []
+        for target, source in aliases:
+            if source.is_dir() and source.resolve().is_relative_to(destination.resolve()):
+                if target.is_relative_to(source):
+                    raise ValueError('Recursive build source directory alias')
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(source, target)
+            else:
+                pending.append((target, source))
+        if len(pending) == len(aliases):
+            raise ValueError('Unresolved build source directory alias')
+        aliases = pending
 
 
 def vendor(cache, destination, cargo, git_sources):

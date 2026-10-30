@@ -12,9 +12,46 @@ sys.path.insert(0, str(harness))
 spec = importlib.util.spec_from_file_location('comparison', harness / 'worker-comparison.py')
 comparison = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(comparison)
+reference_runtimes = comparison.native.load_script('reference-runtimes')
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_reference_reuses_exact_disk_binaries_and_rejects_altered_payloads(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            source = base / 'payload'; source.mkdir()
+            lock = base / 'components.json'; lock.write_text('{}')
+            identity = {'architecture': 'arm64', 'raw_image_sha256': 'a' * 64,
+                        'components_lock_sha256': reference_runtimes.digest(lock)}
+            records = []
+            for name, component in reference_runtimes.RUNTIMES.items():
+                (source / name).write_bytes(('qualified bytes of ' + name).encode())
+                records.append({'path': '/usr/bin/' + name, 'component': component,
+                                'sha256': reference_runtimes.digest(source / name)})
+            evidence = {'status': 'inventoried', 'identity': identity, 'runtimes': records}
+            manifest = reference_runtimes.inventory(identity, evidence, lock)
+            (source / 'runtimes.json').write_text(comparison.json.dumps(manifest))
+            reference_runtimes.install(source, base / 'guest', 'arm64')
+            for name in reference_runtimes.RUNTIMES:
+                self.assertEqual((base / 'guest/usr/bin' / name).read_bytes(), (source / name).read_bytes())
+            for changed in [{**evidence, 'identity': {**identity, 'raw_image_sha256': 'b' * 64}},
+                            {**evidence, 'runtimes': records[:-1]},
+                            {**evidence, 'runtimes': records + [records[0]]}]:
+                with self.subTest(evidence=changed), self.assertRaises(ValueError):
+                    reference_runtimes.inventory(identity, changed, lock)
+            with self.assertRaises(ValueError):
+                reference_runtimes.install(source, base / 'wrong-arch', 'amd64')
+            for symlink in [False, True]:
+                target = source / 'ctr'; target.unlink()
+                if symlink:
+                    target.symlink_to(source / 'containerd')
+                else:
+                    target.write_bytes(b'unqualified replacement')
+                destination = base / ('rejected-' + str(symlink))
+                with self.subTest(symlink=symlink), self.assertRaises(ValueError):
+                    reference_runtimes.install(source, destination, 'arm64')
+                self.assertFalse(destination.exists())
+
     def samples(self):
         return [{'uptime_seconds': 100 + 10 * n,
                  'cpu_ticks': [100 * n, 0, 0, 0, 0, 0, 0, 0, 99 * n, 0],

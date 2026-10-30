@@ -108,17 +108,20 @@ def verified_runtimes(root, components, architecture, cache, output=None):
     result = []
     for name, version, artifact, member, path, archive in runtime_files(components, architecture):
         if artifact.get('source_build'):
-            if name not in ['dfdaemon', 'crictl'] or output is None:
+            if name not in ['dfdaemon', 'crictl', 'containerd'] or output is None:
                 raise ValueError('Missing source runtime build evidence')
             builder = runtime_build if name == 'dfdaemon' else go_runtime_build
-            receipt = builder.verify_receipt(output, architecture, packaged=True)
+            receipt = builder.verify_receipt(output, architecture, packaged=True,
+                **({'component': name} if name != 'dfdaemon' else {}))
+            expected = (receipt['binary_sha256'] if Path(path).name == name else
+                        receipt.get('additional_binaries', {}).get(Path(path).name, {}).get('sha256'))
             installed = root / path.lstrip('/')
             if (installed.is_symlink() or not installed.resolve().is_relative_to(root.resolve())
-                    or sha256(installed) != receipt['binary_sha256']
+                    or sha256(installed) != expected
                     or (name == 'dfdaemon' and runtime_build.audit_data(installed, architecture) != receipt['dependencies'])):
                 raise ValueError('Installed runtime differs from verified source build')
             result.append({'component': name, 'version': version, 'path': path,
-                           'sha256': receipt['binary_sha256'], 'artifact': artifact})
+                           'sha256': expected, 'artifact': artifact})
             continue
         source = cache / artifact['sha256']
         if source.is_symlink() or not source.is_file() or sha256(source) != artifact['sha256']:

@@ -419,9 +419,53 @@
           ]
         }
       }
+    },
+    {
+      "name": "zowens/crc32c",
+      "commit": "66c7c4905a6cf624cb1e1cbc21e7dd3cbce6faa1",
+      "url": "https://codeload.github.com/zowens/crc32c/tar.gz/66c7c4905a6cf624cb1e1cbc21e7dd3cbce6faa1",
+      "sha256": "048516a99c48d101e8781bc49a23f70ed07d583c3f82e1f6b2139339b7cb3249",
+      "size": 14684,
+      "for_crates": [
+        "3a47af21622d091a8f0fb295b88bc886ac74efcc613efc19f5d0b21de5c89e47"
+      ],
+      "notice_backfills": {
+        "3a47af21622d091a8f0fb295b88bc886ac74efcc613efc19f5d0b21de5c89e47": {
+          "publication_commit": "254a861f7cc71bfe455e86f0e1d86e3c83c33390",
+          "source_directory": ".",
+          "packaging_files": {
+            "Cargo.toml": "ffe61d0e558aff076c6be396c1a1cd46bcaa9b56a0f0e9d609767fcdc7eb1d6d"
+          },
+          "notice_paths": [
+            "LICENSE-APACHE",
+            "LICENSE-MIT"
+          ],
+          "evidence": [
+            "https://github.com/zowens/crc32c/commit/66c7c4905a6cf624cb1e1cbc21e7dd3cbce6faa1",
+            "https://github.com/zowens/crc32c/compare/254a861f7cc71bfe455e86f0e1d86e3c83c33390...66c7c4905a6cf624cb1e1cbc21e7dd3cbce6faa1"
+          ],
+          "metadata_changes": {
+            ".github/workflows/build.yml": {
+              "published_sha256": "cc4b34ab10fbb5c284275532d4d9f58d860a33c8ce3c4f8cf677b2126be5ab30",
+              "upstream_sha256": "ce41f2c16cf416785a38261339b380c39a97bf4797c47b32c3c6373b26875fd3"
+            },
+            "Cargo.toml.orig": {
+              "published_sha256": "99342c77e539bf3d549262dadd7d7ed646ce309b6dabde67a5a35b7c0faaca31",
+              "upstream_sha256": "4a3bc6fb744cb5dee3c3e7c620c28e8b17cded6e0e6e5fee4442ec1e8acef9a9"
+            }
+          }
+        }
+      }
     }
   ],
   "go_dependency_updates": {
-    "crictl": "c4504ec94e06694281539cc2dbe6e1d66a4d2c0bb2c3e9640138fce7bc3cde1e"
+    "crictl": "c4504ec94e06694281539cc2dbe6e1d66a4d2c0bb2c3e9640138fce7bc3cde1e",
+    "containerd": "d934211c9daf0d3cc1ba5d68da23d90bba276d495db24cb870624250556fe77d"
+  },
+  "embedded_go_notices": {
+    "ebd95653aaca6182184a1b9b309a65d55eb4c7c833c5e790aee11efd73d4722c": [
+      "github.com/kr/logfmt@v0.0.0-20140226030751-b84e30acd515/Readme",
+      "github.com/kr/logfmt@v0.0.0-20140226030751-b84e30acd515/unquote.go"
+    ]
   }
 }

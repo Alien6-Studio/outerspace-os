@@ -12,6 +12,7 @@ import shutil
 import tarfile
 import tempfile
 import unittest
+import zipfile
 from unittest.mock import patch
 
 from image_fixtures import identity, BUILD_TOOLS
@@ -27,6 +28,24 @@ spec.loader.exec_module(apt_inputs)
 
 
 class AptSourceTests(unittest.TestCase):
+    def test_shared_go_main_module_requires_source_proof_for_every_binary(self):
+        paths = ['/usr/bin/containerd', '/usr/bin/ctr']
+        raw = {'artifacts': [{'id': 'main', 'type': 'go-module', 'name': 'example.org/runtime',
+                'version': 'UNKNOWN', 'locations': [{'path': p} for p in paths], 'metadata': {}}]}
+        proofs = [{'main_module': 'example.org/runtime', 'path': p,
+                   'source_sha256': 'a' * 64, 'module_version': 'v1.0.0'} for p in paths]
+        def compose(selected):
+            return supply_chain.compose_native(raw, {'packages': [], 'sources': []}, {'artifacts': []},
+                {'packages': []}, {'entries': []}, go_build=selected)
+        result = compose(proofs)['artifacts'][0]
+        self.assertEqual(result['version'], 'v1.0.0')
+        self.assertEqual(result['metadata']['outerspaceSourceBuild'], proofs)
+        self.assertEqual(raw['artifacts'][0]['version'], 'UNKNOWN')
+        for changed in [proofs[:1], [proofs[0], proofs[0]],
+                        [proofs[0], {**proofs[1], 'source_sha256': 'b' * 64}]]:
+            with self.subTest(proofs=changed), self.assertRaises(ValueError):
+                compose(changed)
+
     def test_newer_spdx_identifiers_remain_declared_names_in_cyclonedx_16(self):
         original = {'components': [{'licenses': [{'license': {'id': 'MIT'}},
                                   {'license': {'id': 'SMAIL-GPL'}}, {'license': {'id': 'Artistic-dist'}}]}]}
@@ -67,6 +86,17 @@ class AptSourceTests(unittest.TestCase):
 
 
 class SourceArchiveTests(unittest.TestCase):
+    def test_embedded_notice_requires_an_explicit_pinned_path(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'source.zip'
+            with zipfile.ZipFile(path, 'w') as archive:
+                archive.writestr('example.org/pkg@v1/Readme', b'Original embedded notice')
+            self.assertEqual(supply_chain.sources.license_evidence(path)['notices'], [])
+            result = supply_chain.sources.license_evidence(path, ['example.org/pkg@v1/Readme'])
+            self.assertEqual(result['notices'][0]['sha256'], hashlib.sha256(b'Original embedded notice').hexdigest())
+            with self.assertRaisesRegex(ValueError, 'absent'):
+                supply_chain.sources.license_evidence(path, ['example.org/pkg@v1/missing'])
+
     def archive(self, root, entries):
         path = root / 'source.tar.gz'
         with tarfile.open(path, 'w:gz') as tar:
@@ -75,6 +105,32 @@ class SourceArchiveTests(unittest.TestCase):
                 member.size = len(data)
                 tar.addfile(member, io.BytesIO(data))
         return path
+
+    @unittest.skipUnless(shutil.which('zstd'), 'Source archive integration requires zstd')
+    def test_identical_source_bytes_keep_each_pinned_origin(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); cache = root / 'cache'; cache.mkdir()
+            cargo = b'version=4\n[[package]]\nname="workspace"\nversion="1.0.0"\n'
+            path = self.archive(root, {'project/Cargo.lock': cargo})
+            digest = security.sha256(path); shutil.copyfile(path, cache / digest)
+            source = {'sha256': digest, 'url': 'https://example.invalid/source', 'size': path.stat().st_size}
+            shared = b'one metadata object for two pinned origins'
+            digest = hashlib.sha256(shared).hexdigest(); (cache / digest).write_bytes(shared)
+            first = {'sha256': digest, 'size': len(shared), 'url': 'https://example.invalid/v1.mod'}
+            second = {**first, 'url': 'https://example.invalid/v2.mod'}
+            lockfile = root / 'sources.lock.json'
+            security.write_json(lockfile, {'sources': {'dfdaemon': source, 'v1': first, 'v2': second}})
+            entries = [{**source, 'kind': 'runtime-source', 'name': 'dfdaemon',
+                        'cargo_lock_sha256': hashlib.sha256(cargo).hexdigest()},
+                       {**first, 'kind': 'go-module-metadata'}, {**second, 'kind': 'go-module-metadata'}]
+            index = {'schema': 1, 'source_lock_sha256': security.sha256(lockfile), 'entries': entries}
+            security.write_json(root / 'source-index.json', index)
+            supply_chain.sources.bundle(cache, root, index)
+            self.assertEqual(supply_chain.sources.verify(root, {'sources': []}, lockfile)['objects'], 2)
+            entries.pop()
+            security.write_json(root / 'source-index.json', index)
+            with self.assertRaisesRegex(ValueError, 'incomplete or changed'):
+                supply_chain.sources.verify(root, {'sources': []}, lockfile)
 
     def test_cargo_transitive_input_requires_checksums_and_approved_git_origin(self):
         with tempfile.TemporaryDirectory() as temporary:

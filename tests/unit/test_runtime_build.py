@@ -86,3 +86,24 @@ class RuntimeBuildTests(unittest.TestCase):
         for number, link in enumerate(['/etc/passwd', '../../../outside']):
             with self.subTest(link=link), self.assertRaisesRegex(ValueError, 'escapes'):
                 runtime_build.extract(self.archive(link), self.root / str(number), Path('package'))
+
+    def test_directory_aliases_are_materialized_without_links_and_reject_cycles(self):
+        def archive(links):
+            path = self.root / 'directories.tar'
+            with tarfile.open(path, 'w') as tar:
+                member = tarfile.TarInfo('project/original/nested/file'); member.size = 8
+                tar.addfile(member, io.BytesIO(b'original'))
+                for name, target in links:
+                    member = tarfile.TarInfo('project/' + name)
+                    member.type = tarfile.SYMTYPE; member.linkname = target
+                    tar.addfile(member)
+            return path
+        destination = self.root / 'valid'
+        runtime_build.extract(archive([('alias', 'original'), ('second', 'alias/nested')]),
+                              destination, directory_links=True)
+        self.assertEqual((destination / 'second/file').read_bytes(), b'original')
+        self.assertFalse(any(p.is_symlink() for p in destination.rglob('*')))
+        for n, links in enumerate([[('a', 'b'), ('b', 'a')], [('a', '../outside')],
+                                    [('original/recursive', '..')], [('a', 'missing')]]):
+            with self.subTest(links=links), self.assertRaises(ValueError):
+                runtime_build.extract(archive(links), self.root / str(n), directory_links=True)

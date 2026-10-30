@@ -209,7 +209,8 @@ def go_vendor_inventory(path):
 
 def collect(cache, apt_inputs=None):
     lock = json.loads(LOCK.read_text())
-    entries = [{**entry, 'name': name, 'kind': 'runtime-source' if 'commit' in entry else 'go-standard-library'}
+    entries = [{**entry, 'name': name, 'kind': 'runtime-source' if 'commit' in entry
+                else entry.get('source_kind', 'go-standard-library')}
                for name, entry in lock['sources'].items()]
     with ThreadPoolExecutor(max_workers=6) as pool:
         list(pool.map(lambda e: fetch(cache, e), entries))
@@ -231,9 +232,11 @@ def collect(cache, apt_inputs=None):
             entry['notice_provenance'] = supplemental_provenance(cache, entry, cargo)
         if entry['kind'] == 'runtime-source' and entry['name'] in ['containerd', 'kubelet', 'crictl']:
             entry['go_vendor_modules'] = go_vendor_inventory(cache / entry['sha256'])
+        if entry['kind'] == 'runtime-source' and entry['name'] == 'dfdaemon':
+            entry['cargo_lock_sha256'] = hashlib.sha256(archive_file(cache / entry['sha256'], 'Cargo.lock')).hexdigest()
     return {'schema': 1, 'source_lock_sha256': sha256(LOCK), 'entries': entries,
-            'cargo_relationship': 'Source-declared lockfile closure including target/build/test dependencies; '
-                                  'not proof that every crate is linked into the stripped upstream binary'}
+            'cargo_relationship': 'Archived source lock closure includes target/build/test dependencies. '
+                                  'The separate source-build receipt and disk scan identify the compiled runtime inventory.'}
 
 
 def verify(directory, apt_inputs, lock_path=LOCK):
@@ -287,6 +290,9 @@ def verify(directory, apt_inputs, lock_path=LOCK):
                             temporary.write(data); temporary.flush()
                             if runtime['name'] == 'dfdaemon':
                                 cargo_lock = cargo_inventory(Path(temporary.name), lock.get('cargo_git_sources', {}))
+                                if runtime.get('cargo_lock_sha256') != hashlib.sha256(
+                                        archive_file(Path(temporary.name), 'Cargo.lock')).hexdigest():
+                                    raise ValueError('Runtime Cargo lock digest differs from archived source')
                             elif runtime['name'] in ['containerd', 'kubelet', 'crictl']:
                                 if runtime.get('go_vendor_modules') != go_vendor_inventory(Path(temporary.name)):
                                     raise ValueError('Vendored Go source inventory differs')

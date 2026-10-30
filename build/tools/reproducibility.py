@@ -74,6 +74,8 @@ def compare(first, second):
                           'sbom.syft.json', 'sbom-evidence.json']} for p in (first, second)],
             'limits': 'File contents and recorded metadata are compared individually. Syft temporary source prefixes '
                       'in symlink destinations are normalized to image paths; raw scans are retained unchanged. '
+                      'Verified compiled runtime inputs may be reused from the build cache; this compares OS '
+                      'assembly, not independent recompilation of every component. '
                       'Disk/UKI hashes also cover '
                       'filesystem allocation, GPT UUIDs, filesystem timestamps and boot metadata. If only those '
                       'hashes differ, differing 64-KiB regions are reported; their metadata causes remain '

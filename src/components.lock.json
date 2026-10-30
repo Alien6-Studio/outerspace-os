@@ -52,20 +52,14 @@
       "version": "1.4.9",
       "artifacts": {
         "amd64": {
-          "url": "https://github.com/dragonflyoss/client/releases/download/v1.4.9/dragonfly-client-v1.4.9-x86_64-unknown-linux-gnu.tar.gz",
-          "sha256": "04aff1ea0d4380a95e7ff22174d223e470b59a0ab1e6b77dd62cab1576838b32",
-          "binaries": [
-            "dragonfly-client-v1.4.9-x86_64-unknown-linux-gnu/dfdaemon"
-          ],
-          "license": "dragonfly-client-v1.4.9-x86_64-unknown-linux-gnu/LICENSE"
+          "source_build": true,
+          "url": "https://codeload.github.com/dragonflyoss/client/tar.gz/1bdea4a11b7825a3bd727595e540ba2e7cacb151",
+          "sha256": "5ee3577ee369d2f09424ffd7fe60f04c37cd2cd95a894a22463b25ac0cbaad7c"
         },
         "arm64": {
-          "url": "https://github.com/dragonflyoss/client/releases/download/v1.4.9/dragonfly-client-v1.4.9-aarch64-unknown-linux-gnu.tar.gz",
-          "sha256": "8c19924a16bc4fc038421b46d7cf4a8f75c835086b73ee317a45e6f41e1dfec0",
-          "binaries": [
-            "dragonfly-client-v1.4.9-aarch64-unknown-linux-gnu/dfdaemon"
-          ],
-          "license": "dragonfly-client-v1.4.9-aarch64-unknown-linux-gnu/LICENSE"
+          "source_build": true,
+          "url": "https://codeload.github.com/dragonflyoss/client/tar.gz/1bdea4a11b7825a3bd727595e540ba2e7cacb151",
+          "sha256": "5ee3577ee369d2f09424ffd7fe60f04c37cd2cd95a894a22463b25ac0cbaad7c"
         }
       }
     }

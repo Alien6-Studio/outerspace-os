@@ -127,7 +127,8 @@ class SourceArchiveTests(unittest.TestCase):
                 lockfile = root / 'sources.lock.json'
                 security.write_json(lockfile, {'sources': {'dfdaemon': entry}})
                 index = {'schema': 1, 'source_lock_sha256': security.sha256(lockfile),
-                         'entries': [{**entry, 'name': 'dfdaemon', 'kind': 'runtime-source'}]}
+                         'entries': [{**entry, 'name': 'dfdaemon', 'kind': 'runtime-source',
+                                      'cargo_lock_sha256': hashlib.sha256(lock_text.encode()).hexdigest()}]}
                 security.write_json(root / 'source-index.json', index)
                 supply_chain.sources.bundle(cache, root, index)
                 if dependency:

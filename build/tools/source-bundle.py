@@ -333,12 +333,15 @@ def go_vendor_inventory(path):
         return modules
 
 
-def go_build_inputs(path):
+def go_build_inputs(path, names=('go.mod', 'go.sum', 'vendor/modules.txt')):
     result = {}
     with tarfile.open(path) as tar:
         members = tar.getmembers()
-        for name in ['go.mod', 'go.sum', 'vendor/modules.txt']:
+        for name in names:
             matches = [m for m in members if PurePosixPath(m.name).parts[1:] == PurePosixPath(name).parts]
+            if not matches and (name == 'go.work.sum' or name.endswith('/go.sum')):
+                result[name] = None  # Newly materialized by the pinned dependency update.
+                continue
             if len(matches) != 1 or not matches[0].isfile():
                 raise ValueError('Missing or ambiguous root Go build input: ' + name)
             result[name] = hashlib.file_digest(tar.extractfile(matches[0]), 'sha256').hexdigest()
@@ -376,7 +379,7 @@ def collect(cache, apt_inputs=None):
         if entry['kind'] == 'runtime-source' and entry['name'] in ['containerd', 'kubelet', 'crictl']:
             entry['go_vendor_modules'] = go_vendor_inventory(cache / entry['sha256'])
             if entry['name'] in updates:
-                entry['go_build_inputs'] = go_build_inputs(cache / entry['sha256'])
+                entry['go_build_inputs'] = go_build_inputs(cache / entry['sha256'], updates[entry['name']]['manifests'])
                 entry['upstream_go_build_inputs'] = entry['go_build_inputs']
                 entry['upstream_go_vendor_modules'] = entry['go_vendor_modules']
                 entry['go_build_inputs'] = go_dependencies.build_inputs(updates[entry['name']])
@@ -466,7 +469,7 @@ def verify(directory, apt_inputs, lock_path=LOCK):
                                     raise ValueError('Vendored Go source inventory differs')
                                 if updated:
                                     input_key = 'upstream_go_build_inputs' if updated else 'go_build_inputs'
-                                    if runtime.get(input_key) != go_build_inputs(Path(temporary.name)):
+                                    if runtime.get(input_key) != go_build_inputs(Path(temporary.name), updates[runtime['name']]['manifests']):
                                         raise ValueError('Compiled Go input digests differ from archived source')
                                     if (runtime.get('go_build_inputs') != go_dependencies.build_inputs(updates[runtime['name']])
                                             or runtime.get('go_vendor_modules') != go_dependencies.vendor_modules(updates[runtime['name']])):

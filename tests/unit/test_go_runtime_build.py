@@ -160,3 +160,37 @@ class GoRuntimeBuildTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Conflicting'):
             dependencies.source_entries(config)
         self.assertEqual(len(before), len(dependencies.source_entries(original)))
+
+    def test_kubelet_workspace_rejects_missing_manifests_and_external_replacements(self):
+        dependencies = builder.go_dependencies
+        lock = builder.read_lock('kubelet')
+        original = dependencies.read_lock(lock['dependency_lock_sha256'], 'kubelet')
+        self.assertEqual(len(original['workspace_modules']), 33)
+        self.assertEqual(dependencies.vendor_modules(original)['k8s.io/api']['workspace_source'],
+                         'staging/src/k8s.io/api')
+        for change in ['missing', 'escape', 'external', 'version', 'manifest']:
+            config = copy.deepcopy(original)
+            if change == 'missing':
+                del config['manifests']['staging/src/k8s.io/api/go.mod']
+            elif change == 'escape':
+                config['workspace_modules']['k8s.io/api'] = '../unapproved'
+            elif change == 'external':
+                config['manifests']['vendor/modules.txt'] += '# example.org/local v0.0.0 => ./staging/src/k8s.io/api\n'
+            elif change == 'version':
+                config['manifests']['vendor/modules.txt'] = config['manifests']['vendor/modules.txt'].replace(
+                    '# k8s.io/api v0.0.0 =>', '# k8s.io/api v9.0.0 =>')
+            else:
+                config['manifests']['staging/src/k8s.io/api/../../outside'] = 'unapproved'
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                dependencies.validate(config)
+
+    def test_kubelet_keeps_its_target_tags_and_requires_the_pinned_compiler(self):
+        lock = builder.read_lock('kubelet')
+        info = (self.info.replace('sigs.k8s.io/cri-tools', 'k8s.io/kubernetes').replace('cmd/crictl', 'cmd/kubelet')
+                + '\tdep\tk8s.io/api\t(devel)\t\n\tbuild\t-tags=selinux,notest,grpcnotrace\n')
+        parsed = builder.build_info(info, 'arm64', lock)
+        self.assertEqual(parsed['modules']['k8s.io/api'], '(devel)')
+        for old, new in [('grpcnotrace', 'unapproved'), ('CGO_ENABLED=0', 'CGO_ENABLED=1'),
+                         (lock['go_version'], 'go1.26.9')]:
+            with self.subTest(change=old), self.assertRaises(ValueError):
+                builder.build_info(info.replace(old, new), 'arm64', lock)

@@ -24,6 +24,7 @@ COMPONENTS = {
     'crictl': {'module': 'sigs.k8s.io/cri-tools', 'binaries': ['crictl']},
     'containerd': {'module': 'github.com/containerd/containerd/v2',
                    'binaries': ['containerd', 'ctr', 'containerd-shim-runc-v2']},
+    'kubelet': {'module': 'k8s.io/kubernetes', 'binaries': ['kubelet']},
 }
 
 
@@ -41,6 +42,8 @@ def evidence_files(component='crictl'):
 def build_tags(component, binary):
     if component == 'crictl':
         return []
+    if component == 'kubelet':
+        return ['selinux', 'notest', 'grpcnotrace']
     tags = ['urfave_cli_no_docs', 'osusergo', 'netgo', 'static_build']
     return tags + (['no_grpc'] if binary == 'containerd-shim-runc-v2' else [])
 
@@ -173,28 +176,43 @@ def build(cache, output, arch, jobs, component='crictl'):
     with tempfile.TemporaryDirectory(prefix='outerspace-go-runtime-') as temporary:
         work = Path(temporary)
         source, toolchain = work / 'source', work / 'go'
-        runtime_build.extract(source_archive, source, directory_links=component == 'containerd')
+        runtime_build.extract(source_archive, source, directory_links=component != 'crictl')
         runtime_build.extract(compiler, toolchain)
-        upstream_inputs = {n: sha256(source / n) for n in ['go.mod', 'go.sum', 'vendor/modules.txt']}
+        config = go_dependencies.read_lock(lock['dependency_lock_sha256'], component)
+        upstream_inputs = sources.go_build_inputs(source_archive, config['manifests'])
         env = {'PATH': str(toolchain / 'bin') + ':/usr/bin:/bin', 'HOME': str(work), 'LANG': 'C.UTF-8',
                'GOROOT': str(toolchain), 'GOCACHE': str(work / 'cache'), 'GOPATH': str(work / 'gopath'),
                'GOTOOLCHAIN': 'local', 'GOPROXY': 'off', 'GOSUMDB': 'off', 'GOENV': 'off',
                'CGO_ENABLED': '0', 'GOOS': 'linux', 'GOARCH': arch}
         if subprocess.check_output(['go', 'version'], env=env, text=True).strip() != 'go version ' + lock['go_version'] + ' linux/' + arch:
             raise ValueError('Go toolchain version differs from recipe')
-        config = go_dependencies.read_lock(lock['dependency_lock_sha256'], component)
         proxy = work / 'proxy'
         go_dependencies.stage(config, cache / 'source-inputs', source, proxy)
         # The Go tool verifies module h1 checksums against the frozen go.sum.
         # A local proxy provides complete module archives without network access.
         vendor_env = {**env, 'GOPROXY': proxy.as_uri()}
-        subprocess.run(['go', 'mod', 'vendor'], cwd=source, env=vendor_env, check=True)
+        workspace = config.get('workspace_modules', {})
+        if workspace:
+            resolved = json.loads(subprocess.check_output(['go', 'work', 'edit', '-json'],
+                                                         cwd=source, env=env, text=True))
+            paths = [item['DiskPath'].removeprefix('./') for item in resolved['Use']]
+            if resolved.get('Replace') or len(paths) != len(set(paths)) or set(paths) != {'.', *workspace.values()}:
+                raise ValueError('Go workspace differs from the pinned source directories')
+        subprocess.run(['go', 'work' if workspace else 'mod', 'vendor'], cwd=source, env=vendor_env, check=True)
         inputs = go_dependencies.build_inputs(config)
         if inputs != {n: sha256(source / n) for n in inputs}:
             raise ValueError('Offline vendoring differs from pinned Go dependency update')
         module = COMPONENTS[component]['module']
         if component == 'crictl':
             flags = '-X ' + module + '/pkg/version.Version=v' + lock['source']['version']
+        elif component == 'kubelet':
+            values = {'gitVersion': 'v' + lock['source']['version'] + '+outerspace.1',
+                      'gitMajor': '1', 'gitMinor': lock['source']['version'].split('.')[1],
+                      'gitCommit': lock['source']['commit'], 'gitTreeState': 'dirty',
+                      'buildDate': '1970-01-01T00:00:00Z'}
+            flags = ' '.join('-X ' + package + '.' + key + '=' + value
+                             for package in ['k8s.io/client-go/pkg/version', 'k8s.io/component-base/version']
+                             for key, value in values.items())
         else:
             flags = ('-X ' + module + '/version.Version=v' + lock['source']['version']
                      + ' -X ' + module + '/version.Revision=' + lock['source']['commit'] + '.outerspace'
@@ -217,9 +235,10 @@ def build(cache, output, arch, jobs, component='crictl'):
             raise ValueError('Go runtime build modified vendored dependency inputs')
         primary = executables.pop(component)
         version = subprocess.check_output([str(output / component), '--version'], text=True).strip()
-        expected_version = ('crictl version v' + lock['source']['version'] if component == 'crictl' else
-                            'containerd ' + module + ' v' + lock['source']['version'] + ' '
-                            + lock['source']['commit'] + '.outerspace')
+        expected_version = {'crictl': 'crictl version v' + lock['source']['version'],
+                            'kubelet': 'Kubernetes v' + lock['source']['version'] + '+outerspace.1',
+                            'containerd': 'containerd ' + module + ' v' + lock['source']['version'] + ' '
+                                          + lock['source']['commit'] + '.outerspace'}[component]
         if version != expected_version:
             raise ValueError('Compiled runtime reports an unexpected version')
         shutil.copyfile(source / 'LICENSE', output / 'LICENSE')

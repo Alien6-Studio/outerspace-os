@@ -64,7 +64,7 @@ def extract_binaries(archive, destination, allowed):
 
 
 def install(root, architecture, lockfile, cache=None, runtime_directory=None, go_runtime_directory=None,
-            containerd_directory=None):
+            containerd_directory=None, kubelet_directory=None):
     arch = ARCHES[architecture]
     lock = json.loads(lockfile.read_text())
     destination = root / "usr/bin"
@@ -77,7 +77,8 @@ def install(root, architecture, lockfile, cache=None, runtime_directory=None, go
                 import go_runtime_build
                 builders = {'dfdaemon': (runtime_build, runtime_directory),
                             'crictl': (go_runtime_build, go_runtime_directory),
-                            'containerd': (go_runtime_build, containerd_directory)}
+                            'containerd': (go_runtime_build, containerd_directory),
+                            'kubelet': (go_runtime_build, kubelet_directory)}
                 if name not in builders or builders[name][1] is None:
                     raise ValueError('Missing approved source runtime build')
                 builder, directory = builders[name]
@@ -124,4 +125,5 @@ if __name__ == "__main__":
         install(Path(sys.argv[1]), sys.argv[2], Path(sys.argv[3]), Path(sys.argv[4]),
                 Path(sys.argv[5]) if len(sys.argv) > 5 else None,
                 Path(sys.argv[6]) if len(sys.argv) > 6 else None,
-                Path(sys.argv[7]) if len(sys.argv) > 7 else None)
+                Path(sys.argv[7]) if len(sys.argv) > 7 else None,
+                Path(sys.argv[8]) if len(sys.argv) > 8 else None)

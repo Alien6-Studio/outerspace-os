@@ -26,7 +26,8 @@ spec.loader.exec_module(sources)
 FILES = ('apt-inputs.json', 'apt-notices.tar', 'apt.sbom.syft.json', 'source-index.json',
          'corresponding-source.tar.zst', 'distribution.sbom.syft.json', 'distribution.sbom.cdx.json',
          'build-provenance.json', 'builder-packages.tsv', *runtime_build.EVIDENCE_FILES,
-         *go_runtime_build.EVIDENCE_FILES, *go_runtime_build.evidence_files('containerd'))
+         *go_runtime_build.EVIDENCE_FILES, *go_runtime_build.evidence_files('containerd'),
+         *go_runtime_build.evidence_files('kubelet'))
 REPORT = 'supply-chain.json'
 POLICIES = {'inputs.lock.json': ROOT / 'build/inputs.lock.json',
             'apt.sources': ROOT / 'build/apt.sources',
@@ -36,7 +37,9 @@ POLICIES = {'inputs.lock.json': ROOT / 'build/inputs.lock.json',
             'crictl.lock.json': go_runtime_build.LOCK,
             'crictl-dependencies.lock.json': go_dependencies.LOCK,
             'containerd.lock.json': go_runtime_build.recipe_path('containerd'),
-            'containerd-dependencies.lock.json': go_dependencies.lock_path('containerd')}
+            'containerd-dependencies.lock.json': go_dependencies.lock_path('containerd'),
+            'kubelet.lock.json': go_runtime_build.recipe_path('kubelet'),
+            'kubelet-dependencies.lock.json': go_dependencies.lock_path('kubelet')}
 
 
 def schema_licenses(document):
@@ -179,7 +182,8 @@ def go_build_correspondence(directory, identity, raw, runtimes, index, component
         raise ValueError('Compiled Go inventory targets another executable or source')
     observed = [p for p in raw['artifacts'] if p['type'] == 'go-module'
                 and any(l['path'] == runtime['path'] for l in p['locations'])]
-    expected = dict(built['build_info']['modules'])
+    expected = {name: 'UNKNOWN' if version == '(devel)' else version
+                for name, version in built['build_info']['modules'].items()}
     main_module = go_runtime_build.COMPONENTS[component]['module']
     expected[main_module] = 'UNKNOWN'  # Syft's representation of Go's (devel).
     expected['stdlib'] = built['build_info']['go_version']

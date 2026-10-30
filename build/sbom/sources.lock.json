@@ -460,7 +460,8 @@
   ],
   "go_dependency_updates": {
     "crictl": "c4504ec94e06694281539cc2dbe6e1d66a4d2c0bb2c3e9640138fce7bc3cde1e",
-    "containerd": "60669b8348fccc939d1810d388df94e6248c62321091a79e557a73bbc22639d6"
+    "containerd": "60669b8348fccc939d1810d388df94e6248c62321091a79e557a73bbc22639d6",
+    "kubelet": "baf5ba5ddd45a2953811e62e30e746bc253f3bd6d836d85e1569f582cd4e6e5b"
   },
   "embedded_go_notices": {
     "ebd95653aaca6182184a1b9b309a65d55eb4c7c833c5e790aee11efd73d4722c": [

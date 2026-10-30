@@ -108,7 +108,7 @@ def verified_runtimes(root, components, architecture, cache, output=None):
     result = []
     for name, version, artifact, member, path, archive in runtime_files(components, architecture):
         if artifact.get('source_build'):
-            if name not in ['dfdaemon', 'crictl', 'containerd'] or output is None:
+            if name not in ['dfdaemon', *go_runtime_build.COMPONENTS] or output is None:
                 raise ValueError('Missing source runtime build evidence')
             builder = runtime_build if name == 'dfdaemon' else go_runtime_build
             receipt = builder.verify_receipt(output, architecture, packaged=True,

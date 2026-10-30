@@ -25,12 +25,14 @@
       "version": "1.36.6",
       "artifacts": {
         "amd64": {
-          "url": "https://dl.k8s.io/release/v1.36.6/bin/linux/amd64/kubelet",
-          "sha256": "cf8baae869b810d84338f8c7111e2bb32733e992c0c08107cf6692120f5e229f"
+          "source_build": true,
+          "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/1b2171b110bb2a2542e1322035c6583ec86eb976",
+          "sha256": "53f24f30a8d3db882e3965d8296f57552cef170a9972e1c0d5b3f3d363505c68"
         },
         "arm64": {
-          "url": "https://dl.k8s.io/release/v1.36.6/bin/linux/arm64/kubelet",
-          "sha256": "14c52637849edf6abdcfb2d094c5ff69f257309d6a6cae2f707f9113fab91d39"
+          "source_build": true,
+          "url": "https://codeload.github.com/kubernetes/kubernetes/tar.gz/1b2171b110bb2a2542e1322035c6583ec86eb976",
+          "sha256": "53f24f30a8d3db882e3965d8296f57552cef170a9972e1c0d5b3f3d363505c68"
         }
       }
     },

@@ -19,7 +19,7 @@ def escape(value):
 
 
 def lock_path(component='crictl'):
-    if component not in ('crictl', 'containerd'):
+    if component not in ('crictl', 'containerd', 'kubelet'):
         raise ValueError('Unsupported Go runtime component')
     return LOCK if component == 'crictl' else ROOT / 'build/runtime' / (component + '-dependencies.lock.json')
 
@@ -29,9 +29,9 @@ def read_lock(expected_digest, component='crictl'):
     if sha256(path) != expected_digest:
         raise ValueError('Go dependency update differs from its source lock')
     config = json.loads(path.read_text())
-    if (config.get('schema') != 1 or config.get('component') != component
-            or set(config['manifests']) != {'go.mod', 'go.sum', 'vendor/modules.txt'}):
+    if config.get('schema') != 1 or config.get('component') != component:
         raise ValueError('Invalid Go dependency update')
+    validate_manifest_paths(config)
     for name, digest in config['manifests'].items():
         manifest_path = lock_path(component).parent / component / name
         if manifest_path.is_symlink() or sha256(manifest_path) != digest:
@@ -41,9 +41,28 @@ def read_lock(expected_digest, component='crictl'):
     return config
 
 
+def validate_manifest_paths(config):
+    required = {'go.mod', 'go.sum', 'vendor/modules.txt'}
+    allowed = set(required)
+    workspace = config.get('workspace_modules', {})
+    if workspace:
+        if (config.get('component') != 'kubelet' or not workspace
+                or any(not re.fullmatch(r'k8s\.io/[a-z][a-z0-9-]*', name)
+                       or path != 'staging/src/' + name for name, path in workspace.items())):
+            raise ValueError('Unsafe or unsupported Go workspace')
+        required.add('go.work'); allowed.update({'go.work', 'go.work.sum'})
+        for path in workspace.values():
+            required.add(path + '/go.mod')
+            allowed.update({path + '/go.mod', path + '/go.sum'})
+    if not required <= set(config['manifests']) <= allowed:
+        raise ValueError('Incomplete or unsafe Go dependency manifests')
+
+
 def validate(config):
+    validate_manifest_paths(config)
     seen = set()
-    sums = set(config['manifests']['go.sum'].splitlines())
+    sums = {line for name, data in config['manifests'].items() if name.endswith('.sum')
+            for line in data.splitlines()}
     for module in config['modules']:
         name, version = module['path'], module['version']
         if name in seen or not version.startswith('v') or set(module['files']) != {'zip', 'mod', 'info'}:
@@ -71,7 +90,8 @@ def validate(config):
                     or not isinstance(entry['size'], int) or entry['size'] <= 0):
                 raise ValueError('Invalid Go module graph metadata')
     selected = {m['path']: m['version'] for m in config['modules']}
-    if any(selected.get(name) != record['version'] for name, record in vendor_modules(config).items()):
+    if any(selected.get(name) != record['version'] for name, record in vendor_modules(config).items()
+           if not record.get('workspace_source')):
         raise ValueError('Vendored Go dependency has no pinned source')
 
 
@@ -80,6 +100,11 @@ def vendor_modules(config):
     for line in config['manifests']['vendor/modules.txt'].splitlines():
         if line.startswith('# '):
             fields = line.split()
+            workspace = config.get('workspace_modules', {})
+            if (len(fields) == 5 and fields[1] in workspace and fields[2:4] == ['v0.0.0', '=>']
+                    and fields[4] == './' + workspace[fields[1]] and fields[1] not in result):
+                result[fields[1]] = {'version': fields[2], 'workspace_source': workspace[fields[1]]}
+                continue
             if len(fields) != 3 or not fields[2].startswith('v') or fields[1] in result:
                 raise ValueError('Unsupported replacement or duplicate vendored Go module')
             result[fields[1]] = {'version': fields[2]}
@@ -118,9 +143,11 @@ def stage(config, cache, source, proxy):
         if path.is_symlink() or sha256(path) != entry['sha256'] or path.stat().st_size != entry['size']:
             raise ValueError('Go module source cache corruption')
         shutil.copyfile(path, directory / (escape(entry['version']) + '.' + entry['format']))
-    for name in ['go.mod', 'go.sum']:
+    for name in config['manifests']:
+        if name == 'vendor/modules.txt':
+            continue
         path = source / name
-        if path.is_symlink():
+        if path.is_symlink() or not path.resolve().is_relative_to(source.resolve()):
             raise ValueError('Unsafe Go manifest')
         path.write_text(config['manifests'][name])
     shutil.rmtree(source / 'vendor')

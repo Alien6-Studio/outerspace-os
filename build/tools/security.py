@@ -29,6 +29,7 @@ def exception_scope(identity):
             'runtime_build_lock_sha256': sha256(ROOT / 'build/runtime/dragonfly.lock.json'),
             'go_runtime_build_lock_sha256': sha256(ROOT / 'build/runtime/crictl.lock.json'),
             'containerd_build_lock_sha256': sha256(ROOT / 'build/runtime/containerd.lock.json'),
+            'kubelet_build_lock_sha256': sha256(ROOT / 'build/runtime/kubelet.lock.json'),
             'sources_lock_sha256': sha256(ROOT / 'build/sbom/sources.lock.json')}
 
 

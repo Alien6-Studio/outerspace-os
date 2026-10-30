@@ -1,6 +1,6 @@
 # Contributing to OuterSpace OS
 
-Start with the [README](README.md), [architecture](docs/architecture.md) and
+Start with the [README](README.md), [architecture decisions](docs/adr/) and
 [release gates](build/release/README.md). The current channel is development; use
 disposable infrastructure and describe what you actually tested.
 
@@ -51,6 +51,13 @@ generated evidence to the relevant run or release; do not add progress diaries
 or duplicate roadmaps to the repository. Keep PR validation concise, with the
 commit, image checksum and tested scope. A kind network lab does not qualify an
 OuterSpace OS node; native VM evidence does not qualify physical hardware.
+
+Record durable architectural choices in `docs/adr/`: context, decision,
+alternatives, consequences and implementation references. An ADR explains why a
+choice was made; operational instructions stay with the source, build or test
+guide. Supersede an obsolete decision with a new ADR rather than rewriting its
+history. Record existing choices as retrospective records, without inventing a
+past approval or decision date.
 
 ## Review expectations
 

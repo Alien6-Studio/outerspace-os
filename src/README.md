@@ -15,5 +15,5 @@ This directory defines the content and configuration of an OuterSpace OS image.
 systemd units and shell programs under `image/mkosi.extra/`; Python, compilers,
 model weights and inference engines are not installed in the base OS.
 
-See [architecture](../docs/architecture.md) for the host/workload boundary and
+See [ADR 0001](../docs/adr/0001-share-a-minimal-kubernetes-oci-host.md) for the host/workload boundary and
 [cluster integration](cluster/README.md) for provisioning a worker.

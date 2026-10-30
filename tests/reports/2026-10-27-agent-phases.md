@@ -75,8 +75,8 @@ remain unknown. The private delayed HTTP fixture executes no model; it represent
 remote waiting. No SDK or language runtime is installed in the host.
 
 `make check` passed 137 unit/contract tests and syntax checks for the qualified
-source. The [contract and reproduction guide](../../docs/agent-phase-correlation.md)
-describes the boundaries and resource limits. Current-source Agent/Inference
+source. The [decision and implementation references](../../docs/adr/0003-correlate-trusted-operations-with-cgroup-scopes.md)
+explain why measurements remain at scope level. Current-source Agent/Inference
 amd64/arm64 build, boot and native qualification are tracked separately in
 [PR #43](https://github.com/Alien6-Studio/outerspace-os/pull/43). This local dataset
 is development evidence and grants no release or redistribution approval.

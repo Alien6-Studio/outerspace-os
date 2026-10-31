@@ -1,10 +1,10 @@
 site_name: OuterSpace OS
 site_url: https://os.outerspace.sh/
 site_author: Alien6
-site_description: Ubuntu-based Linux workers for Agent and Inference workloads. Four qualified CPU alpha images; release in draft.
+site_description: An immutable Linux OS for Kubernetes workers running AI agents and inference.
 repo_name: Alien6-Studio/outerspace-os
 repo_url: https://github.com/Alien6-Studio/outerspace-os
-copyright: OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
+copyright: OuterSpace OS — by Alien6.
 strict: true
 theme:
   name: material
@@ -41,13 +41,11 @@ extra:
       link: https://github.com/Alien6-Studio/outerspace-os
 nav:
   - Home: index.md
-  - Documentation:
+  - Explore OuterSpace OS:
       - Overview: introduction.md
-      - Architecture: architecture.md
-      - Build and test: getting-started.md
-      - Features and status: features.md
+      - How it works: architecture.md
+      - Get started: getting-started.md
+      - Agent and Inference: features.md
       - Releases: releases.md
       - Security: security.md
       - FAQ: faq.md
-  - About:
-      - Alien6: about/sponsors.md

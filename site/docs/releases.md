@@ -1,71 +1,60 @@
 ---
-title: Releases and maintenance
-description: Status, qualified scope and limitations of OuterSpace OS 0.1.0-alpha.1, with the remaining release gates.
+title: Releases
+description: What you can do with OuterSpace OS 0.1.0-alpha.1, how to try it and the limits of this CPU preview.
 ---
-# Releases and maintenance
+# 0.1.0-alpha.1 — AI workers on CPU
 
-**Current version: `0.1.0-alpha.1` — qualified CPU alpha, release in draft.**
-[Execution foundation](https://github.com/Alien6-Studio/outerspace-os/milestone/1)
-is closed with all seven delivery issues completed. The draft contains the four
-qualified images and their verification material. Public downloads will appear on
-[GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases) after
-publication; no stable or production release is claimed.
+The first OuterSpace OS alpha lets you evaluate a dedicated Kubernetes worker OS
+for agent tasks and model serving. It is intended for teams exploring these
+workloads in a self-managed cluster, using disposable CPU virtual machines.
 
-## What the first alpha qualifies
+**The release is currently a draft.** Public downloads will appear on
+[GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases) when
+published. You can [build the tagged source](getting-started.md) today.
 
-| Profile | Architectures | Native scenarios |
-| --- | --- | --- |
-| Agent | AMD64, ARM64 | OCI admission/isolation, resource-pressure cases and worker recovery |
-| Inference | AMD64, ARM64 | Real CPU serving, workload replacement/drain and worker recovery |
+## What you can do
 
-All four images passed two UEFI boots, persistence and host budgets,
-Kubernetes/Cilium enrollment, certificate rotation, cold-boot recovery and their
-own security/redistribution gates. Integration records also retain the static
-Agent resource and operation-phase baselines with their exact image identities.
+- **Run bounded agent tasks.** The Agent profile combines restricted container
+  execution, default-deny networking and enforced resource budgets for small
+  tasks and tools controlled by your operator.
+- **Serve models on CPU.** The Inference profile hosts your containerized serving
+  engine and weights. Deploy a model, replace the workload, drain the node and
+  recover after a worker restart. The alpha has been exercised with llama.cpp.
+- **Keep the host separate from your applications.** Both profiles use a
+  read-only system root and persistent node state. An enrolled worker retains
+  its identity across restarts.
 
-The distributions include checksums, GitHub attestations, SBOMs, **2,554
-corresponding-source objects and 120 original APT notices** per reviewed inventory.
-The release also preserves the native and integration records and provides a
-verification companion. Attestations authenticate the inner `SHA256SUMS`; they
-are not Secure Boot signatures.
+Agent and Inference each have **AMD64 and ARM64** images. Your Kubernetes control
+plane, cluster add-ons, application containers and model weights are deployed
+separately. See [Choose your worker](features.md) for profile details.
 
-- [Qualified version source](https://github.com/Alien6-Studio/outerspace-os/tree/v0.1.0-alpha.1)
-- [Four-candidate qualification](https://github.com/Alien6-Studio/outerspace-os/actions/runs/41219970340)
-- [Verified draft preparation](https://github.com/Alien6-Studio/outerspace-os/actions/runs/41230956048)
-- [Remaining roadmap](https://github.com/Alien6-Studio/outerspace-os/issues/7)
+## Try it
 
-## Evaluation limits
+Use a **UEFI VM with 4 vCPUs and 4 GiB RAM**, with Secure Boot disabled, and a
+separate Kubernetes 1.36 control plane with the supplied Cilium configuration.
+Choose a profile, prepare the image and configure the worker to join your cluster.
 
-Use disposable CPU UEFI VMs; the native reference setup has four vCPUs and 4 GiB
-RAM with Secure Boot disabled. A separate Kubernetes control plane is required.
-Bare-metal/GPU qualification, authenticated A/B updates, production support and
-performance guarantees are not included. Persistent state is unencrypted.
+The [getting-started guide](getting-started.md) covers building an image,
+verifying a downloaded bundle and enrolling the worker. Release bundles include
+checksums, attestations, a software inventory, sources and license notices.
 
-The accepted **CVE-2019-14899** risk expires on **14 November 2026 at 06:24:43 UTC**
-and applies only to the stock CPU configuration without host VPNs or custom
-networking. No universal kernel fix is claimed. Model weights and application
-containers have separate provenance and licensing requirements.
+## Know the limits
 
-## Qualification phases
+This is an evaluation preview, with no production support commitment or
+performance guarantee. GPU workers, a qualified bare-metal hardware matrix,
+Secure Boot and authenticated update/rollback are not available. Persistent
+state is unencrypted; keep important data externally.
 
-OuterSpace uses its own `MAJOR.MINOR.PATCH` version, independent of Ubuntu, Linux
-and Kubernetes. A version tag alone does not establish support.
+Agent tasks share the host kernel. The alpha does not provide a credential
+broker, approval service or isolation for mutually untrusted tenants.
 
-| Phase | Intended use | Required evidence |
-| --- | --- | --- |
-| Alpha | Explicit experimental preview | Boot, CRI, configuration, checksums, notes, licenses/sources, SBOM, vulnerability review and profile-specific workload gates |
-| Beta | Integration testing | Alpha gates plus cluster readiness, Cilium, P2P, image GC and state persistence |
-| Release candidate | Hardware/security qualification | Beta gates plus bare metal, CIS audit, signed boot and upgrade/rollback |
-| Stable | Supported operation within a published matrix | RC gates plus soak evidence and an explicit support policy |
+The accepted **CVE-2019-14899** risk applies only to the stock CPU configuration
+without host VPNs or custom networking and expires on **14 November 2026 at
+06:24:43 UTC**. See the [security scope](security.md) for the exact boundary.
 
-The [policy](https://github.com/Alien6-Studio/outerspace-os/blob/main/build/release/policy.json)
-and [release process](https://github.com/Alien6-Studio/outerspace-os/blob/main/build/release/README.md)
-are authoritative. Release CI prepares a draft from existing qualified artifacts;
-promotion does not rebuild them. Publication and later stages remain explicit decisions.
+## Share your experience
 
-## Maintenance
-
-Update reviewed, pinned inputs and deploy whole images. Preserve the source,
-profile, architecture and image identity with every result. Reassess expiring
-vulnerability decisions and retain original upstream notices. No supported
-in-place update path or production support window is offered by this alpha.
+[Report a problem](https://github.com/Alien6-Studio/outerspace-os/issues) with your
+version, profile, architecture and the steps that reproduce it. Evaluation
+support is best-effort. Report vulnerabilities through the
+[private security channel](https://github.com/Alien6-Studio/outerspace-os/security/advisories/new).

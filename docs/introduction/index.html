@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="The qualified Agent and Inference CPU profiles of OuterSpace OS and the scope of the first alpha.">
+        <meta name="description" content="A dedicated Kubernetes worker OS for containerized agent tasks and CPU model serving.">
       
       
         <meta name="author" content="Alien6">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Introduction - OuterSpace OS</title>
+        <title>Overview - OuterSpace OS</title>
       
     
     
@@ -57,7 +57,7 @@
     
 <meta property="og:type" content="website">
 <meta property="og:title" content="Overview — OuterSpace OS">
-<meta property="og:description" content="The qualified Agent and Inference CPU profiles of OuterSpace OS and the scope of the first alpha.">
+<meta property="og:description" content="A dedicated Kubernetes worker OS for containerized agent tasks and CPU model serving.">
 <meta property="og:url" content="https://os.outerspace.sh/introduction/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#one-os-two-worker-profiles" class="md-skip">
+        <a href="#a-dedicated-host-for-ai-workers" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Introduction
+              Overview
             
           </span>
         </div>
@@ -284,7 +284,7 @@
   
   
   <span class="md-ellipsis">
-    Documentation
+    Explore OuterSpace OS
     
   </span>
   
@@ -295,7 +295,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Documentation
+            Explore OuterSpace OS
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -356,18 +356,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#qualified-today" class="md-nav__link">
+  <a href="#where-it-fits" class="md-nav__link">
     <span class="md-ellipsis">
-      Qualified today
+      Where it fits
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#evaluation-scope" class="md-nav__link">
+  <a href="#pick-a-profile" class="md-nav__link">
     <span class="md-ellipsis">
-      Evaluation scope
+      Pick a profile
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-with-a-disposable-vm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Start with a disposable VM
     </span>
   </a>
   
@@ -394,7 +403,7 @@
   
   
   <span class="md-ellipsis">
-    Architecture
+    How it works
     
   </span>
   
@@ -417,7 +426,7 @@
   
   
   <span class="md-ellipsis">
-    Build and test
+    Get started
     
   </span>
   
@@ -440,7 +449,7 @@
   
   
   <span class="md-ellipsis">
-    Features and status
+    Agent and Inference
     
   </span>
   
@@ -527,79 +536,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    About
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            About
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../about/sponsors/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Alien6
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -627,18 +563,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#qualified-today" class="md-nav__link">
+  <a href="#where-it-fits" class="md-nav__link">
     <span class="md-ellipsis">
-      Qualified today
+      Where it fits
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#evaluation-scope" class="md-nav__link">
+  <a href="#pick-a-profile" class="md-nav__link">
     <span class="md-ellipsis">
-      Evaluation scope
+      Pick a profile
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-with-a-disposable-vm" class="md-nav__link">
+    <span class="md-ellipsis">
+      Start with a disposable VM
     </span>
   </a>
   
@@ -663,34 +608,34 @@
   
 
 
-<h1 id="one-os-two-worker-profiles">One OS, two worker profiles</h1>
-<p>OuterSpace OS is an Ubuntu-based Linux distribution for Kubernetes workers.
-The shared Core supplies the kernel, systemd, containerd, kubelet and immutable
-node identity. Agent frameworks, inference engines, models and their language
-libraries run in separately deployed containers.</p>
-<p><strong>Version 0.1.0-alpha.1 is qualified for CPU evaluation and prepared as a draft.</strong>
-The first milestone, <a href="https://github.com/Alien6-Studio/outerspace-os/milestone/1">Execution foundation</a>,
-is complete. Public downloads await publication of the draft; there is no stable
-or supported production release.</p>
-<h2 id="qualified-today">Qualified today</h2>
-<ul>
-<li><strong>Agent:</strong> native OCI admission and isolation, enforced resource limits, pressure
-  scenarios and recovery after worker restart.</li>
-<li><strong>Inference:</strong> real CPU model serving, workload replacement and drain/recovery.</li>
-<li><strong>Both:</strong> separate AMD64 and ARM64 images, UEFI boot, Kubernetes/Cilium enrollment,
-  certificate rotation and cold-boot recovery on the actual OuterSpace kernel.</li>
-</ul>
-<p>The host combines Ubuntu 24.04 LTS packages with source-built Linux 6.18.60 and
-pinned runtimes. A read-only dm-verity root is paired with persistent <code>/var</code>.
-Dragonfly is an optional OCI delivery component; its fleet/P2P qualification is
-still separate work.</p>
-<h2 id="evaluation-scope">Evaluation scope</h2>
-<p>Use disposable UEFI VMs and a separate, self-managed Kubernetes control plane.
-The native qualification used four vCPUs and 4 GiB RAM per worker. Bare-metal,
-GPU, authenticated updates and production support have not been qualified.
-Host VPNs and custom network configurations are outside the alpha's reviewed scope.</p>
-<p>Start with <a href="../getting-started/">build and test</a>, <a href="../architecture/">architecture</a>
-and the <a href="../releases/">alpha release information</a>.</p>
+<h1 id="a-dedicated-host-for-ai-workers">A dedicated host for AI workers</h1>
+<p>OuterSpace OS is an immutable, Ubuntu-based Linux distribution for Kubernetes
+workers running agent tasks and inference. It brings the host system, container
+runtime and node services together in one image. Your tools, serving engines and
+models stay in containers, where you can deploy and replace them independently.</p>
+<h2 id="where-it-fits">Where it fits</h2>
+<p>Use OuterSpace when you operate a self-managed Kubernetes cluster and want
+dedicated workers for AI workloads. The OS supplies Linux, systemd, containerd
+and kubelet. You supply the control plane, Cilium networking and the applications
+you want to run.</p>
+<p>The system root is read-only. Container storage, logs and the worker's identity
+live in separate persistent state, so an enrolled node can restart and rejoin
+the cluster without its original bootstrap credentials.</p>
+<h2 id="pick-a-profile">Pick a profile</h2>
+<p><strong>Agent</strong> provides bounded execution for small containerized tasks and tools.
+The operator controls admission and network access; each task runs with restricted
+permissions and fixed resource budgets.</p>
+<p><strong>Inference</strong> hosts CPU model-serving containers. Deploy your serving engine and
+weights through Kubernetes, replace the workload as it changes, and drain the
+worker when you need to take it out of service.</p>
+<p>Both profiles are available as source builds for AMD64 and ARM64. The
+<a href="../features/">profile guide</a> explains the differences and the Agent alpha's limits.</p>
+<h2 id="start-with-a-disposable-vm">Start with a disposable VM</h2>
+<p>The current version, <strong>0.1.0-alpha.1</strong>, is a CPU preview. Its release is still a
+draft, so public downloads are pending. Build the tagged source to evaluate it
+today, using a UEFI VM with 4 vCPUs, 4 GiB RAM and Secure Boot disabled.</p>
+<p>GPU workers, bare-metal support and production operation are outside this alpha.
+Read the <a href="../releases/">release information</a>, then follow <a href="../getting-started/">Get started</a>.</p>
 
 
 
@@ -747,13 +692,13 @@ and the <a href="../releases/">alpha release information</a>.</p>
         
         
           
-          <a href="../architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: Architecture">
+          <a href="../architecture/" class="md-footer__link md-footer__link--next" aria-label="Next: How it works">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Architecture
+                How it works
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -770,7 +715,7 @@ and the <a href="../releases/">alpha release information</a>.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
+      OuterSpace OS — by Alien6.
     </div>
   
   

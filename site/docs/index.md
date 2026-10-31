@@ -1,5 +1,5 @@
 ---
 title: Linux for Kubernetes Inference
-description: OuterSpace OS is an Ubuntu-based Linux distribution for bare-metal Kubernetes inference workers. Explore its architecture and development roadmap.
+description: An immutable Linux OS for Kubernetes workers running AI agents and inference.
 template: home.html
 ---

@@ -1,52 +1,56 @@
 ---
-title: Frequently asked questions
-description: Answers about the CPU alpha, Agent and Inference profiles, image verification, GPU support and release status.
+title: FAQ
+description: Choosing a worker profile, bringing your applications and understanding where the CPU alpha can run.
 ---
 # Questions about OuterSpace OS
 
-## What is available now?
+## Is this an OS or a container image?
 
-`0.1.0-alpha.1` has four qualified CPU images: Agent and Inference on AMD64 and
-ARM64. The first milestone is complete and the release is prepared as a draft.
-Public downloads will appear on [GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases)
-after publication. There is no stable release.
+OuterSpace is an operating-system disk image for Kubernetes workers. Your agent
+tasks and inference applications run in containers on that host. The OS has a
+read-only system root and separate persistent node state.
 
-## Is this a container image?
+## Does it create a Kubernetes cluster for me?
 
-It is an operating-system disk image for Kubernetes workers. Containers hold the
-Agent or Inference workloads. Both profiles share one immutable Core, but each
-shipped image is qualified separately.
+You provide a self-managed control plane and configure the worker to join it.
+The alpha uses Kubernetes 1.36 with the supplied Cilium configuration. It is not
+a supported replacement for a managed cloud provider's node image.
 
-## Does the alpha run a real model?
+## Which profile should I choose?
 
-Yes. The Inference candidates passed a separately pinned CPU serving workload,
-including replacement, drain and recovery after node restart. The model weights
-and serving container are not bundled into the host or covered by its licenses.
+Choose **Agent** for small containerized tasks that fit the supplied execution
+policy and resource budgets. Choose **Inference** to host CPU model-serving
+containers. Both are available for AMD64 and ARM64; see the
+[profile comparison](features.md).
 
-## Does an attestation enable Secure Boot?
+## Does OuterSpace include an agent framework or a model?
 
-No. The GitHub attestation authenticates the checksum inventory and its build
-provenance. Secure Boot and authenticated A/B updates have separate, unfinished
-gates. The alpha uses UEFI with Secure Boot disabled.
+You deploy those separately. The Agent profile supplies the execution boundary
+for task containers; it does not manage agent reasoning, credentials or approvals.
+The Inference alpha has been exercised with llama.cpp, but the serving engine
+and model weights are not bundled into the OS.
 
-## Is GPU or bare-metal operation supported?
+## What survives a restart?
 
-Neither has a qualified hardware matrix yet. Evaluate this alpha in disposable
-UEFI VMs. Driver/kernel/CDI integration and physical hardware tests are later work.
+The worker's identity, container storage and logs live in persistent state.
+Agent task workspaces are temporary and disappear when their pods are removed.
+Keep important application data externally. The alpha does not encrypt the state
+partition or provide an authenticated update/rollback path.
 
-## Does Dragonfly eliminate local image storage?
+## Can I use a GPU or install it on a server?
 
-Each node still needs the image layers it executes. Optional peer delivery can
-share OCI content, while model-weight storage remains separate. P2P, private
-registry authorization and fleet cache lifecycle are not yet qualified.
+Evaluate this release in disposable UEFI VMs with Secure Boot disabled. GPU
+support and a qualified bare-metal hardware matrix are not available yet.
 
-## Is it production ready or CIS certified?
+## Is it ready for production?
 
-No. This is an experimental CPU alpha with explicit [limits and release gates](releases.md).
-In particular, the [time-limited kernel risk acceptance](security.md) excludes
-host VPNs and custom networking.
+It is an experimental CPU alpha, without a production support commitment or
+performance guarantee. Review the [release limits](releases.md) and
+[security scope](security.md), including the time-limited kernel risk acceptance.
 
-## Is it a Flatcar fork?
+## Where do I download it?
 
-No. OuterSpace maintains its own Ubuntu-based image and source-built kernel/runtime
-inputs, with independently packaged Agent and Inference profiles.
+The alpha release is still a draft. Public downloads will appear on
+[GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases) after
+publication. Follow [Get started](getting-started.md) to build the tagged source
+in the meantime.

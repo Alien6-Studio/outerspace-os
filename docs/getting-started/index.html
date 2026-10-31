@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Build the qualified CPU source snapshot and configure an OuterSpace OS Kubernetes worker in a disposable UEFI VM.">
+        <meta name="description" content="Choose an OuterSpace OS profile, prepare a CPU VM and connect it to your Kubernetes cluster.">
       
       
         <meta name="author" content="Alien6">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Build and test - OuterSpace OS</title>
+        <title>Get started - OuterSpace OS</title>
       
     
     
@@ -56,8 +56,8 @@
     
     
 <meta property="og:type" content="website">
-<meta property="og:title" content="Build and test — OuterSpace OS">
-<meta property="og:description" content="Build the qualified CPU source snapshot and configure an OuterSpace OS Kubernetes worker in a disposable UEFI VM.">
+<meta property="og:title" content="Get started — OuterSpace OS">
+<meta property="og:description" content="Choose an OuterSpace OS profile, prepare a CPU VM and connect it to your Kubernetes cluster.">
 <meta property="og:url" content="https://os.outerspace.sh/getting-started/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#build-and-evaluate-the-cpu-alpha" class="md-skip">
+        <a href="#try-outerspace-os" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Build and test
+              Get started
             
           </span>
         </div>
@@ -284,7 +284,7 @@
   
   
   <span class="md-ellipsis">
-    Documentation
+    Explore OuterSpace OS
     
   </span>
   
@@ -295,7 +295,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Documentation
+            Explore OuterSpace OS
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -334,7 +334,7 @@
   
   
   <span class="md-ellipsis">
-    Architecture
+    How it works
     
   </span>
   
@@ -366,7 +366,7 @@
   
   
   <span class="md-ellipsis">
-    Build and test
+    Get started
     
   </span>
   
@@ -379,7 +379,7 @@
   
   
   <span class="md-ellipsis">
-    Build and test
+    Get started
     
   </span>
   
@@ -402,27 +402,51 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#build-from-source" class="md-nav__link">
+  <a href="#what-you-need" class="md-nav__link">
     <span class="md-ellipsis">
-      Build from source
+      What you need
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#verify-and-boot-a-downloaded-candidate" class="md-nav__link">
+  <a href="#prepare-an-image" class="md-nav__link">
     <span class="md-ellipsis">
-      Verify and boot a downloaded candidate
+      Prepare an image
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prepare an image">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#verify-a-release-bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify a release bundle
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connect-the-worker-to-your-cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      Connect the worker to your cluster
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#configure-a-worker" class="md-nav__link">
+  <a href="#deploy-your-workload" class="md-nav__link">
     <span class="md-ellipsis">
-      Configure a worker
+      Deploy your workload
     </span>
   </a>
   
@@ -449,7 +473,7 @@
   
   
   <span class="md-ellipsis">
-    Features and status
+    Agent and Inference
     
   </span>
   
@@ -536,79 +560,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    About
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            About
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../about/sponsors/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Alien6
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -636,27 +587,51 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#build-from-source" class="md-nav__link">
+  <a href="#what-you-need" class="md-nav__link">
     <span class="md-ellipsis">
-      Build from source
+      What you need
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#verify-and-boot-a-downloaded-candidate" class="md-nav__link">
+  <a href="#prepare-an-image" class="md-nav__link">
     <span class="md-ellipsis">
-      Verify and boot a downloaded candidate
+      Prepare an image
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prepare an image">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#verify-a-release-bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Verify a release bundle
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#connect-the-worker-to-your-cluster" class="md-nav__link">
+    <span class="md-ellipsis">
+      Connect the worker to your cluster
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#configure-a-worker" class="md-nav__link">
+  <a href="#deploy-your-workload" class="md-nav__link">
     <span class="md-ellipsis">
-      Configure a worker
+      Deploy your workload
     </span>
   </a>
   
@@ -681,42 +656,64 @@
   
 
 
-<h1 id="build-and-evaluate-the-cpu-alpha">Build and evaluate the CPU alpha</h1>
-<p>The <code>0.1.0-alpha.1</code> images are qualified and prepared as a draft. Published downloads
-will appear on <a href="https://github.com/Alien6-Studio/outerspace-os/releases">GitHub Releases</a>.
-Read the <a href="../releases/">alpha limitations</a> before evaluating a worker.</p>
-<h2 id="build-from-source">Build from source</h2>
+<h1 id="try-outerspace-os">Try OuterSpace OS</h1>
+<p>Start with a disposable CPU virtual machine in a self-managed Kubernetes cluster.
+Choose <strong>Agent</strong> for small, bounded task containers or <strong>Inference</strong> for CPU model
+serving. Read the <a href="../features/">profile comparison</a> and <a href="../releases/">alpha limits</a>
+before preparing a worker.</p>
+<h2 id="what-you-need">What you need</h2>
+<ul>
+<li>A UEFI VM matching your image architecture, with <strong>4 vCPUs and 4 GiB RAM</strong> and
+  <strong>Secure Boot disabled</strong>. This is the reference setup, not a model-sizing guide.</li>
+<li>A separate <strong>Kubernetes 1.36</strong> control plane reachable from the worker, with
+  TLS bootstrap and certificate rotation enabled.</li>
+<li><strong>Cilium 1.20.3</strong>, deployed using the supplied
+  <a href="https://github.com/Alien6-Studio/outerspace-os/tree/v0.1.0-alpha.1/src/cluster/cilium">cluster configuration</a>.
+  Use a dedicated evaluation cluster; do not replace an existing cluster's CNI
+  using these instructions.</li>
+<li>The control plane CA, a dedicated short-lived bootstrap token and your
+  cluster DNS address.</li>
+</ul>
+<p>The worker image does not create the control plane. Application containers,
+serving engines and model weights are deployed separately.</p>
+<h2 id="prepare-an-image">Prepare an image</h2>
+<p><strong>0.1.0-alpha.1 is currently a draft release.</strong> Public downloads will appear on
+<a href="https://github.com/Alien6-Studio/outerspace-os/releases">GitHub Releases</a> when
+published. You can build the tagged source now.</p>
 <p>Install Python 3.11+, Make and Docker running Linux containers. The build uses
-Docker's native architecture: ARM64 on Apple Silicon, AMD64 on x86 hosts.
-Allow space for image output, source archives and reusable download caches.</p>
+Docker's native architecture: ARM64 on Apple Silicon, AMD64 on x86 hosts. Allow
+disk space for the image, source archives and reusable download caches.</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Alien6-Studio/outerspace-os.git
 <span class="nb">cd</span><span class="w"> </span>outerspace-os
 git<span class="w"> </span>checkout<span class="w"> </span>v0.1.0-alpha.1
-make<span class="w"> </span>check
 make<span class="w"> </span><span class="nv">PROFILE</span><span class="o">=</span>agent<span class="w"> </span><span class="nv">HARDWARE</span><span class="o">=</span>cpu<span class="w"> </span>builder<span class="w"> </span>build<span class="w"> </span>smoke<span class="w"> </span>package
-<span class="c1"># Build the other profile independently:</span>
-make<span class="w"> </span><span class="nv">PROFILE</span><span class="o">=</span>inference<span class="w"> </span><span class="nv">HARDWARE</span><span class="o">=</span>cpu<span class="w"> </span>build<span class="w"> </span>smoke<span class="w"> </span>package
+<span class="c1"># Use PROFILE=inference for a model-serving worker.</span>
 </code></pre></div>
-<p>Images, bundles and reports are written under <code>out/&lt;profile&gt;-cpu-&lt;architecture&gt;/</code>;
-<code>.cache/</code> holds reusable downloads. The builder uses privileged Linux mount
-namespaces without a host Docker socket or host devices mounted inside it.</p>
-<p>The smoke test boots the packaged image through <strong>UEFI twice</strong> and checks
-persistence, read-only root, verity, cgroup v2/PSI, kernel BPF/BTF, AppArmor,
-CRI availability and host resource budgets. Native enrollment and workload
-qualification are separate targets; <code>make help</code> lists them.</p>
-<h2 id="verify-and-boot-a-downloaded-candidate">Verify and boot a downloaded candidate</h2>
-<p>Check the archive checksum, then extract the distribution bundle into a new
-directory. The accompanying <code>.tar.attestation.jsonl</code> authenticates its inner
-<code>SHA256SUMS</code>, not the outer tar file. Use the release's <code>verify-attestation.py</code>
-companion with the expected commit, tag and candidate run from the release notes.
-Then run <code>sha256sum -c SHA256SUMS</code> inside the bundle before using the disk image.</p>
-<p>Use a disposable UEFI VM with four vCPUs and 4 GiB RAM, with Secure Boot disabled.
-The qualified configuration uses a separate Kubernetes 1.36 control plane and
-Cilium 1.20.3 with the supplied <code>src/cluster/cilium</code> configuration. This worker
-image does not create the control plane.</p>
-<h2 id="configure-a-worker">Configure a worker</h2>
-<p>From the corresponding source checkout, supply the real cluster CA, a protected
-short-lived bootstrap-token file and the HTTPS API address:</p>
+<p>Images and bundles are written under <code>out/&lt;profile&gt;-cpu-&lt;architecture&gt;/</code>.
+The command also boots the image to check that it starts successfully. See the
+<a href="https://github.com/Alien6-Studio/outerspace-os/blob/v0.1.0-alpha.1/build/README.md">build guide</a>
+for output files and options.</p>
+<h3 id="verify-a-release-bundle">Verify a release bundle</h3>
+<p>When downloads are available, choose the archive matching your profile and
+architecture. Download its <code>.sha256</code> and <code>.tar.attestation.jsonl</code> companions,
+plus <code>verify-attestation.py</code> and its checksum. Check the archive and helper
+checksums, then extract the archive into a new directory.</p>
+<p>With Python 3.11+ and the GitHub CLI installed, authenticate the bundle's inner
+<code>SHA256SUMS</code> inventory using the supplied helper. Replace the two paths below;
+the expected source, tag and build run are fixed for this alpha:</p>
+<div class="highlight"><pre><span></span><code>python3<span class="w"> </span>verify-attestation.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--checksums<span class="w"> </span>/path/to/extracted/SHA256SUMS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--bundle<span class="w"> </span>/path/to/archive.tar.attestation.jsonl<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--commit<span class="w"> </span>a1df243a099e8ab74ba2c1706a0fa719d681c689<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--tag<span class="w"> </span>v0.1.0-alpha.1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--run<span class="w"> </span><span class="m">41219970340</span>
+</code></pre></div>
+<p>Inside the extracted bundle, run <code>sha256sum -c SHA256SUMS</code> before decompressing
+or using the raw disk. On macOS, use <code>shasum -a 256 -c SHA256SUMS</code>. The attestation
+authenticates the inventory; it does not enable Secure Boot.</p>
+<h2 id="connect-the-worker-to-your-cluster">Connect the worker to your cluster</h2>
+<p>From the matching source checkout, generate a config drive with your cluster's
+values. Store the bootstrap token in a protected file:</p>
 <div class="highlight"><pre><span></span><code>python3<span class="w"> </span>build/tools/node-config.py<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--api-server<span class="w"> </span>https://api.example.net:6443<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--ca<span class="w"> </span>/secure/cluster-ca.crt<span class="w"> </span><span class="se">\</span>
@@ -724,13 +721,29 @@ short-lived bootstrap-token file and the HTTPS API address:</p>
 <span class="w">  </span>--cluster-dns<span class="w"> </span><span class="m">10</span>.96.0.10
 make<span class="w"> </span>config-drive
 </code></pre></div>
-<p>Attach <code>out/node-config.raw</code> only to the intended worker. It contains credentials;
-keep it private, detach it after enrollment and revoke the bootstrap token.
-The worker retains its rotated identity in persistent state. Use an explicit
-control-plane policy for serving-certificate CSR approval.</p>
-<p>See the <a href="https://github.com/Alien6-Studio/outerspace-os/blob/main/src/cluster/README.md">worker guide</a>
-for the Agent profile, CPU serving and native qualification commands. The <code>outerspace</code>
-and root accounts are locked; the image provides no SSH server or shared password.</p>
+<p>Use the raw OS image as the VM's boot disk and attach <code>out/node-config.raw</code> as a
+second disk. Boot through UEFI with Secure Boot disabled. Check the worker from
+your evaluation cluster's Kubernetes context:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>get<span class="w"> </span>nodes<span class="w"> </span>-o<span class="w"> </span>wide
+</code></pre></div>
+<p>The control plane must have an explicit approval policy for serving-certificate
+requests. Once the node has enrolled, detach the config drive and revoke the
+bootstrap token. The drive contains credentials: keep it private. The worker
+retains its rotated identity in persistent state and can boot without the drive.</p>
+<p>Manage workloads through Kubernetes. The image has locked local accounts and
+no SSH server or shared password.</p>
+<h2 id="deploy-your-workload">Deploy your workload</h2>
+<p>For <strong>Agent</strong>, apply the supplied execution profile, label the intended worker
+and adapt the example task container using the
+<a href="https://github.com/Alien6-Studio/outerspace-os/blob/v0.1.0-alpha.1/src/cluster/README.md#native-oci-agent-v1-profile">Agent setup instructions</a>.
+Network access is denied by default; allow only the flows your task needs.</p>
+<p>For <strong>Inference</strong>, deploy your CPU serving container and model weights through
+Kubernetes, selecting the OuterSpace worker and setting suitable resource
+requests and limits. Keep important model and application data externally.</p>
+<p>See the <a href="https://github.com/Alien6-Studio/outerspace-os/blob/v0.1.0-alpha.1/src/cluster/README.md">worker configuration reference</a>
+for cluster integration details. If enrollment or a workload fails, report the
+version, profile, architecture and reproduction steps in an
+<a href="https://github.com/Alien6-Studio/outerspace-os/issues">issue</a>, without credentials.</p>
 
 
 
@@ -770,7 +783,7 @@ and root accounts are locked; the image provides no SSH server or shared passwor
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../architecture/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Architecture">
+          <a href="../architecture/" class="md-footer__link md-footer__link--prev" aria-label="Previous: How it works">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -780,20 +793,20 @@ and root accounts are locked; the image provides no SSH server or shared passwor
                 Previous
               </span>
               <div class="md-ellipsis">
-                Architecture
+                How it works
               </div>
             </div>
           </a>
         
         
           
-          <a href="../features/" class="md-footer__link md-footer__link--next" aria-label="Next: Features and status">
+          <a href="../features/" class="md-footer__link md-footer__link--next" aria-label="Next: Agent and Inference">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Features and status
+                Agent and Inference
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -810,7 +823,7 @@ and root accounts are locked; the image provides no SSH server or shared passwor
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
+      OuterSpace OS — by Alien6.
     </div>
   
   

@@ -1,65 +1,75 @@
 ---
-title: Architecture
-description: Shared immutable Core, independently qualified Agent and Inference profiles, and separately deployed cluster workloads.
+title: How it works
+description: How the immutable host, persistent node state and your Kubernetes workloads fit together.
 ---
-# Architecture
+# How OuterSpace fits your cluster
+
+OuterSpace runs as a worker in your self-managed Kubernetes cluster. The OS
+provides the host and container runtime; your cluster supplies networking,
+workload scheduling and the applications.
 
 ```text
-Agent pods / inference pods: tools · models · serving engines
+Your workloads       Agent tasks or model-serving containers
+                     Kubernetes deployments, services and storage
 ──────────────────────────────────────────────────────────────
-Kubernetes: kubelet · CRI · Cilium networking and policy
+Your cluster         Separate control plane and Cilium add-ons
 ──────────────────────────────────────────────────────────────
-OuterSpace Core: Linux · systemd · containerd · optional Dragonfly
+OuterSpace worker    kubelet · containerd · Linux · systemd
+                     Read-only system + persistent node state
 ──────────────────────────────────────────────────────────────
-Qualified CPU UEFI virtual machines: AMD64 / ARM64
+CPU alpha            AMD64 or ARM64 UEFI virtual machine
 ```
 
-The Agent and Inference profiles share one build and maintenance stream. Each
-shipped image has its own manifest, source/image identity, SBOM and qualification
-records. A passing result for one profile never promotes another image.
-The Kubernetes control plane, Cilium and application workloads are deployed
-separately from the host image.
+## A host that stays separate from your applications
 
-## Image layout
+The system root is read-only and protected by dm-verity. Install application
+libraries, tools and serving engines in your workload containers. The running
+host does not use in-place `apt` upgrades.
 
-| Partition | Purpose | Alpha status |
+Both worker profiles use the same Core. Agent adds the host policy and I/O
+budgets needed by its restricted execution profile. Inference provides a worker
+for your model-serving deployments, with a larger default state partition.
+See the [profile comparison](features.md) to choose an image.
+
+## What persists
+
+| Storage | Holds | Behavior |
 | --- | --- | --- |
-| EFI system partition | systemd-boot and unified kernel image | UEFI boot qualified; Secure Boot disabled |
-| OOS_ROOT | Read-only ext4 host filesystem | dm-verity data |
-| OOS_VERITY | Root hash tree | Expected hash embedded in UKI |
-| OOS_STATE | Persistent `/var` | Runtime images, rotated kubelet identity and bounded logs; unencrypted |
+| System root | OS and host services | Read-only |
+| Node state (`/var`) | Container storage, worker identity and logs | Survives reboot; unencrypted in the alpha |
+| Agent workspace and scratch | Files created by a task | Temporary; discarded with the pod |
+| Application data and model weights | Your workload's data | Storage and backups are managed by your deployment |
 
-The current image has one root slot. dm-verity detects root-filesystem corruption;
-it does not provide authenticated boot by itself. Signed boot, authenticated A/B
-updates and rollback remain future qualification work. The running host does not
-use in-place `apt` upgrades.
+An enrolled worker retains its hostname and rotated Kubernetes identity after
+restart. Its original config drive is no longer needed. Persistent node state
+is not an application backup; keep important data externally.
 
-## Native execution and networking
+## Joining and networking
 
-containerd uses overlayfs, systemd cgroups and CRI. Kubelet has anonymous
-authentication disabled, webhook authorization, TLS bootstrap and certificate
-rotation. The actual CPU candidates have passed enrollment, Cilium/Envoy readiness,
-DNS/service traffic, default-deny/allow checks and cold-boot recovery.
+A config drive supplies the cluster API address, CA and a short-lived bootstrap
+token. Kubelet enrolls the node and rotates its certificates. The cluster operator
+controls serving-certificate approval and workload policy.
 
-The Agent v1 profile combines native admission, AppArmor, seccomp and cgroup v2
-limits. It qualifies a shared-kernel OCI workload within one trusted administrative
-domain. Revocable workload authority, external approval brokers, fleet quarantine
-and VM-backed tenant isolation remain distinct roadmap items.
+The supplied Cilium configuration provides cluster networking, services and
+network policy. The Agent profile starts with default-deny ingress and egress;
+the operator must allow the flows a task needs.
 
-Inference qualifies a separately pinned CPU serving workload. Model containers
-and weights have their own provenance and licenses; they are not part of the OS
-image's redistribution approval.
+## Container storage
 
-## OCI delivery and persistent state
+Containerd stores the images used by workloads in node state. Kubelet reclaims
+unused images periodically using age and disk-pressure settings. Budget disk
+space for both image layers and your workloads.
 
-Dragonfly is enabled through explicit node configuration. Containerd retains
-HTTPS origin resolution and content-digest verification. Kubelet owns runtime
-image garbage collection, with a 24-hour maximum unused age and 80%/65% pressure
-thresholds. Dragonfly's peer cache has a separate six-hour TTL.
+Optional Dragonfly peer delivery is experimental in this alpha. It does not
+replace local image storage or manage model weights. End-to-end peer delivery,
+private-registry access control and fleet cache behavior are outside the
+evaluated scope.
 
-End-to-end P2P, private-registry authorization, peer security and fleet cache
-lifecycle remain unqualified. Model-weight caching is a separate lifecycle.
-No throughput or storage-reduction guarantee is implied by the architecture.
+## Replacing a node
 
-See the [architecture decisions](https://github.com/Alien6-Studio/outerspace-os/tree/main/docs/adr)
-and [worker configuration](https://github.com/Alien6-Studio/outerspace-os/blob/main/src/cluster/README.md).
+The alpha uses a single system slot and has no authenticated updater or rollback
+mechanism. Plan to drain and recreate disposable evaluation nodes when changing
+the OS image. UEFI boot requires Secure Boot to be disabled.
+
+Follow [Get started](getting-started.md) to prepare a worker. For design rationale,
+see the [architecture decisions](https://github.com/Alien6-Studio/outerspace-os/tree/main/docs/adr).

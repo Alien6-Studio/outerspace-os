@@ -1,38 +1,43 @@
 ---
-title: Introduction
-description: The qualified Agent and Inference CPU profiles of OuterSpace OS and the scope of the first alpha.
+title: Overview
+description: A dedicated Kubernetes worker OS for containerized agent tasks and CPU model serving.
 ---
-# One OS, two worker profiles
+# A dedicated host for AI workers
 
-OuterSpace OS is an Ubuntu-based Linux distribution for Kubernetes workers.
-The shared Core supplies the kernel, systemd, containerd, kubelet and immutable
-node identity. Agent frameworks, inference engines, models and their language
-libraries run in separately deployed containers.
+OuterSpace OS is an immutable, Ubuntu-based Linux distribution for Kubernetes
+workers running agent tasks and inference. It brings the host system, container
+runtime and node services together in one image. Your tools, serving engines and
+models stay in containers, where you can deploy and replace them independently.
 
-**Version 0.1.0-alpha.1 is qualified for CPU evaluation and prepared as a draft.**
-The first milestone, [Execution foundation](https://github.com/Alien6-Studio/outerspace-os/milestone/1),
-is complete. Public downloads await publication of the draft; there is no stable
-or supported production release.
+## Where it fits
 
-## Qualified today
+Use OuterSpace when you operate a self-managed Kubernetes cluster and want
+dedicated workers for AI workloads. The OS supplies Linux, systemd, containerd
+and kubelet. You supply the control plane, Cilium networking and the applications
+you want to run.
 
-- **Agent:** native OCI admission and isolation, enforced resource limits, pressure
-  scenarios and recovery after worker restart.
-- **Inference:** real CPU model serving, workload replacement and drain/recovery.
-- **Both:** separate AMD64 and ARM64 images, UEFI boot, Kubernetes/Cilium enrollment,
-  certificate rotation and cold-boot recovery on the actual OuterSpace kernel.
+The system root is read-only. Container storage, logs and the worker's identity
+live in separate persistent state, so an enrolled node can restart and rejoin
+the cluster without its original bootstrap credentials.
 
-The host combines Ubuntu 24.04 LTS packages with source-built Linux 6.18.60 and
-pinned runtimes. A read-only dm-verity root is paired with persistent `/var`.
-Dragonfly is an optional OCI delivery component; its fleet/P2P qualification is
-still separate work.
+## Pick a profile
 
-## Evaluation scope
+**Agent** provides bounded execution for small containerized tasks and tools.
+The operator controls admission and network access; each task runs with restricted
+permissions and fixed resource budgets.
 
-Use disposable UEFI VMs and a separate, self-managed Kubernetes control plane.
-The native qualification used four vCPUs and 4 GiB RAM per worker. Bare-metal,
-GPU, authenticated updates and production support have not been qualified.
-Host VPNs and custom network configurations are outside the alpha's reviewed scope.
+**Inference** hosts CPU model-serving containers. Deploy your serving engine and
+weights through Kubernetes, replace the workload as it changes, and drain the
+worker when you need to take it out of service.
 
-Start with [build and test](getting-started.md), [architecture](architecture.md)
-and the [alpha release information](releases.md).
+Both profiles are available as source builds for AMD64 and ARM64. The
+[profile guide](features.md) explains the differences and the Agent alpha's limits.
+
+## Start with a disposable VM
+
+The current version, **0.1.0-alpha.1**, is a CPU preview. Its release is still a
+draft, so public downloads are pending. Build the tagged source to evaluate it
+today, using a UEFI VM with 4 vCPUs, 4 GiB RAM and Secure Boot disabled.
+
+GPU workers, bare-metal support and production operation are outside this alpha.
+Read the [release information](releases.md), then follow [Get started](getting-started.md).

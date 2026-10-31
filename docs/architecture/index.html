@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Shared immutable Core, independently qualified Agent and Inference profiles, and separately deployed cluster workloads.">
+        <meta name="description" content="How the immutable host, persistent node state and your Kubernetes workloads fit together.">
       
       
         <meta name="author" content="Alien6">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Architecture - OuterSpace OS</title>
+        <title>How it works - OuterSpace OS</title>
       
     
     
@@ -56,8 +56,8 @@
     
     
 <meta property="og:type" content="website">
-<meta property="og:title" content="Architecture — OuterSpace OS">
-<meta property="og:description" content="Shared immutable Core, independently qualified Agent and Inference profiles, and separately deployed cluster workloads.">
+<meta property="og:title" content="How it works — OuterSpace OS">
+<meta property="og:description" content="How the immutable host, persistent node state and your Kubernetes workloads fit together.">
 <meta property="og:url" content="https://os.outerspace.sh/architecture/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#architecture" class="md-skip">
+        <a href="#how-outerspace-fits-your-cluster" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Architecture
+              How it works
             
           </span>
         </div>
@@ -284,7 +284,7 @@
   
   
   <span class="md-ellipsis">
-    Documentation
+    Explore OuterSpace OS
     
   </span>
   
@@ -295,7 +295,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Documentation
+            Explore OuterSpace OS
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -343,7 +343,7 @@
   
   
   <span class="md-ellipsis">
-    Architecture
+    How it works
     
   </span>
   
@@ -356,7 +356,7 @@
   
   
   <span class="md-ellipsis">
-    Architecture
+    How it works
     
   </span>
   
@@ -379,27 +379,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#image-layout" class="md-nav__link">
+  <a href="#a-host-that-stays-separate-from-your-applications" class="md-nav__link">
     <span class="md-ellipsis">
-      Image layout
+      A host that stays separate from your applications
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#native-execution-and-networking" class="md-nav__link">
+  <a href="#what-persists" class="md-nav__link">
     <span class="md-ellipsis">
-      Native execution and networking
+      What persists
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#oci-delivery-and-persistent-state" class="md-nav__link">
+  <a href="#joining-and-networking" class="md-nav__link">
     <span class="md-ellipsis">
-      OCI delivery and persistent state
+      Joining and networking
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Container storage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replacing-a-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      Replacing a node
     </span>
   </a>
   
@@ -426,7 +444,7 @@
   
   
   <span class="md-ellipsis">
-    Build and test
+    Get started
     
   </span>
   
@@ -449,7 +467,7 @@
   
   
   <span class="md-ellipsis">
-    Features and status
+    Agent and Inference
     
   </span>
   
@@ -536,79 +554,6 @@
   
 
     
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    About
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            About
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../about/sponsors/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Alien6
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -636,27 +581,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#image-layout" class="md-nav__link">
+  <a href="#a-host-that-stays-separate-from-your-applications" class="md-nav__link">
     <span class="md-ellipsis">
-      Image layout
+      A host that stays separate from your applications
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#native-execution-and-networking" class="md-nav__link">
+  <a href="#what-persists" class="md-nav__link">
     <span class="md-ellipsis">
-      Native execution and networking
+      What persists
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#oci-delivery-and-persistent-state" class="md-nav__link">
+  <a href="#joining-and-networking" class="md-nav__link">
     <span class="md-ellipsis">
-      OCI delivery and persistent state
+      Joining and networking
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Container storage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#replacing-a-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      Replacing a node
     </span>
   </a>
   
@@ -681,78 +644,84 @@
   
 
 
-<h1 id="architecture">Architecture</h1>
-<div class="highlight"><pre><span></span><code>Agent pods / inference pods: tools · models · serving engines
+<h1 id="how-outerspace-fits-your-cluster">How OuterSpace fits your cluster</h1>
+<p>OuterSpace runs as a worker in your self-managed Kubernetes cluster. The OS
+provides the host and container runtime; your cluster supplies networking,
+workload scheduling and the applications.</p>
+<div class="highlight"><pre><span></span><code>Your workloads       Agent tasks or model-serving containers
+                     Kubernetes deployments, services and storage
 ──────────────────────────────────────────────────────────────
-Kubernetes: kubelet · CRI · Cilium networking and policy
+Your cluster         Separate control plane and Cilium add-ons
 ──────────────────────────────────────────────────────────────
-OuterSpace Core: Linux · systemd · containerd · optional Dragonfly
+OuterSpace worker    kubelet · containerd · Linux · systemd
+                     Read-only system + persistent node state
 ──────────────────────────────────────────────────────────────
-Qualified CPU UEFI virtual machines: AMD64 / ARM64
+CPU alpha            AMD64 or ARM64 UEFI virtual machine
 </code></pre></div>
-<p>The Agent and Inference profiles share one build and maintenance stream. Each
-shipped image has its own manifest, source/image identity, SBOM and qualification
-records. A passing result for one profile never promotes another image.
-The Kubernetes control plane, Cilium and application workloads are deployed
-separately from the host image.</p>
-<h2 id="image-layout">Image layout</h2>
+<h2 id="a-host-that-stays-separate-from-your-applications">A host that stays separate from your applications</h2>
+<p>The system root is read-only and protected by dm-verity. Install application
+libraries, tools and serving engines in your workload containers. The running
+host does not use in-place <code>apt</code> upgrades.</p>
+<p>Both worker profiles use the same Core. Agent adds the host policy and I/O
+budgets needed by its restricted execution profile. Inference provides a worker
+for your model-serving deployments, with a larger default state partition.
+See the <a href="../features/">profile comparison</a> to choose an image.</p>
+<h2 id="what-persists">What persists</h2>
 <table>
 <thead>
 <tr>
-<th>Partition</th>
-<th>Purpose</th>
-<th>Alpha status</th>
+<th>Storage</th>
+<th>Holds</th>
+<th>Behavior</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>EFI system partition</td>
-<td>systemd-boot and unified kernel image</td>
-<td>UEFI boot qualified; Secure Boot disabled</td>
+<td>System root</td>
+<td>OS and host services</td>
+<td>Read-only</td>
 </tr>
 <tr>
-<td>OOS_ROOT</td>
-<td>Read-only ext4 host filesystem</td>
-<td>dm-verity data</td>
+<td>Node state (<code>/var</code>)</td>
+<td>Container storage, worker identity and logs</td>
+<td>Survives reboot; unencrypted in the alpha</td>
 </tr>
 <tr>
-<td>OOS_VERITY</td>
-<td>Root hash tree</td>
-<td>Expected hash embedded in UKI</td>
+<td>Agent workspace and scratch</td>
+<td>Files created by a task</td>
+<td>Temporary; discarded with the pod</td>
 </tr>
 <tr>
-<td>OOS_STATE</td>
-<td>Persistent <code>/var</code></td>
-<td>Runtime images, rotated kubelet identity and bounded logs; unencrypted</td>
+<td>Application data and model weights</td>
+<td>Your workload's data</td>
+<td>Storage and backups are managed by your deployment</td>
 </tr>
 </tbody>
 </table>
-<p>The current image has one root slot. dm-verity detects root-filesystem corruption;
-it does not provide authenticated boot by itself. Signed boot, authenticated A/B
-updates and rollback remain future qualification work. The running host does not
-use in-place <code>apt</code> upgrades.</p>
-<h2 id="native-execution-and-networking">Native execution and networking</h2>
-<p>containerd uses overlayfs, systemd cgroups and CRI. Kubelet has anonymous
-authentication disabled, webhook authorization, TLS bootstrap and certificate
-rotation. The actual CPU candidates have passed enrollment, Cilium/Envoy readiness,
-DNS/service traffic, default-deny/allow checks and cold-boot recovery.</p>
-<p>The Agent v1 profile combines native admission, AppArmor, seccomp and cgroup v2
-limits. It qualifies a shared-kernel OCI workload within one trusted administrative
-domain. Revocable workload authority, external approval brokers, fleet quarantine
-and VM-backed tenant isolation remain distinct roadmap items.</p>
-<p>Inference qualifies a separately pinned CPU serving workload. Model containers
-and weights have their own provenance and licenses; they are not part of the OS
-image's redistribution approval.</p>
-<h2 id="oci-delivery-and-persistent-state">OCI delivery and persistent state</h2>
-<p>Dragonfly is enabled through explicit node configuration. Containerd retains
-HTTPS origin resolution and content-digest verification. Kubelet owns runtime
-image garbage collection, with a 24-hour maximum unused age and 80%/65% pressure
-thresholds. Dragonfly's peer cache has a separate six-hour TTL.</p>
-<p>End-to-end P2P, private-registry authorization, peer security and fleet cache
-lifecycle remain unqualified. Model-weight caching is a separate lifecycle.
-No throughput or storage-reduction guarantee is implied by the architecture.</p>
-<p>See the <a href="https://github.com/Alien6-Studio/outerspace-os/tree/main/docs/adr">architecture decisions</a>
-and <a href="https://github.com/Alien6-Studio/outerspace-os/blob/main/src/cluster/README.md">worker configuration</a>.</p>
+<p>An enrolled worker retains its hostname and rotated Kubernetes identity after
+restart. Its original config drive is no longer needed. Persistent node state
+is not an application backup; keep important data externally.</p>
+<h2 id="joining-and-networking">Joining and networking</h2>
+<p>A config drive supplies the cluster API address, CA and a short-lived bootstrap
+token. Kubelet enrolls the node and rotates its certificates. The cluster operator
+controls serving-certificate approval and workload policy.</p>
+<p>The supplied Cilium configuration provides cluster networking, services and
+network policy. The Agent profile starts with default-deny ingress and egress;
+the operator must allow the flows a task needs.</p>
+<h2 id="container-storage">Container storage</h2>
+<p>Containerd stores the images used by workloads in node state. Kubelet reclaims
+unused images periodically using age and disk-pressure settings. Budget disk
+space for both image layers and your workloads.</p>
+<p>Optional Dragonfly peer delivery is experimental in this alpha. It does not
+replace local image storage or manage model weights. End-to-end peer delivery,
+private-registry access control and fleet cache behavior are outside the
+evaluated scope.</p>
+<h2 id="replacing-a-node">Replacing a node</h2>
+<p>The alpha uses a single system slot and has no authenticated updater or rollback
+mechanism. Plan to drain and recreate disposable evaluation nodes when changing
+the OS image. UEFI boot requires Secure Boot to be disabled.</p>
+<p>Follow <a href="../getting-started/">Get started</a> to prepare a worker. For design rationale,
+see the <a href="https://github.com/Alien6-Studio/outerspace-os/tree/main/docs/adr">architecture decisions</a>.</p>
 
 
 
@@ -809,13 +778,13 @@ and <a href="https://github.com/Alien6-Studio/outerspace-os/blob/main/src/cluste
         
         
           
-          <a href="../getting-started/" class="md-footer__link md-footer__link--next" aria-label="Next: Build and test">
+          <a href="../getting-started/" class="md-footer__link md-footer__link--next" aria-label="Next: Get started">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Build and test
+                Get started
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -832,7 +801,7 @@ and <a href="https://github.com/Alien6-Studio/outerspace-os/blob/main/src/cluste
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
+      OuterSpace OS — by Alien6.
     </div>
   
   

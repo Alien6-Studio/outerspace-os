@@ -23,7 +23,7 @@ def verify(checksums, bundle, commit, tag, run_id):
     # artifact digest. Certificate constraints are independent of the predicate.
     result = json.loads(subprocess.check_output([
         'gh', 'attestation', 'verify', str(checksums), '--bundle', str(bundle),
-        '--repo', REPOSITORY, '--signer-repo', REPOSITORY, '--signer-workflow', WORKFLOW,
+        '--repo', REPOSITORY, '--signer-workflow', WORKFLOW,
         '--signer-digest', commit, '--source-digest', commit, '--source-ref', 'refs/tags/' + tag,
         '--cert-oidc-issuer', 'https://token.actions.githubusercontent.com',
         '--deny-self-hosted-runners', '--predicate-type', 'https://slsa.dev/provenance/v1',

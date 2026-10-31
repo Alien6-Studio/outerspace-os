@@ -381,6 +381,11 @@ class ProvenanceTests(unittest.TestCase):
                 for flag in ['--signer-digest', '--source-digest', '--source-ref', '--deny-self-hosted-runners',
                              '--signer-workflow', '--cert-oidc-issuer']:
                     self.assertIn(flag, command)
+                # gh's actor selectors are mutually exclusive; the exact workflow
+                # selector includes its repository and retains the stricter bound.
+                selectors = {'--cert-identity', '--cert-identity-regex', '--signer-repo', '--signer-workflow'}
+                self.assertEqual(selectors.intersection(command), {'--signer-workflow'})
+                self.assertEqual(command[command.index('--signer-workflow') + 1], attestations.WORKFLOW)
                 with self.assertRaisesRegex(ValueError, 'workflow run'):
                     attestations.verify(checksums, bundle, 'a'*40, 'v0.1.0-alpha.1', '124')
             with patch.object(attestations.subprocess, 'check_output', side_effect=subprocess.CalledProcessError(1, 'gh')):

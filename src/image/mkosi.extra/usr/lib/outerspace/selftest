@@ -22,6 +22,9 @@ done
 ss -H -u -a >/dev/null 2>/run/outerspace-udp-diag.err || fail 'UDP socket diagnostics missing'
 [[ ! -s /run/outerspace-udp-diag.err ]] || fail 'UDP socket diagnostics fell back or reported an error'
 [[ -r /proc/schedstat ]] || fail 'scheduler statistics missing'
+for pressure in cpu memory io; do
+    [[ -r /proc/pressure/$pressure && -r /sys/fs/cgroup/$pressure.pressure ]] || fail "PSI accounting missing: $pressure"
+done
 findmnt -n -o OPTIONS / | tr ',' '\n' | grep -qx ro || fail 'root is writable'
 [[ $(findmnt -n -o FSTYPE /) == ext4 ]] || fail 'unexpected root filesystem'
 ls /sys/block/dm-*/dm/name | xargs cat | grep -q root || fail 'verity mapping missing'

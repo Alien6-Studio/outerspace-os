@@ -121,7 +121,10 @@ def snapshot(root, request):
             if path.stat().st_ino != inode:
                 raise ValueError('Cgroup identity changed while reading')
             result['status'] = 'observed'
-        except (FileNotFoundError, ProcessLookupError):
+        except (FileNotFoundError, ProcessLookupError) as exc:
+            if path.is_dir():
+                counter = Path(exc.filename).name if exc.filename else 'unknown'
+                raise ValueError('Kernel lacks required phase accounting counter: ' + counter) from None
             result['status'] = 'lost-during-snapshot'
             result['gaps'].append('cgroup-disappeared')
     result['finished_monotonic_ns'] = time.monotonic_ns()

@@ -289,7 +289,7 @@
         ]
       },
       "materials": {
-        "build/kernel/kernel.lock.json": "4c1ebbca95ce1d36f633eb87e2a3fcd9594bbf22178df25d8cc3e10b034e3596",
+        "build/kernel/kernel.lock.json": "37ad13d910b77c0ae0d974cb77045dd44c045052a8fcaf477731803037d330cc",
         "build/kernel/release-key.gpg": "8467aa3e7270895f8d1e27a274ea37cffffaa8d204eb4cf4991f296a8f12fc6f",
         "build/tools/kernel_build.py": "1d31305535b4a0c8cd1c5af6648ff9e7d14f5e64054e9987b216d393cc921b54",
         "build/tools/kernel_inventory.py": "e3cde8ca4ad4598f9f0032e7a7c31371f39d52d5c4d190737f15c3f562d2a6cd",
@@ -1502,7 +1502,26 @@
           "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_NETFS_SUPPORT\": \"n\"}. This decision is limited to the reviewed signed source and patches."
         }
       ],
-      "approval_proposal_sha256": "285d57fdaeb194ab1d61ef13bff656def51bc9a85ac872da47575ff31072f52a"
+      "approval_proposal_sha256": "285d57fdaeb194ab1d61ef13bff656def51bc9a85ac872da47575ff31072f52a",
+      "technical_revalidations": [
+        {
+          "verified_at": "2026-10-31T10:57:27.132004+00:00",
+          "verified_by": "Codex",
+          "reason": "Enable the PSI accounting required by issue #29. Upstream source, signature, patches, approved advisory decisions, image predicates and expiry are unchanged.",
+          "previous_kernel_recipe_sha256": "4c1ebbca95ce1d36f633eb87e2a3fcd9594bbf22178df25d8cc3e10b034e3596",
+          "kernel_recipe_sha256": "37ad13d910b77c0ae0d974cb77045dd44c045052a8fcaf477731803037d330cc",
+          "configuration_delta": {
+            "CONFIG_PSI": {
+              "from": "n",
+              "to": "y"
+            }
+          },
+          "checked_architecture": "arm64",
+          "kernel_config_sha256": "36754a742fc11140d37241564dc63098890f640799138bc5d5dd54c84218f5a4",
+          "kernel_receipt_sha256": "512ee668935b3214703a2bf08fa103a530c9fd538955adfbc81d1e7f23a02a5f",
+          "scope": "Compiled ARM64 configuration and patch predicates. Image and AMD64 predicates remain independently mandatory."
+        }
+      ]
     }
   ]
 }

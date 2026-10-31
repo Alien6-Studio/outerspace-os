@@ -1,33 +1,38 @@
 ---
 title: Introduction
-description: What OuterSpace OS builds, who it is for, and what the development image supports today.
+description: The qualified Agent and Inference CPU profiles of OuterSpace OS and the scope of the first alpha.
 ---
-# A Linux host with one mission
+# One OS, two worker profiles
 
-OuterSpace OS is an Ubuntu-based operating system for Kubernetes inference workers,
-installed on bare metal or tested in virtual machines. A small host supplies Linux,
-systemd, containerd and kubelet. Inference engines, model frameworks and user-space
-accelerator libraries belong in containers.
+OuterSpace OS is an Ubuntu-based Linux distribution for Kubernetes workers.
+The shared Core supplies the kernel, systemd, containerd, kubelet and immutable
+node identity. Agent frameworks, inference engines, models and their language
+libraries run in separately deployed containers.
 
-!!! warning "Development — 0.1.0-dev.0"
-    There is no stable release, supported production image or CIS certification.
-    The source and tests are available; hardware qualification, secure updates and
-    security audit evidence are still required.
+**Version 0.1.0-alpha.1 is qualified for CPU evaluation and prepared as a draft.**
+The first milestone, [Execution foundation](https://github.com/Alien6-Studio/outerspace-os/milestone/1),
+is complete. Public downloads await publication of the draft; there is no stable
+or supported production release.
 
-The first foundation uses Ubuntu 24.04 LTS, a generic server kernel, a read-only
-root protected by dm-verity, and a writable `/var` for runtime state. Native
-Dragonfly integration provides optional P2P image delivery. Cilium supplies the
-cluster networking and policy profile.
+## Qualified today
 
-## Where it fits
+- **Agent:** native OCI admission and isolation, enforced resource limits, pressure
+  scenarios and recovery after worker restart.
+- **Inference:** real CPU model serving, workload replacement and drain/recovery.
+- **Both:** separate AMD64 and ARM64 images, UEFI boot, Kubernetes/Cilium enrollment,
+  certificate rotation and cold-boot recovery on the actual OuterSpace kernel.
 
-- Physical inference workers in self-managed Kubernetes / kubeadm clusters.
-- Virtual machines for image qualification and self-managed cloud clusters.
-- Local Docker/kind tests for cluster integration, separately from OS image tests.
+The host combines Ubuntu 24.04 LTS packages with source-built Linux 6.18.60 and
+pinned runtimes. A read-only dm-verity root is paired with persistent `/var`.
+Dragonfly is an optional OCI delivery component; its fleet/P2P qualification is
+still separate work.
 
-Managed AKS node pools require provider-supported OS images. OuterSpace cannot
-replace their base OS. On Azure, test this OS on VMs running a self-managed cluster;
-AKS can separately test portable workloads and supported cluster components.
+## Evaluation scope
 
-Start with the [build guide](getting-started.md), [architecture](architecture.md),
-and [release policy](releases.md).
+Use disposable UEFI VMs and a separate, self-managed Kubernetes control plane.
+The native qualification used four vCPUs and 4 GiB RAM per worker. Bare-metal,
+GPU, authenticated updates and production support have not been qualified.
+Host VPNs and custom network configurations are outside the alpha's reviewed scope.
+
+Start with [build and test](getting-started.md), [architecture](architecture.md)
+and the [alpha release information](releases.md).

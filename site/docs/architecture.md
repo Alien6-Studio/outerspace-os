@@ -1,61 +1,65 @@
 ---
 title: Architecture
-description: Read-only Ubuntu host, persistent runtime state, containerd, Kubernetes, eBPF and peer-assisted image delivery.
+description: Shared immutable Core, independently qualified Agent and Inference profiles, and separately deployed cluster workloads.
 ---
 # Architecture
 
 ```text
-Inference pods: models · serving engines · user-space libraries
+Agent pods / inference pods: tools · models · serving engines
 ──────────────────────────────────────────────────────────────
 Kubernetes: kubelet · CRI · Cilium networking and policy
 ──────────────────────────────────────────────────────────────
-OuterSpace OS: Ubuntu kernel · systemd · containerd · Dragonfly
+OuterSpace Core: Linux · systemd · containerd · optional Dragonfly
 ──────────────────────────────────────────────────────────────
-Bare metal / virtual machine
+Qualified CPU UEFI virtual machines: AMD64 / ARM64
 ```
+
+The Agent and Inference profiles share one build and maintenance stream. Each
+shipped image has its own manifest, source/image identity, SBOM and qualification
+records. A passing result for one profile never promotes another image.
+The Kubernetes control plane, Cilium and application workloads are deployed
+separately from the host image.
 
 ## Image layout
 
-| Partition | Purpose | Status |
+| Partition | Purpose | Alpha status |
 | --- | --- | --- |
-| EFI system partition | systemd-boot and unified kernel image | Unsigned development boot assets |
+| EFI system partition | systemd-boot and unified kernel image | UEFI boot qualified; Secure Boot disabled |
 | OOS_ROOT | Read-only ext4 host filesystem | dm-verity data |
 | OOS_VERITY | Root hash tree | Expected hash embedded in UKI |
-| OOS_STATE | Persistent `/var` | Runtime images, kubelet identity, bounded logs |
+| OOS_STATE | Persistent `/var` | Runtime images, rotated kubelet identity and bounded logs; unencrypted |
 
-A trusted root hash is necessary for authenticity. Development UKIs are unsigned;
-Secure Boot signing is a release gate. The current image has one root slot.
-Authenticated A/B updates, boot health checks and rollback are planned together.
-There are no in-place `apt` upgrades on the running host.
+The current image has one root slot. dm-verity detects root-filesystem corruption;
+it does not provide authenticated boot by itself. Signed boot, authenticated A/B
+updates and rollback remain future qualification work. The running host does not
+use in-place `apt` upgrades.
 
-## Runtime and networking
+## Native execution and networking
 
-containerd uses overlayfs, systemd cgroups and the CRI API. Kubelet is configured
-with anonymous authentication disabled, webhook authorization, TLS bootstrap,
-certificate rotation and default seccomp. CNI binaries and configuration live in
-persistent state through fixed paths in the read-only filesystem.
+containerd uses overlayfs, systemd cgroups and CRI. Kubelet has anonymous
+authentication disabled, webhook authorization, TLS bootstrap and certificate
+rotation. The actual CPU candidates have passed enrollment, Cilium/Envoy readiness,
+DNS/service traffic, default-deny/allow checks and cold-boot recovery.
 
-Cilium is the first eBPF integration. Its trusted agents need privileges; host
-policy disables unprivileged BPF. Kernel BPF/BTF features are checked at build time.
-A local three-node kind lab validates cross-node DNS/service connectivity and
-network-policy deny/restore. That lab uses Docker's kernel and does not qualify
-the OuterSpace OS kernel as a joined cluster node.
+The Agent v1 profile combines native admission, AppArmor, seccomp and cgroup v2
+limits. It qualifies a shared-kernel OCI workload within one trusted administrative
+domain. Revocable workload authority, external approval brokers, fleet quarantine
+and VM-backed tenant isolation remain distinct roadmap items.
 
-## Image and model delivery
+Inference qualifies a separately pinned CPU serving workload. Model containers
+and weights have their own provenance and licenses; they are not part of the OS
+image's redistribution approval.
 
-Dragonfly is enabled by node configuration with explicit registry routing.
-Containerd retains HTTPS origin resolution and digest verification. Each node
-still stores the image content needed by its containers. P2P reduces repeated
-traffic from origin; it does not make local storage unnecessary.
+## OCI delivery and persistent state
 
-Kubelet owns unused image garbage collection (24h maximum age, 80%/65% pressure
-thresholds). Its age tracking resets on kubelet restart. Dragonfly's peer cache
-has a separate six-hour TTL. No external prune loop competes with kubelet.
+Dragonfly is enabled through explicit node configuration. Containerd retains
+HTTPS origin resolution and content-digest verification. Kubelet owns runtime
+image garbage collection, with a 24-hour maximum unused age and 80%/65% pressure
+thresholds. Dragonfly's peer cache has a separate six-hour TTL.
 
-Model weights are a separate lifecycle: an image being ready does not mean weights
-are loaded into RAM or VRAM. Measure image delivery, model loading and inference
-readiness independently. End-to-end P2P, private registry authorization and GPU
-profiles remain qualification work.
+End-to-end P2P, private-registry authorization, peer security and fleet cache
+lifecycle remain unqualified. Model-weight caching is a separate lifecycle.
+No throughput or storage-reduction guarantee is implied by the architecture.
 
-The [source design](https://github.com/Alien6-Studio/outerspace-os/blob/main/design/architecture.md)
-records detailed decisions and references.
+See the [architecture decisions](https://github.com/Alien6-Studio/outerspace-os/tree/main/docs/adr)
+and [worker configuration](https://github.com/Alien6-Studio/outerspace-os/blob/main/src/cluster/README.md).

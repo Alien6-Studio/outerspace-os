@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
-"""Skip image builds only for an explicit set of documentation/community paths."""
+"""Skip image builds only for explicit documentation or promotion-only paths."""
 import argparse
 from pathlib import PurePosixPath
 import re
@@ -19,6 +19,15 @@ DOCUMENTS = frozenset({
     '.github/ISSUE_TEMPLATE/config.yml',
 })
 
+# These files verify/promote existing images or classify CI work; none builds or
+# configures the OS. Contract checks remain mandatory. Any mixed runtime, policy,
+# image-workflow or unknown change still requires the complete image campaign.
+PROMOTION_ONLY = frozenset({
+    'build/tools/attestations.py', '.github/workflows/release.yml',
+    'build/tools/ci-scope.py', 'tests/unit/test_ci_scope.py',
+    'tests/unit/test_supply_chain.py',
+})
+
 
 def documentation_only(path):
     parts = PurePosixPath(path).parts
@@ -32,7 +41,7 @@ def documentation_only(path):
 def requires_images(event, paths):
     # Empty, failed or unknown change inventories must never skip qualification.
     return event not in {'push', 'pull_request'} or not paths or any(
-        not documentation_only(path) for path in paths
+        not (documentation_only(path) or path in PROMOTION_ONLY) for path in paths
     )
 
 
@@ -61,7 +70,7 @@ def main():
             print(f'Change classification unavailable; building images: {error}', file=sys.stderr)
     images = requires_images(args.event, paths)
     print(f'images={str(images).lower()}')
-    print('Full image qualification' if images else 'Documentation/community changes only', file=sys.stderr)
+    print('Full image qualification' if images else 'Documentation or promotion-only changes', file=sys.stderr)
 
 
 if __name__ == '__main__':

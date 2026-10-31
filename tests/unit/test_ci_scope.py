@@ -68,6 +68,19 @@ class CIScopeTests(unittest.TestCase):
                      '/README.md', 'src/docs/data.json', 'docs/data.json']:
             self.assertTrue(scope.requires_images('push', [path]))
 
+    def test_promotion_changes_reuse_images_but_never_skip_runtime_or_policy_changes(self):
+        paths = ['build/tools/attestations.py', '.github/workflows/release.yml',
+                 'build/tools/ci-scope.py', 'tests/unit/test_ci_scope.py',
+                 'tests/unit/test_supply_chain.py']
+        self.assertFalse(scope.requires_images('pull_request', paths))
+        for image_input in ['build/tools/package.py', 'build/tools/prepare-release.py',
+                            'build/security/policy.json', 'build/licenses/reviews.json',
+                            'build/release/policy.json', 'src/kernel/kernel.config',
+                            '.github/workflows/candidate.yml', '.github/workflows/ci.yml', 'VERSION']:
+            with self.subTest(path=image_input):
+                self.assertTrue(scope.requires_images('pull_request', paths + [image_input]))
+        self.assertTrue(scope.requires_images('workflow_dispatch', paths))
+
     def test_git_diff_includes_deletions_renames_and_unusual_names(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

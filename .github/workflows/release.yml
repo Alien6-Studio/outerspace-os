@@ -36,8 +36,32 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
+      - name: Load the verifier from this promotion revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: out/promotion-verifier
+          sparse-checkout: build/tools/attestations.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - name: Check qualification, download exact candidate, verify inventory
-        run: python3 build/tools/prepare-release.py
+        run: |
+          python3 - <<'PY'
+          import hashlib, importlib.util, json, os, runpy, sys
+          from pathlib import Path
+          verifier = Path('out/promotion-verifier/build/tools/attestations.py')
+          expected = json.loads(os.environ['EVIDENCE_JSON'])['attestation_verifier']
+          assert expected['commit'] == os.environ['GITHUB_SHA'], 'Unqualified promotion revision'
+          assert hashlib.sha256(verifier.read_bytes()).hexdigest() == expected['sha256'], 'Verifier differs from qualification'
+          spec = importlib.util.spec_from_file_location('attestations', verifier)
+          module = importlib.util.module_from_spec(spec)
+          sys.modules['attestations'] = module
+          spec.loader.exec_module(module)
+          sys.path.insert(0, str(Path('build/tools').resolve()))
+          runpy.run_path('build/tools/prepare-release.py', run_name='__main__')
+          Path('out/release-assets/verify-attestation.py').write_bytes(verifier.read_bytes())
+          Path('out/release-assets/verify-attestation.py.sha256').write_text(expected['sha256'] + '  verify-attestation.py\n')
+          PY
       - name: Create a draft only
         run: |
           version=$(cat VERSION)

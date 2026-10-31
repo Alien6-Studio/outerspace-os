@@ -23,6 +23,32 @@ import go_dependencies
 LOCK = ROOT / 'build/sbom/sources.lock.json'
 
 
+def go_info_bytes(data):
+    """Match Go's cached .info field order without changing any metadata values."""
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate Go module metadata field')
+            result[key] = value
+        return result
+
+    info = json.loads(data, object_pairs_hook=unique)
+    fields = ('Version', 'Time', 'Origin')
+    origin_fields = ('VCS', 'URL', 'Subdir', 'Hash', 'TagPrefix', 'TagSum', 'Ref', 'RepoSum')
+    if (not isinstance(info, dict) or not {'Version', 'Time'} <= set(info) <= set(fields)
+            or not all(isinstance(info[key], str) for key in ('Version', 'Time'))):
+        raise ValueError('Invalid Go module metadata')
+    if 'Origin' in info:
+        origin = info['Origin']
+        if (not isinstance(origin, dict) or not set(origin) <= set(origin_fields)
+                or not all(isinstance(value, str) for value in origin.values())):
+            raise ValueError('Invalid Go module origin metadata')
+        info['Origin'] = {key: origin[key] for key in origin_fields if key in origin}
+    return json.dumps({key: info[key] for key in fields if key in info},
+                      separators=(',', ':'), ensure_ascii=False).encode()
+
+
 def fetch(cache, entry):
     digest = entry['sha256']
     if not re.fullmatch('[a-f0-9]{64}', digest) or urlsplit(entry['url']).scheme != 'https':
@@ -42,7 +68,7 @@ def fetch(cache, entry):
                 # Locks record Go's cache serialization. Proxy responses may
                 # reorder JSON keys; the resulting bytes must still match the
                 # original locked SHA256 and size, including every origin value.
-                temporary.write_bytes(go_dependencies.info_bytes(temporary.read_bytes()))
+                temporary.write_bytes(go_info_bytes(temporary.read_bytes()))
             if sha256(temporary) != digest:
                 raise ValueError('Corresponding source checksum mismatch: ' + entry['url'])
             temporary.replace(path)

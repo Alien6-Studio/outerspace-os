@@ -11,7 +11,19 @@ import redistribution
 import runtime_review
 import security
 from image_fixtures import identity
-from sbom import write_json
+from sbom import read_json, write_json
+
+
+class CandidateReviewConfigurationTests(unittest.TestCase):
+    def test_candidate_reviews_match_the_checked_in_source_materials(self):
+        if '-dev.' in (runtime_review.ROOT / 'VERSION').read_text():
+            self.skipTest('Development source changes may await a new owner review')
+        policy = read_json(security.POLICY)
+        for key, module in [('runtime_reviews', runtime_review), ('kernel_reviews', kernel_review)]:
+            for review in policy.get(key, []):
+                with self.subTest(review=key):
+                    self.assertEqual(review['materials'], module.material_identity(),
+                                     'Candidate source changes invalidate the recorded owner review')
 
 
 class KernelSourceReviewTests(unittest.TestCase):

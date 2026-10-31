@@ -1,10 +1,10 @@
 site_name: OuterSpace OS
 site_url: https://os.outerspace.sh/
 site_author: Alien6
-site_description: An Ubuntu-based Linux distribution for bare-metal Kubernetes inference. Immutable hosts, Dragonfly image delivery and eBPF networking. In development.
+site_description: Ubuntu-based Linux workers for Agent and Inference workloads. Four qualified CPU alpha images; release in draft.
 repo_name: Alien6-Studio/outerspace-os
 repo_url: https://github.com/Alien6-Studio/outerspace-os
-copyright: OuterSpace OS — by Alien6. Development project; no stable release available.
+copyright: OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
 strict: true
 theme:
   name: material
@@ -35,7 +35,7 @@ extra_css:
   - assets/stylesheets/docs.css
 extra:
   generator: false
-  version: 0.1.0-dev.0
+  version: 0.1.0-alpha.1
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/Alien6-Studio/outerspace-os

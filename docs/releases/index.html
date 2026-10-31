@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="OuterSpace OS release phases, versioning, evidence gates and maintenance policy from development through stable.">
+        <meta name="description" content="Status, qualified scope and limitations of OuterSpace OS 0.1.0-alpha.1, with the remaining release gates.">
       
       
         <meta name="author" content="Alien6">
@@ -57,7 +57,7 @@
     
 <meta property="og:type" content="website">
 <meta property="og:title" content="Releases — OuterSpace OS">
-<meta property="og:description" content="OuterSpace OS release phases, versioning, evidence gates and maintenance policy from development through stable.">
+<meta property="og:description" content="Status, qualified scope and limitations of OuterSpace OS 0.1.0-alpha.1, with the remaining release gates.">
 <meta property="og:url" content="https://os.outerspace.sh/releases/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -448,6 +448,24 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#what-the-first-alpha-qualifies" class="md-nav__link">
+    <span class="md-ellipsis">
+      What the first alpha qualifies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation limits
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#qualification-phases" class="md-nav__link">
     <span class="md-ellipsis">
       Qualification phases
@@ -457,18 +475,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#maintenance-model" class="md-nav__link">
+  <a href="#maintenance" class="md-nav__link">
     <span class="md-ellipsis">
-      Maintenance model
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#launch-sequence" class="md-nav__link">
-    <span class="md-ellipsis">
-      Launch sequence
+      Maintenance
     </span>
   </a>
   
@@ -636,6 +645,24 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#what-the-first-alpha-qualifies" class="md-nav__link">
+    <span class="md-ellipsis">
+      What the first alpha qualifies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation limits
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#qualification-phases" class="md-nav__link">
     <span class="md-ellipsis">
       Qualification phases
@@ -645,18 +672,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#maintenance-model" class="md-nav__link">
+  <a href="#maintenance" class="md-nav__link">
     <span class="md-ellipsis">
-      Maintenance model
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#launch-sequence" class="md-nav__link">
-    <span class="md-ellipsis">
-      Launch sequence
+      Maintenance
     </span>
   </a>
   
@@ -682,15 +700,61 @@
 
 
 <h1 id="releases-and-maintenance">Releases and maintenance</h1>
-<p><strong>Current status: <code>0.1.0-dev.0</code>. No stable or public alpha release exists.</strong></p>
-<p>OuterSpace uses its own <code>MAJOR.MINOR.PATCH</code> version, independent of the Ubuntu,
-Linux kernel and Kubernetes versions. It follows familiar prerelease conventions:</p>
-<div class="highlight"><pre><span></span><code>0.1.0-dev.0 → 0.1.0-alpha.1 → 0.1.0-beta.1 → 0.1.0-rc.1 → 0.1.0
-</code></pre></div>
-<p>A tagged build is not automatically a supported release. Each stage requires
-version- and commit-specific evidence. The validator refuses missing gates and
-refuses publishing a <code>-dev.N</code> version as a release.</p>
+<p><strong>Current version: <code>0.1.0-alpha.1</code> — qualified CPU alpha, release in draft.</strong>
+<a href="https://github.com/Alien6-Studio/outerspace-os/milestone/1">Execution foundation</a>
+is closed with all seven delivery issues completed. The draft contains the four
+qualified images and their verification material. Public downloads will appear on
+<a href="https://github.com/Alien6-Studio/outerspace-os/releases">GitHub Releases</a> after
+publication; no stable or production release is claimed.</p>
+<h2 id="what-the-first-alpha-qualifies">What the first alpha qualifies</h2>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>Architectures</th>
+<th>Native scenarios</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Agent</td>
+<td>AMD64, ARM64</td>
+<td>OCI admission/isolation, resource-pressure cases and worker recovery</td>
+</tr>
+<tr>
+<td>Inference</td>
+<td>AMD64, ARM64</td>
+<td>Real CPU serving, workload replacement/drain and worker recovery</td>
+</tr>
+</tbody>
+</table>
+<p>All four images passed two UEFI boots, persistence and host budgets,
+Kubernetes/Cilium enrollment, certificate rotation, cold-boot recovery and their
+own security/redistribution gates. Integration records also retain the static
+Agent resource and operation-phase baselines with their exact image identities.</p>
+<p>The distributions include checksums, GitHub attestations, SBOMs, <strong>2,554
+corresponding-source objects and 120 original APT notices</strong> per reviewed inventory.
+The release also preserves the native and integration records and provides a
+verification companion. Attestations authenticate the inner <code>SHA256SUMS</code>; they
+are not Secure Boot signatures.</p>
+<ul>
+<li><a href="https://github.com/Alien6-Studio/outerspace-os/tree/v0.1.0-alpha.1">Qualified version source</a></li>
+<li><a href="https://github.com/Alien6-Studio/outerspace-os/actions/runs/41219970340">Four-candidate qualification</a></li>
+<li><a href="https://github.com/Alien6-Studio/outerspace-os/actions/runs/41230956048">Verified draft preparation</a></li>
+<li><a href="https://github.com/Alien6-Studio/outerspace-os/issues/7">Remaining roadmap</a></li>
+</ul>
+<h2 id="evaluation-limits">Evaluation limits</h2>
+<p>Use disposable CPU UEFI VMs; the native reference setup has four vCPUs and 4 GiB
+RAM with Secure Boot disabled. A separate Kubernetes control plane is required.
+Bare-metal/GPU qualification, authenticated A/B updates, production support and
+performance guarantees are not included. Persistent state is unencrypted.</p>
+<p>The accepted <strong>CVE-2019-14899</strong> risk expires on <strong>14 November 2026 at 06:24:43 UTC</strong>
+and applies only to the stock CPU configuration without host VPNs or custom
+networking. No universal kernel fix is claimed. Model weights and application
+containers have separate provenance and licensing requirements.</p>
 <h2 id="qualification-phases">Qualification phases</h2>
+<p>OuterSpace uses its own <code>MAJOR.MINOR.PATCH</code> version, independent of Ubuntu, Linux
+and Kubernetes. A version tag alone does not establish support.</p>
 <table>
 <thead>
 <tr>
@@ -701,59 +765,36 @@ refuses publishing a <code>-dev.N</code> version as a release.</p>
 </thead>
 <tbody>
 <tr>
-<td>Development</td>
-<td>Internal engineering and disposable labs</td>
-<td>Unit/contract checks and image build logs</td>
-</tr>
-<tr>
 <td>Alpha</td>
 <td>Explicit experimental preview</td>
-<td>Boot, CRI, config contract, checksums, release notes and license/source review</td>
+<td>Boot, CRI, configuration, checksums, notes, licenses/sources, SBOM, vulnerability review and profile-specific workload gates</td>
 </tr>
 <tr>
 <td>Beta</td>
 <td>Integration testing</td>
-<td>Alpha gates plus Node Ready, Cilium, P2P, GC and state persistence</td>
+<td>Alpha gates plus cluster readiness, Cilium, P2P, image GC and state persistence</td>
 </tr>
 <tr>
 <td>Release candidate</td>
-<td>Frozen candidate for qualification</td>
-<td>Beta gates plus bare metal, CIS audit, signed boot, upgrade/rollback, SBOM and vulnerability review</td>
+<td>Hardware/security qualification</td>
+<td>Beta gates plus bare metal, CIS audit, signed boot and upgrade/rollback</td>
 </tr>
 <tr>
 <td>Stable</td>
 <td>Supported operation within a published matrix</td>
-<td>RC gates plus soak tests and an explicit support policy</td>
+<td>RC gates plus soak evidence and an explicit support policy</td>
 </tr>
 </tbody>
 </table>
-<p>Release CI prepares <strong>draft</strong> releases after verification. Maintainer review and
-complete evidence are required before publication. Stable status is never inferred
-from a green build or a tag. No automatic promotion between stages occurs.</p>
-<h2 id="maintenance-model">Maintenance model</h2>
-<ul>
-<li>Rebuild images from reviewed Ubuntu security/update packages; deploy whole images.</li>
-<li>Pin runtime binaries and verify SHA256. Review kernel ABI and dependent modules together.</li>
-<li>Run regular integration builds to detect package and upstream drift.</li>
-<li>Review dependency updates in pull requests, including release notes and migration risks.</li>
-<li>Record exact package manifests, runtime versions, architecture and source commit.</li>
-<li>Qualify upgrade, downgrade and persistent-state compatibility before promotion.</li>
-</ul>
-<p>Prelaunch work has no production support commitment. A stable branch must state
-its support dates, architectures, kernel/runtime/Kubernetes matrix and security
-response ownership before it can pass the support gate. Upstream Ubuntu LTS
-coverage does not automatically confer support on this distribution.</p>
-<h2 id="launch-sequence">Launch sequence</h2>
-<ol>
-<li>Publish source and clearly marked development documentation.</li>
-<li>Qualify and publish alpha artifacts with known limitations.</li>
-<li>Validate on a dedicated bare-metal worker, then a self-managed cloud VM cluster.</li>
-<li>Complete beta integration and RC security/update gates.</li>
-<li>Publish support policy and stable artifacts with checksums, SBOM and provenance.</li>
-<li>Only then apply to distribution directories with accurate status and licensing.</li>
-</ol>
-<p>The authoritative <a href="https://github.com/Alien6-Studio/outerspace-os/tree/main/release">release policy and evidence contract</a>
-live with the build source. There is no downloadable stable image at this stage.</p>
+<p>The <a href="https://github.com/Alien6-Studio/outerspace-os/blob/main/build/release/policy.json">policy</a>
+and <a href="https://github.com/Alien6-Studio/outerspace-os/blob/main/build/release/README.md">release process</a>
+are authoritative. Release CI prepares a draft from existing qualified artifacts;
+promotion does not rebuild them. Publication and later stages remain explicit decisions.</p>
+<h2 id="maintenance">Maintenance</h2>
+<p>Update reviewed, pinned inputs and deploy whole images. Preserve the source,
+profile, architecture and image identity with every result. Reassess expiring
+vulnerability decisions and retain original upstream notices. No supported
+in-place update path or production support window is offered by this alpha.</p>
 
 
 
@@ -833,7 +874,7 @@ live with the build source. There is no downloadable stable image at this stage.
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. Development project; no stable release available.
+      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
     </div>
   
   
@@ -869,7 +910,7 @@ live with the build source. There is no downloadable stable image at this stage.
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-dev.0"}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-alpha.1"}</script>
     
     
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>

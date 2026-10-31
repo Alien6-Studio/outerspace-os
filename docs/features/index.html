@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Implemented foundations and outstanding qualification gates for the OuterSpace OS development image.">
+        <meta name="description" content="Qualified CPU alpha capabilities and the remaining Agent security and Fleet qualification work.">
       
       
         <meta name="author" content="Alien6">
@@ -57,7 +57,7 @@
     
 <meta property="og:type" content="website">
 <meta property="og:title" content="Features and status — OuterSpace OS">
-<meta property="og:description" content="Implemented foundations and outstanding qualification gates for the OuterSpace OS development image.">
+<meta property="og:description" content="Qualified CPU alpha capabilities and the remaining Agent security and Fleet qualification work.">
 <meta property="og:url" content="https://os.outerspace.sh/features/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -588,65 +588,74 @@
 
 
 <h1 id="capabilities-and-status">Capabilities and status</h1>
+<p><strong>Execution foundation is complete: seven delivery issues closed.</strong>
+The four CPU candidates for <code>0.1.0-alpha.1</code> passed independently. The release
+is currently a draft.</p>
 <table>
 <thead>
 <tr>
 <th>Area</th>
-<th>Implemented foundation</th>
-<th>Still to qualify</th>
+<th>Qualified or implemented in this alpha</th>
+<th>Remaining scope</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Minimal host</td>
-<td>Ubuntu package assembly, no desktop or model framework</td>
-<td>Hardware-specific footprint and firmware</td>
+<td>Worker profiles</td>
+<td>Independent Agent/Inference images on AMD64 and ARM64</td>
+<td>Bare-metal and GPU hardware matrices</td>
 </tr>
 <tr>
-<td>Immutable root</td>
-<td>Read-only ext4 with dm-verity</td>
-<td>Signed boot, tamper tests, A/B rollback</td>
+<td>Boot and state</td>
+<td>Two UEFI boots, read-only dm-verity root, persistent state</td>
+<td>Authenticated Secure Boot and A/B rollback</td>
 </tr>
 <tr>
-<td>Kubernetes runtime</td>
-<td>containerd, kubelet, CRI tools</td>
-<td>OS node enrollment and real inference pod</td>
+<td>Kubernetes</td>
+<td>Real OuterSpace nodes, CRI, certificate rotation and cold-boot recovery</td>
+<td>Fleet-scale lifecycle and upgrades</td>
 </tr>
 <tr>
-<td>eBPF</td>
-<td>Kernel checks, Cilium profile, local kind policy test</td>
-<td>Cilium on an enrolled OuterSpace node</td>
+<td>Networking</td>
+<td>Cilium/Envoy, DNS/services and default-deny/allow on each image</td>
+<td>Custom networking and host VPNs</td>
 </tr>
 <tr>
-<td>Image delivery</td>
-<td>Native Dragonfly peer, explicit registry routing</td>
-<td>P2P metrics, outage cases, private auth, peer security</td>
+<td>Agent execution</td>
+<td>Native OCI admission, AppArmor/seccomp enforcement and resource-pressure cases</td>
+<td>Scoped credentials, approvals, egress mediation and quarantine</td>
 </tr>
 <tr>
-<td>Cache cleanup</td>
-<td>Kubelet max age/pressure and separate peer TTL</td>
-<td>Long-running GC, restart and disk-pressure tests</td>
+<td>Inference</td>
+<td>Real CPU model serving, replacement, drain and recovery</td>
+<td>GPU/CDI, shared tenancy and serving QoS</td>
 </tr>
 <tr>
-<td>Hardening</td>
-<td>Accounts locked, AppArmor, seccomp defaults, audit and sysctls</td>
-<td>CIS audit, tailoring, enforcement and vulnerability evidence</td>
+<td>Resource evidence</td>
+<td>Static baselines and trusted operation-phase measurements</td>
+<td>Hardware capacity claims and adaptive-budget research</td>
 </tr>
 <tr>
-<td>Accelerators</td>
-<td>CPU foundation</td>
-<td>GPU kernel/driver/CDI profile and hardware tests</td>
+<td>OCI delivery</td>
+<td>Optional native Dragonfly component and explicit routing</td>
+<td>P2P, private auth, peer security and cache lifecycle qualification</td>
 </tr>
 <tr>
-<td>Releases</td>
-<td>Version and evidence gate validator</td>
-<td>Qualified preview artifacts, signing and supported stable branch</td>
+<td>Supply chain</td>
+<td>SBOMs, sources/notices, reviewed vulnerabilities and attested checksums</td>
+<td>Ongoing updates and renewal of expiring decisions</td>
+</tr>
+<tr>
+<td>Release</td>
+<td>Four qualified CPU candidates and verified draft preparation</td>
+<td>Public publication, then later beta/RC/stable gates</td>
 </tr>
 </tbody>
 </table>
-<p>No latency, image-size reduction percentage or CIS compliance score is published
-without a reproducible measurement. See <a href="../security/">security</a> and
-<a href="../releases/">release qualification</a>.</p>
+<p>The <a href="https://github.com/Alien6-Studio/outerspace-os/issues/7">roadmap</a> tracks the
+remaining <strong>Agent security</strong> and <strong>Fleet qualification</strong> milestones. No general
+latency, energy, image-size reduction or CIS compliance claim follows from these
+reference results. See <a href="../security/">security</a> and <a href="../releases/">release information</a>.</p>
 
 
 
@@ -726,7 +735,7 @@ without a reproducible measurement. See <a href="../security/">security</a> and
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. Development project; no stable release available.
+      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
     </div>
   
   
@@ -762,7 +771,7 @@ without a reproducible measurement. See <a href="../security/">security</a> and
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-dev.0"}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-alpha.1"}</script>
     
     
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>

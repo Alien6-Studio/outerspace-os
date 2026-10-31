@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Answers about bare-metal installation, AKS compatibility, P2P storage, GPU support and OuterSpace OS release status.">
+        <meta name="description" content="Answers about the CPU alpha, Agent and Inference profiles, image verification, GPU support and release status.">
       
       
         <meta name="author" content="Alien6">
@@ -57,7 +57,7 @@
     
 <meta property="og:type" content="website">
 <meta property="og:title" content="FAQ — OuterSpace OS">
-<meta property="og:description" content="Answers about bare-metal installation, AKS compatibility, P2P storage, GPU support and OuterSpace OS release status.">
+<meta property="og:description" content="Answers about the CPU alpha, Agent and Inference profiles, image verification, GPU support and release status.">
 <meta property="og:url" content="https://os.outerspace.sh/faq/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -494,6 +494,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#what-is-available-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      What is available now?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#is-this-a-container-image" class="md-nav__link">
     <span class="md-ellipsis">
       Is this a container image?
@@ -503,36 +512,36 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#can-it-replace-the-os-in-an-aks-node-pool" class="md-nav__link">
+  <a href="#does-the-alpha-run-a-real-model" class="md-nav__link">
     <span class="md-ellipsis">
-      Can it replace the OS in an AKS node pool?
+      Does the alpha run a real model?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#does-p2p-eliminate-images-on-every-machine" class="md-nav__link">
+  <a href="#does-an-attestation-enable-secure-boot" class="md-nav__link">
     <span class="md-ellipsis">
-      Does P2P eliminate images on every machine?
+      Does an attestation enable Secure Boot?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#when-are-unused-images-removed" class="md-nav__link">
+  <a href="#is-gpu-or-bare-metal-operation-supported" class="md-nav__link">
     <span class="md-ellipsis">
-      When are unused images removed?
+      Is GPU or bare-metal operation supported?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#is-gpu-inference-supported" class="md-nav__link">
+  <a href="#does-dragonfly-eliminate-local-image-storage" class="md-nav__link">
     <span class="md-ellipsis">
-      Is GPU inference supported?
+      Does Dragonfly eliminate local image storage?
     </span>
   </a>
   
@@ -672,6 +681,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#what-is-available-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      What is available now?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#is-this-a-container-image" class="md-nav__link">
     <span class="md-ellipsis">
       Is this a container image?
@@ -681,36 +699,36 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#can-it-replace-the-os-in-an-aks-node-pool" class="md-nav__link">
+  <a href="#does-the-alpha-run-a-real-model" class="md-nav__link">
     <span class="md-ellipsis">
-      Can it replace the OS in an AKS node pool?
+      Does the alpha run a real model?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#does-p2p-eliminate-images-on-every-machine" class="md-nav__link">
+  <a href="#does-an-attestation-enable-secure-boot" class="md-nav__link">
     <span class="md-ellipsis">
-      Does P2P eliminate images on every machine?
+      Does an attestation enable Secure Boot?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#when-are-unused-images-removed" class="md-nav__link">
+  <a href="#is-gpu-or-bare-metal-operation-supported" class="md-nav__link">
     <span class="md-ellipsis">
-      When are unused images removed?
+      Is GPU or bare-metal operation supported?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#is-gpu-inference-supported" class="md-nav__link">
+  <a href="#does-dragonfly-eliminate-local-image-storage" class="md-nav__link">
     <span class="md-ellipsis">
-      Is GPU inference supported?
+      Does Dragonfly eliminate local image storage?
     </span>
   </a>
   
@@ -754,28 +772,37 @@
 
 
 <h1 id="questions-about-outerspace-os">Questions about OuterSpace OS</h1>
+<h2 id="what-is-available-now">What is available now?</h2>
+<p><code>0.1.0-alpha.1</code> has four qualified CPU images: Agent and Inference on AMD64 and
+ARM64. The first milestone is complete and the release is prepared as a draft.
+Public downloads will appear on <a href="https://github.com/Alien6-Studio/outerspace-os/releases">GitHub Releases</a>
+after publication. There is no stable release.</p>
 <h2 id="is-this-a-container-image">Is this a container image?</h2>
-<p>It is an operating-system disk image, assembled from Ubuntu packages. Containers
-are the workloads it hosts. The first image targets worker nodes.</p>
-<h2 id="can-it-replace-the-os-in-an-aks-node-pool">Can it replace the OS in an AKS node pool?</h2>
-<p>No. Managed AKS requires its supported node images. OuterSpace can be tested on
-Azure VMs in self-managed Kubernetes, while portable applications can also run on AKS.</p>
-<h2 id="does-p2p-eliminate-images-on-every-machine">Does P2P eliminate images on every machine?</h2>
-<p>Each node still needs the layers it executes. Dragonfly can reduce repeated origin
-traffic by sharing content between peers. Model-weight storage remains separate.</p>
-<h2 id="when-are-unused-images-removed">When are unused images removed?</h2>
-<p>Kubelet owns runtime GC with a configured 24-hour maximum unused age and 80%/65%
-disk-pressure thresholds. Age tracking resets when kubelet restarts. Dragonfly's
-peer cache uses a separate six-hour TTL. These policies still need lifecycle tests.</p>
-<h2 id="is-gpu-inference-supported">Is GPU inference supported?</h2>
-<p>A GPU profile is planned. Driver/kernel compatibility, signed modules, CDI and a
-real inference test on hardware must be validated before claiming support.</p>
+<p>It is an operating-system disk image for Kubernetes workers. Containers hold the
+Agent or Inference workloads. Both profiles share one immutable Core, but each
+shipped image is qualified separately.</p>
+<h2 id="does-the-alpha-run-a-real-model">Does the alpha run a real model?</h2>
+<p>Yes. The Inference candidates passed a separately pinned CPU serving workload,
+including replacement, drain and recovery after node restart. The model weights
+and serving container are not bundled into the host or covered by its licenses.</p>
+<h2 id="does-an-attestation-enable-secure-boot">Does an attestation enable Secure Boot?</h2>
+<p>No. The GitHub attestation authenticates the checksum inventory and its build
+provenance. Secure Boot and authenticated A/B updates have separate, unfinished
+gates. The alpha uses UEFI with Secure Boot disabled.</p>
+<h2 id="is-gpu-or-bare-metal-operation-supported">Is GPU or bare-metal operation supported?</h2>
+<p>Neither has a qualified hardware matrix yet. Evaluate this alpha in disposable
+UEFI VMs. Driver/kernel/CDI integration and physical hardware tests are later work.</p>
+<h2 id="does-dragonfly-eliminate-local-image-storage">Does Dragonfly eliminate local image storage?</h2>
+<p>Each node still needs the image layers it executes. Optional peer delivery can
+share OCI content, while model-weight storage remains separate. P2P, private
+registry authorization and fleet cache lifecycle are not yet qualified.</p>
 <h2 id="is-it-production-ready-or-cis-certified">Is it production ready or CIS certified?</h2>
-<p>No. It is a development foundation with explicit <a href="../releases/">qualification gates</a>.
-There is no stable release or completed CIS audit.</p>
+<p>No. This is an experimental CPU alpha with explicit <a href="../releases/">limits and release gates</a>.
+In particular, the <a href="../security/">time-limited kernel risk acceptance</a> excludes
+host VPNs and custom networking.</p>
 <h2 id="is-it-a-flatcar-fork">Is it a Flatcar fork?</h2>
-<p>No. It takes inspiration from the small, immutable container-host approach and
-assembles its own image from Ubuntu packages.</p>
+<p>No. OuterSpace maintains its own Ubuntu-based image and source-built kernel/runtime
+inputs, with independently packaged Agent and Inference profiles.</p>
 
 
 
@@ -855,7 +882,7 @@ assembles its own image from Ubuntu packages.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. Development project; no stable release available.
+      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
     </div>
   
   
@@ -891,7 +918,7 @@ assembles its own image from Ubuntu packages.</p>
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-dev.0"}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-alpha.1"}</script>
     
     
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>

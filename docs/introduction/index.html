@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="What OuterSpace OS builds, who it is for, and what the development image supports today.">
+        <meta name="description" content="The qualified Agent and Inference CPU profiles of OuterSpace OS and the scope of the first alpha.">
       
       
         <meta name="author" content="Alien6">
@@ -57,7 +57,7 @@
     
 <meta property="og:type" content="website">
 <meta property="og:title" content="Overview — OuterSpace OS">
-<meta property="og:description" content="What OuterSpace OS builds, who it is for, and what the development image supports today.">
+<meta property="og:description" content="The qualified Agent and Inference CPU profiles of OuterSpace OS and the scope of the first alpha.">
 <meta property="og:url" content="https://os.outerspace.sh/introduction/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#a-linux-host-with-one-mission" class="md-skip">
+        <a href="#one-os-two-worker-profiles" class="md-skip">
           Skip to content
         </a>
       
@@ -356,9 +356,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#where-it-fits" class="md-nav__link">
+  <a href="#qualified-today" class="md-nav__link">
     <span class="md-ellipsis">
-      Where it fits
+      Qualified today
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation scope
     </span>
   </a>
   
@@ -618,9 +627,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#where-it-fits" class="md-nav__link">
+  <a href="#qualified-today" class="md-nav__link">
     <span class="md-ellipsis">
-      Where it fits
+      Qualified today
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluation-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      Evaluation scope
     </span>
   </a>
   
@@ -645,32 +663,34 @@
   
 
 
-<h1 id="a-linux-host-with-one-mission">A Linux host with one mission</h1>
-<p>OuterSpace OS is an Ubuntu-based operating system for Kubernetes inference workers,
-installed on bare metal or tested in virtual machines. A small host supplies Linux,
-systemd, containerd and kubelet. Inference engines, model frameworks and user-space
-accelerator libraries belong in containers.</p>
-<div class="admonition warning">
-<p class="admonition-title">Development — 0.1.0-dev.0</p>
-<p>There is no stable release, supported production image or CIS certification.
-The source and tests are available; hardware qualification, secure updates and
-security audit evidence are still required.</p>
-</div>
-<p>The first foundation uses Ubuntu 24.04 LTS, a generic server kernel, a read-only
-root protected by dm-verity, and a writable <code>/var</code> for runtime state. Native
-Dragonfly integration provides optional P2P image delivery. Cilium supplies the
-cluster networking and policy profile.</p>
-<h2 id="where-it-fits">Where it fits</h2>
+<h1 id="one-os-two-worker-profiles">One OS, two worker profiles</h1>
+<p>OuterSpace OS is an Ubuntu-based Linux distribution for Kubernetes workers.
+The shared Core supplies the kernel, systemd, containerd, kubelet and immutable
+node identity. Agent frameworks, inference engines, models and their language
+libraries run in separately deployed containers.</p>
+<p><strong>Version 0.1.0-alpha.1 is qualified for CPU evaluation and prepared as a draft.</strong>
+The first milestone, <a href="https://github.com/Alien6-Studio/outerspace-os/milestone/1">Execution foundation</a>,
+is complete. Public downloads await publication of the draft; there is no stable
+or supported production release.</p>
+<h2 id="qualified-today">Qualified today</h2>
 <ul>
-<li>Physical inference workers in self-managed Kubernetes / kubeadm clusters.</li>
-<li>Virtual machines for image qualification and self-managed cloud clusters.</li>
-<li>Local Docker/kind tests for cluster integration, separately from OS image tests.</li>
+<li><strong>Agent:</strong> native OCI admission and isolation, enforced resource limits, pressure
+  scenarios and recovery after worker restart.</li>
+<li><strong>Inference:</strong> real CPU model serving, workload replacement and drain/recovery.</li>
+<li><strong>Both:</strong> separate AMD64 and ARM64 images, UEFI boot, Kubernetes/Cilium enrollment,
+  certificate rotation and cold-boot recovery on the actual OuterSpace kernel.</li>
 </ul>
-<p>Managed AKS node pools require provider-supported OS images. OuterSpace cannot
-replace their base OS. On Azure, test this OS on VMs running a self-managed cluster;
-AKS can separately test portable workloads and supported cluster components.</p>
-<p>Start with the <a href="../getting-started/">build guide</a>, <a href="../architecture/">architecture</a>,
-and <a href="../releases/">release policy</a>.</p>
+<p>The host combines Ubuntu 24.04 LTS packages with source-built Linux 6.18.60 and
+pinned runtimes. A read-only dm-verity root is paired with persistent <code>/var</code>.
+Dragonfly is an optional OCI delivery component; its fleet/P2P qualification is
+still separate work.</p>
+<h2 id="evaluation-scope">Evaluation scope</h2>
+<p>Use disposable UEFI VMs and a separate, self-managed Kubernetes control plane.
+The native qualification used four vCPUs and 4 GiB RAM per worker. Bare-metal,
+GPU, authenticated updates and production support have not been qualified.
+Host VPNs and custom network configurations are outside the alpha's reviewed scope.</p>
+<p>Start with <a href="../getting-started/">build and test</a>, <a href="../architecture/">architecture</a>
+and the <a href="../releases/">alpha release information</a>.</p>
 
 
 
@@ -750,7 +770,7 @@ and <a href="../releases/">release policy</a>.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. Development project; no stable release available.
+      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
     </div>
   
   
@@ -786,7 +806,7 @@ and <a href="../releases/">release policy</a>.</p>
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-dev.0"}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-alpha.1"}</script>
     
     
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>

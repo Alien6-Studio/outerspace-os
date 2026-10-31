@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="OuterSpace OS targets CIS Ubuntu Level 1 Server with Kubernetes and eBPF tailoring, documented release gates and no premature compliance claims.">
+        <meta name="description" content="Enforced CPU alpha boundaries, reviewed supply-chain decisions and the limits of the current OuterSpace OS qualification.">
       
       
         <meta name="author" content="Alien6">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Security target - OuterSpace OS</title>
+        <title>Security scope - OuterSpace OS</title>
       
     
     
@@ -57,7 +57,7 @@
     
 <meta property="og:type" content="website">
 <meta property="og:title" content="Security — OuterSpace OS">
-<meta property="og:description" content="OuterSpace OS targets CIS Ubuntu Level 1 Server with Kubernetes and eBPF tailoring, documented release gates and no premature compliance claims.">
+<meta property="og:description" content="Enforced CPU alpha boundaries, reviewed supply-chain decisions and the limits of the current OuterSpace OS qualification.">
 <meta property="og:url" content="https://os.outerspace.sh/security/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#security-target" class="md-skip">
+        <a href="#security-scope" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Security target
+              Security scope
             
           </span>
         </div>
@@ -471,18 +471,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#material-development-limitations" class="md-nav__link">
+  <a href="#time-limited-accepted-risk" class="md-nav__link">
     <span class="md-ellipsis">
-      Material development limitations
+      Time-limited accepted risk
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#evidence-before-claims" class="md-nav__link">
+  <a href="#remaining-limits" class="md-nav__link">
     <span class="md-ellipsis">
-      Evidence before claims
+      Remaining limits
     </span>
   </a>
   
@@ -627,18 +627,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#material-development-limitations" class="md-nav__link">
+  <a href="#time-limited-accepted-risk" class="md-nav__link">
     <span class="md-ellipsis">
-      Material development limitations
+      Time-limited accepted risk
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#evidence-before-claims" class="md-nav__link">
+  <a href="#remaining-limits" class="md-nav__link">
     <span class="md-ellipsis">
-      Evidence before claims
+      Remaining limits
     </span>
   </a>
   
@@ -663,33 +663,38 @@
   
 
 
-<h1 id="security-target">Security target</h1>
-<p>The target is <strong>CIS Ubuntu Linux 24.04 LTS v2.0.0, Level 1 Server</strong>, with explicit
-Kubernetes/eBPF tailoring. CIS is the Center for Internet Security. Its benchmarks
-provide configuration recommendations; choosing them is not a certification.</p>
-<p>The image includes a read-only verity root, locked local accounts, no SSH server,
-AppArmor availability, Kubernetes seccomp defaults, kernel-introspection restrictions,
-audit rules and bounded logs. Runtime enforcement still requires testing.</p>
-<h2 id="material-development-limitations">Material development limitations</h2>
+<h1 id="security-scope">Security scope</h1>
+<p>The CPU alpha has passed actual-image boot, native workload and supply-chain
+checks. The Agent profile has demonstrated admission refusals, AppArmor/seccomp
+enforcement, bounded resource pressure and recovery. These results qualify the
+stated shared-kernel profile, not arbitrary untrusted tenancy or production use.</p>
+<p>Each distribution includes an SBOM, corresponding sources, original notices,
+unfiltered vulnerability reports and accountable review decisions. The four
+checksum inventories have GitHub attestations tied to their exact source, tag
+and candidate workflow. Promotion verifies every payload before preparing a draft.</p>
+<h2 id="time-limited-accepted-risk">Time-limited accepted risk</h2>
+<p><strong>CVE-2019-14899 is accepted only for the stock CPU alpha until 14 November 2026,
+06:24:43 UTC.</strong> No host VPN client or configured VPN tunnel is included in this
+qualification. IPsec/XFRM remains compiled for Cilium; no universal kernel fix is
+claimed. Host VPN setup and custom network configurations are outside this scope.</p>
+<p>The recorded kernel non-applicability decisions and source/notice reviews are
+conditional on the verified inputs and configuration. Unknown findings remain
+blocking, and expired decisions must be reviewed again.</p>
+<h2 id="remaining-limits">Remaining limits</h2>
 <ul>
-<li>UKIs are unsigned; dm-verity alone does not establish boot authenticity.</li>
-<li>The state partition is unencrypted.</li>
-<li>There is no authenticated A/B updater or rollback implementation yet.</li>
-<li>Full CIS host and Kubernetes audit evidence is absent.</li>
-<li>Private P2P registry authorization and peer security remain unqualified.</li>
+<li>UKIs are unsigned; dm-verity alone does not authenticate boot. Disable Secure Boot for this alpha.</li>
+<li>Persistent state is unencrypted, and no authenticated A/B updater or rollback is supplied.</li>
+<li>Bare-metal and GPU configurations have not been qualified.</li>
+<li>Agent authority brokers, fleet quarantine, private P2P authorization and peer security remain roadmap work.</li>
+<li>A full CIS audit and production support commitment are not present.</li>
 </ul>
-<h2 id="evidence-before-claims">Evidence before claims</h2>
-<p>Run Canonical USG with a suitable Ubuntu Pro subscription and a reviewed tailoring
-file on a disposable image instance. Preserve audit output. Select a Kubernetes
-benchmark that matches the actual Kubernetes version and retain worker results.
-Translate accepted remediations into the image build; do not blindly mutate an
-enrolled worker with an audit tool's fix command.</p>
-<p>Document every exception with applicability, rationale, owner, review date and
-supporting tests. IP forwarding, trusted BPF agents and executable container state
-need workload-aware policies. Never omit a rule solely to improve a score.</p>
-<p>For the full target, see <a href="https://github.com/Alien6-Studio/outerspace-os/tree/main/security">security documentation</a>.
-For sensitive reports, use GitHub's private reporting feature if enabled; otherwise
-request a private reporting channel without posting exploit details publicly.</p>
+<p>CIS Ubuntu Level 1 Server remains an audit target with explicit Kubernetes/eBPF
+tailoring, not a certification. Hardware, signed updates and fleet adversarial
+qualification belong to the later milestones.</p>
+<p>See the <a href="https://github.com/Alien6-Studio/outerspace-os/blob/main/SECURITY.md">security policy</a>
+and <a href="https://github.com/Alien6-Studio/outerspace-os/tree/main/build/security">recorded release decisions</a>.
+Report vulnerabilities through the repository's
+<a href="https://github.com/Alien6-Studio/outerspace-os/security/advisories/new">private advisory channel</a>.</p>
 
 
 
@@ -769,7 +774,7 @@ request a private reporting channel without posting exploit details publicly.</p
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. Development project; no stable release available.
+      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
     </div>
   
   
@@ -805,7 +810,7 @@ request a private reporting channel without posting exploit details publicly.</p
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-dev.0"}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-alpha.1"}</script>
     
     
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>

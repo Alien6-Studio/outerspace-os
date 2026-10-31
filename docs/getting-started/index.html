@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Build an OuterSpace OS development image from source using Python, Make, Docker and mkosi, then verify it with QEMU.">
+        <meta name="description" content="Build the qualified CPU source snapshot and configure an OuterSpace OS Kubernetes worker in a disposable UEFI VM.">
       
       
         <meta name="author" content="Alien6">
@@ -57,7 +57,7 @@
     
 <meta property="og:type" content="website">
 <meta property="og:title" content="Build and test — OuterSpace OS">
-<meta property="og:description" content="Build an OuterSpace OS development image from source using Python, Make, Docker and mkosi, then verify it with QEMU.">
+<meta property="og:description" content="Build the qualified CPU source snapshot and configure an OuterSpace OS Kubernetes worker in a disposable UEFI VM.">
 <meta property="og:url" content="https://os.outerspace.sh/getting-started/">
 <meta property="og:image" content="https://os.outerspace.sh/assets/images/illustration.png">
 <meta name="theme-color" content="#10101b">
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#build-a-development-image" class="md-skip">
+        <a href="#build-and-evaluate-the-cpu-alpha" class="md-skip">
           Skip to content
         </a>
       
@@ -402,18 +402,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configure-a-worker" class="md-nav__link">
+  <a href="#build-from-source" class="md-nav__link">
     <span class="md-ellipsis">
-      Configure a worker
+      Build from source
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#operator-identity" class="md-nav__link">
+  <a href="#verify-and-boot-a-downloaded-candidate" class="md-nav__link">
     <span class="md-ellipsis">
-      Operator identity
+      Verify and boot a downloaded candidate
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-a-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure a worker
     </span>
   </a>
   
@@ -627,18 +636,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configure-a-worker" class="md-nav__link">
+  <a href="#build-from-source" class="md-nav__link">
     <span class="md-ellipsis">
-      Configure a worker
+      Build from source
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#operator-identity" class="md-nav__link">
+  <a href="#verify-and-boot-a-downloaded-candidate" class="md-nav__link">
     <span class="md-ellipsis">
-      Operator identity
+      Verify and boot a downloaded candidate
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-a-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configure a worker
     </span>
   </a>
   
@@ -663,44 +681,56 @@
   
 
 
-<h1 id="build-a-development-image">Build a development image</h1>
-<p>Requirements: Python 3.11+, Make and Docker running Linux containers. The build
-uses the Docker VM's native architecture: arm64 on Apple Silicon, amd64 on CI.
-Allow several gigabytes for package caches and build output.</p>
+<h1 id="build-and-evaluate-the-cpu-alpha">Build and evaluate the CPU alpha</h1>
+<p>The <code>0.1.0-alpha.1</code> images are qualified and prepared as a draft. Published downloads
+will appear on <a href="https://github.com/Alien6-Studio/outerspace-os/releases">GitHub Releases</a>.
+Read the <a href="../releases/">alpha limitations</a> before evaluating a worker.</p>
+<h2 id="build-from-source">Build from source</h2>
+<p>Install Python 3.11+, Make and Docker running Linux containers. The build uses
+Docker's native architecture: ARM64 on Apple Silicon, AMD64 on x86 hosts.
+Allow space for image output, source archives and reusable download caches.</p>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Alien6-Studio/outerspace-os.git
 <span class="nb">cd</span><span class="w"> </span>outerspace-os
+git<span class="w"> </span>checkout<span class="w"> </span>v0.1.0-alpha.1
 make<span class="w"> </span>check
-make<span class="w"> </span>builder
-make<span class="w"> </span>build
-make<span class="w"> </span>smoke
+make<span class="w"> </span><span class="nv">PROFILE</span><span class="o">=</span>agent<span class="w"> </span><span class="nv">HARDWARE</span><span class="o">=</span>cpu<span class="w"> </span>builder<span class="w"> </span>build<span class="w"> </span>smoke<span class="w"> </span>package
+<span class="c1"># Build the other profile independently:</span>
+make<span class="w"> </span><span class="nv">PROFILE</span><span class="o">=</span>inference<span class="w"> </span><span class="nv">HARDWARE</span><span class="o">=</span>cpu<span class="w"> </span>build<span class="w"> </span>smoke<span class="w"> </span>package
 </code></pre></div>
-<p>The disposable builder uses privileged Linux mount namespaces. It has no host
-devices or Docker socket mounted. QEMU verification needs no additional privileges.</p>
-<p>The <code>build/</code> directory contains a raw GPT disk, UKI, split kernel/initrd, package
-manifest and boot log. Development images are unsigned. Do not overwrite a physical
-disk to try this first version; use the snapshot-based QEMU smoke test.</p>
-<p>The smoke test checks read-only root, verity mapping, writable state, cgroup v2,
-BPF/BTF availability, AppArmor, selected hardening settings, locked operator account
-and CRI availability. It boots the split kernel/initrd, not the EFI boot path.</p>
+<p>Images, bundles and reports are written under <code>out/&lt;profile&gt;-cpu-&lt;architecture&gt;/</code>;
+<code>.cache/</code> holds reusable downloads. The builder uses privileged Linux mount
+namespaces without a host Docker socket or host devices mounted inside it.</p>
+<p>The smoke test boots the packaged image through <strong>UEFI twice</strong> and checks
+persistence, read-only root, verity, cgroup v2/PSI, kernel BPF/BTF, AppArmor,
+CRI availability and host resource budgets. Native enrollment and workload
+qualification are separate targets; <code>make help</code> lists them.</p>
+<h2 id="verify-and-boot-a-downloaded-candidate">Verify and boot a downloaded candidate</h2>
+<p>Check the archive checksum, then extract the distribution bundle into a new
+directory. The accompanying <code>.tar.attestation.jsonl</code> authenticates its inner
+<code>SHA256SUMS</code>, not the outer tar file. Use the release's <code>verify-attestation.py</code>
+companion with the expected commit, tag and candidate run from the release notes.
+Then run <code>sha256sum -c SHA256SUMS</code> inside the bundle before using the disk image.</p>
+<p>Use a disposable UEFI VM with four vCPUs and 4 GiB RAM, with Secure Boot disabled.
+The qualified configuration uses a separate Kubernetes 1.36 control plane and
+Cilium 1.20.3 with the supplied <code>src/cluster/cilium</code> configuration. This worker
+image does not create the control plane.</p>
 <h2 id="configure-a-worker">Configure a worker</h2>
-<p>The repository includes a config-drive generator. It accepts a real cluster CA,
-a short-lived bootstrap token read from a protected file, and an HTTPS API address.
-It validates input and produces private files. No password is baked into the image.</p>
-<div class="highlight"><pre><span></span><code>python3<span class="w"> </span>scripts/node-config.py<span class="w"> </span><span class="se">\</span>
+<p>From the corresponding source checkout, supply the real cluster CA, a protected
+short-lived bootstrap-token file and the HTTPS API address:</p>
+<div class="highlight"><pre><span></span><code>python3<span class="w"> </span>build/tools/node-config.py<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--api-server<span class="w"> </span>https://api.example.net:6443<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--ca<span class="w"> </span>/secure/cluster-ca.crt<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--token-file<span class="w"> </span>/secure/bootstrap-token<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--cluster-dns<span class="w"> </span><span class="m">10</span>.96.0.10
-./scripts/config-drive.sh
+make<span class="w"> </span>config-drive
 </code></pre></div>
-<p>The generated drive contains credentials. Attach it only to the intended node,
-detach after enrollment and revoke the token. Cluster enrollment on this image
-is still a release gate. See the <a href="https://github.com/Alien6-Studio/outerspace-os#configure-a-worker">repository guide</a>.</p>
-<h2 id="operator-identity">Operator identity</h2>
-<p>The image includes an <code>outerspace</code> account (UID 1000), locked by default. Root is
-also locked; no SSH server, shared password, sudo or autologin is installed. An
-explicit, audited administrative-access design is required before hardware rollout.
-The ASCII boot banner identifies the distribution and development version.</p>
+<p>Attach <code>out/node-config.raw</code> only to the intended worker. It contains credentials;
+keep it private, detach it after enrollment and revoke the bootstrap token.
+The worker retains its rotated identity in persistent state. Use an explicit
+control-plane policy for serving-certificate CSR approval.</p>
+<p>See the <a href="https://github.com/Alien6-Studio/outerspace-os/blob/main/src/cluster/README.md">worker guide</a>
+for the Agent profile, CPU serving and native qualification commands. The <code>outerspace</code>
+and root accounts are locked; the image provides no SSH server or shared password.</p>
 
 
 
@@ -780,7 +810,7 @@ The ASCII boot banner identifies the distribution and development version.</p>
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      OuterSpace OS — by Alien6. Development project; no stable release available.
+      OuterSpace OS — by Alien6. CPU alpha draft; no stable release available.
     </div>
   
   
@@ -816,7 +846,7 @@ The ASCII boot banner identifies the distribution and development version.</p>
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-dev.0"}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.sections", "navigation.footer", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": "0.1.0-alpha.1"}</script>
     
     
       <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>

@@ -1,58 +1,71 @@
 ---
 title: Releases and maintenance
-description: OuterSpace OS release phases, versioning, evidence gates and maintenance policy from development through stable.
+description: Status, qualified scope and limitations of OuterSpace OS 0.1.0-alpha.1, with the remaining release gates.
 ---
 # Releases and maintenance
 
-**Current status: `0.1.0-dev.0`. No stable or public alpha release exists.**
+**Current version: `0.1.0-alpha.1` — qualified CPU alpha, release in draft.**
+[Execution foundation](https://github.com/Alien6-Studio/outerspace-os/milestone/1)
+is closed with all seven delivery issues completed. The draft contains the four
+qualified images and their verification material. Public downloads will appear on
+[GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases) after
+publication; no stable or production release is claimed.
 
-OuterSpace uses its own `MAJOR.MINOR.PATCH` version, independent of the Ubuntu,
-Linux kernel and Kubernetes versions. It follows familiar prerelease conventions:
+## What the first alpha qualifies
 
-```text
-0.1.0-dev.0 → 0.1.0-alpha.1 → 0.1.0-beta.1 → 0.1.0-rc.1 → 0.1.0
-```
+| Profile | Architectures | Native scenarios |
+| --- | --- | --- |
+| Agent | AMD64, ARM64 | OCI admission/isolation, resource-pressure cases and worker recovery |
+| Inference | AMD64, ARM64 | Real CPU serving, workload replacement/drain and worker recovery |
 
-A tagged build is not automatically a supported release. Each stage requires
-version- and commit-specific evidence. The validator refuses missing gates and
-refuses publishing a `-dev.N` version as a release.
+All four images passed two UEFI boots, persistence and host budgets,
+Kubernetes/Cilium enrollment, certificate rotation, cold-boot recovery and their
+own security/redistribution gates. Integration records also retain the static
+Agent resource and operation-phase baselines with their exact image identities.
+
+The distributions include checksums, GitHub attestations, SBOMs, **2,554
+corresponding-source objects and 120 original APT notices** per reviewed inventory.
+The release also preserves the native and integration records and provides a
+verification companion. Attestations authenticate the inner `SHA256SUMS`; they
+are not Secure Boot signatures.
+
+- [Qualified version source](https://github.com/Alien6-Studio/outerspace-os/tree/v0.1.0-alpha.1)
+- [Four-candidate qualification](https://github.com/Alien6-Studio/outerspace-os/actions/runs/41219970340)
+- [Verified draft preparation](https://github.com/Alien6-Studio/outerspace-os/actions/runs/41230956048)
+- [Remaining roadmap](https://github.com/Alien6-Studio/outerspace-os/issues/7)
+
+## Evaluation limits
+
+Use disposable CPU UEFI VMs; the native reference setup has four vCPUs and 4 GiB
+RAM with Secure Boot disabled. A separate Kubernetes control plane is required.
+Bare-metal/GPU qualification, authenticated A/B updates, production support and
+performance guarantees are not included. Persistent state is unencrypted.
+
+The accepted **CVE-2019-14899** risk expires on **14 November 2026 at 06:24:43 UTC**
+and applies only to the stock CPU configuration without host VPNs or custom
+networking. No universal kernel fix is claimed. Model weights and application
+containers have separate provenance and licensing requirements.
 
 ## Qualification phases
 
+OuterSpace uses its own `MAJOR.MINOR.PATCH` version, independent of Ubuntu, Linux
+and Kubernetes. A version tag alone does not establish support.
+
 | Phase | Intended use | Required evidence |
 | --- | --- | --- |
-| Development | Internal engineering and disposable labs | Unit/contract checks and image build logs |
-| Alpha | Explicit experimental preview | Boot, CRI, config contract, checksums, release notes and license/source review |
-| Beta | Integration testing | Alpha gates plus Node Ready, Cilium, P2P, GC and state persistence |
-| Release candidate | Frozen candidate for qualification | Beta gates plus bare metal, CIS audit, signed boot, upgrade/rollback, SBOM and vulnerability review |
-| Stable | Supported operation within a published matrix | RC gates plus soak tests and an explicit support policy |
+| Alpha | Explicit experimental preview | Boot, CRI, configuration, checksums, notes, licenses/sources, SBOM, vulnerability review and profile-specific workload gates |
+| Beta | Integration testing | Alpha gates plus cluster readiness, Cilium, P2P, image GC and state persistence |
+| Release candidate | Hardware/security qualification | Beta gates plus bare metal, CIS audit, signed boot and upgrade/rollback |
+| Stable | Supported operation within a published matrix | RC gates plus soak evidence and an explicit support policy |
 
-Release CI prepares **draft** releases after verification. Maintainer review and
-complete evidence are required before publication. Stable status is never inferred
-from a green build or a tag. No automatic promotion between stages occurs.
+The [policy](https://github.com/Alien6-Studio/outerspace-os/blob/main/build/release/policy.json)
+and [release process](https://github.com/Alien6-Studio/outerspace-os/blob/main/build/release/README.md)
+are authoritative. Release CI prepares a draft from existing qualified artifacts;
+promotion does not rebuild them. Publication and later stages remain explicit decisions.
 
-## Maintenance model
+## Maintenance
 
-- Rebuild images from reviewed Ubuntu security/update packages; deploy whole images.
-- Pin runtime binaries and verify SHA256. Review kernel ABI and dependent modules together.
-- Run regular integration builds to detect package and upstream drift.
-- Review dependency updates in pull requests, including release notes and migration risks.
-- Record exact package manifests, runtime versions, architecture and source commit.
-- Qualify upgrade, downgrade and persistent-state compatibility before promotion.
-
-Prelaunch work has no production support commitment. A stable branch must state
-its support dates, architectures, kernel/runtime/Kubernetes matrix and security
-response ownership before it can pass the support gate. Upstream Ubuntu LTS
-coverage does not automatically confer support on this distribution.
-
-## Launch sequence
-
-1. Publish source and clearly marked development documentation.
-2. Qualify and publish alpha artifacts with known limitations.
-3. Validate on a dedicated bare-metal worker, then a self-managed cloud VM cluster.
-4. Complete beta integration and RC security/update gates.
-5. Publish support policy and stable artifacts with checksums, SBOM and provenance.
-6. Only then apply to distribution directories with accurate status and licensing.
-
-The authoritative [release policy and evidence contract](https://github.com/Alien6-Studio/outerspace-os/tree/main/release)
-live with the build source. There is no downloadable stable image at this stage.
+Update reviewed, pinned inputs and deploy whole images. Preserve the source,
+profile, architecture and image identity with every result. Reassess expiring
+vulnerability decisions and retain original upstream notices. No supported
+in-place update path or production support window is offered by this alpha.

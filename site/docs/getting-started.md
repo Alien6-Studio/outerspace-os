@@ -1,55 +1,70 @@
 ---
 title: Build and test
-description: Build an OuterSpace OS development image from source using Python, Make, Docker and mkosi, then verify it with QEMU.
+description: Build the qualified CPU source snapshot and configure an OuterSpace OS Kubernetes worker in a disposable UEFI VM.
 ---
-# Build a development image
+# Build and evaluate the CPU alpha
 
-Requirements: Python 3.11+, Make and Docker running Linux containers. The build
-uses the Docker VM's native architecture: arm64 on Apple Silicon, amd64 on CI.
-Allow several gigabytes for package caches and build output.
+The `0.1.0-alpha.1` images are qualified and prepared as a draft. Published downloads
+will appear on [GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases).
+Read the [alpha limitations](releases.md) before evaluating a worker.
+
+## Build from source
+
+Install Python 3.11+, Make and Docker running Linux containers. The build uses
+Docker's native architecture: ARM64 on Apple Silicon, AMD64 on x86 hosts.
+Allow space for image output, source archives and reusable download caches.
 
 ```sh
 git clone https://github.com/Alien6-Studio/outerspace-os.git
 cd outerspace-os
+git checkout v0.1.0-alpha.1
 make check
-make builder
-make build
-make smoke
+make PROFILE=agent HARDWARE=cpu builder build smoke package
+# Build the other profile independently:
+make PROFILE=inference HARDWARE=cpu build smoke package
 ```
 
-The disposable builder uses privileged Linux mount namespaces. It has no host
-devices or Docker socket mounted. QEMU verification needs no additional privileges.
+Images, bundles and reports are written under `out/<profile>-cpu-<architecture>/`;
+`.cache/` holds reusable downloads. The builder uses privileged Linux mount
+namespaces without a host Docker socket or host devices mounted inside it.
 
-The `build/` directory contains a raw GPT disk, UKI, split kernel/initrd, package
-manifest and boot log. Development images are unsigned. Do not overwrite a physical
-disk to try this first version; use the snapshot-based QEMU smoke test.
+The smoke test boots the packaged image through **UEFI twice** and checks
+persistence, read-only root, verity, cgroup v2/PSI, kernel BPF/BTF, AppArmor,
+CRI availability and host resource budgets. Native enrollment and workload
+qualification are separate targets; `make help` lists them.
 
-The smoke test checks read-only root, verity mapping, writable state, cgroup v2,
-BPF/BTF availability, AppArmor, selected hardening settings, locked operator account
-and CRI availability. It boots the split kernel/initrd, not the EFI boot path.
+## Verify and boot a downloaded candidate
+
+Check the archive checksum, then extract the distribution bundle into a new
+directory. The accompanying `.tar.attestation.jsonl` authenticates its inner
+`SHA256SUMS`, not the outer tar file. Use the release's `verify-attestation.py`
+companion with the expected commit, tag and candidate run from the release notes.
+Then run `sha256sum -c SHA256SUMS` inside the bundle before using the disk image.
+
+Use a disposable UEFI VM with four vCPUs and 4 GiB RAM, with Secure Boot disabled.
+The qualified configuration uses a separate Kubernetes 1.36 control plane and
+Cilium 1.20.3 with the supplied `src/cluster/cilium` configuration. This worker
+image does not create the control plane.
 
 ## Configure a worker
 
-The repository includes a config-drive generator. It accepts a real cluster CA,
-a short-lived bootstrap token read from a protected file, and an HTTPS API address.
-It validates input and produces private files. No password is baked into the image.
+From the corresponding source checkout, supply the real cluster CA, a protected
+short-lived bootstrap-token file and the HTTPS API address:
 
 ```sh
-python3 scripts/node-config.py \
+python3 build/tools/node-config.py \
   --api-server https://api.example.net:6443 \
   --ca /secure/cluster-ca.crt \
   --token-file /secure/bootstrap-token \
   --cluster-dns 10.96.0.10
-./scripts/config-drive.sh
+make config-drive
 ```
 
-The generated drive contains credentials. Attach it only to the intended node,
-detach after enrollment and revoke the token. Cluster enrollment on this image
-is still a release gate. See the [repository guide](https://github.com/Alien6-Studio/outerspace-os#configure-a-worker).
+Attach `out/node-config.raw` only to the intended worker. It contains credentials;
+keep it private, detach it after enrollment and revoke the bootstrap token.
+The worker retains its rotated identity in persistent state. Use an explicit
+control-plane policy for serving-certificate CSR approval.
 
-## Operator identity
-
-The image includes an `outerspace` account (UID 1000), locked by default. Root is
-also locked; no SSH server, shared password, sudo or autologin is installed. An
-explicit, audited administrative-access design is required before hardware rollout.
-The ASCII boot banner identifies the distribution and development version.
+See the [worker guide](https://github.com/Alien6-Studio/outerspace-os/blob/main/src/cluster/README.md)
+for the Agent profile, CPU serving and native qualification commands. The `outerspace`
+and root accounts are locked; the image provides no SSH server or shared password.

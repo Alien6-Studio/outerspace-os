@@ -10,9 +10,35 @@ language dependencies run in containers.
 [![Distribution checks](https://github.com/Alien6-Studio/outerspace-os/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Alien6-Studio/outerspace-os/actions/workflows/ci.yml?query=branch%3Amain)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-**Current version: `0.1.0-dev.0`.** Development images are intended for disposable
-VMs and qualification labs. A production release requires the evidence defined
-in the [release policy](build/release/README.md).
+**Current version: `0.1.0-alpha.1` — qualified CPU alpha, release in draft.**
+[Execution foundation](https://github.com/Alien6-Studio/outerspace-os/milestone/1)
+is complete: all seven delivery issues are closed. The four candidate images have
+passed their own boot, native workload, recovery and supply-chain checks.
+Public downloads will appear on [GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases)
+when the draft is published.
+
+## CPU alpha
+
+| Profile | Architectures | Qualified behavior |
+| --- | --- | --- |
+| Agent | AMD64, ARM64 | Native OCI admission/isolation, enforced resource limits and recovery after worker restart |
+| Inference | AMD64, ARM64 | Real CPU model serving, workload replacement/drain and recovery after worker restart |
+
+Both profiles boot through UEFI, join Kubernetes with Cilium and retain their
+rotated node identity after reboot. Distribution bundles include checksums,
+GitHub attestations, SBOMs, corresponding sources and original notices.
+The [version tag](https://github.com/Alien6-Studio/outerspace-os/tree/v0.1.0-alpha.1)
+and [candidate qualification](https://github.com/Alien6-Studio/outerspace-os/actions/runs/41219970340)
+identify the exact shipped images. The [roadmap](https://github.com/Alien6-Studio/outerspace-os/issues/7)
+tracks the remaining Agent security and Fleet qualification milestones.
+
+Use disposable UEFI VMs for evaluation; the native qualification used four vCPUs
+and 4 GiB RAM with Secure Boot disabled. This alpha has no production support,
+qualified bare-metal/GPU matrix or authenticated A/B updater. The state partition
+is unencrypted. The accepted **CVE-2019-14899** risk expires on **14 November 2026
+at 06:24 UTC** and covers only the stock CPU configuration without host VPNs or
+custom networking. See the release notes and [release policy](build/release/README.md)
+before using an image.
 
 ## Repository
 

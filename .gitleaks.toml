@@ -1,0 +1,12 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+    [[rules.allowlists]]
+    description = "Verified SHA256 of the public Linux release keyring in the CPU review"
+    condition = "AND"
+    regexTarget = "secret"
+    regexes = ['''^8467aa3e7270895f8d1e27a274ea37cffffaa8d204eb4cf4991f296a8f12fc6f$''']
+    paths = ['''^build/security/policy\.json$''']

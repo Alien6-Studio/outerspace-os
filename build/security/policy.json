@@ -274,5 +274,1235 @@
       ]
     }
   ],
-  "kernel_reviews": []
+  "kernel_reviews": [
+    {
+      "schema": 1,
+      "scope": {
+        "hardware_profile": "cpu",
+        "profiles": [
+          "agent",
+          "inference"
+        ],
+        "architectures": [
+          "amd64",
+          "arm64"
+        ]
+      },
+      "materials": {
+        "build/kernel/kernel.lock.json": "4c1ebbca95ce1d36f633eb87e2a3fcd9594bbf22178df25d8cc3e10b034e3596",
+        "build/kernel/release-key.gpg": "8467aa3e7270895f8d1e27a274ea37cffffaa8d204eb4cf4991f296a8f12fc6f",
+        "build/tools/kernel_build.py": "1d31305535b4a0c8cd1c5af6648ff9e7d14f5e64054e9987b216d393cc921b54",
+        "build/tools/kernel_inventory.py": "e3cde8ca4ad4598f9f0032e7a7c31371f39d52d5c4d190737f15c3f562d2a6cd",
+        "build/sbom/sources.lock.json": "1c4f21c2971c69ce56b6ffe2022966c3cb6bed376af591ae8cb7573f2a6e94f8",
+        "src/components.lock.json": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "src/image/mkosi.conf": "9ee1dd3ac0bd397c7fc93db1481c32790dce048592cfebe3921cdedd878baf86",
+        "src/image/mkosi.postinst": "e4532f92ca280b3dd7e0f5d8fe908613e808fa293c176b6d827e7ed1403c159c"
+      },
+      "approved_by": "Coopyrightdmin",
+      "owner": "Coopyrightdmin",
+      "reviewed_at": "2026-10-31T06:24:43+00:00",
+      "expires_at": "2026-11-14T06:24:43+00:00",
+      "cases": [
+        {
+          "id": "CVE-2016-3699",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2016/3xxx/CVE-2016-3699.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "ACPI_TABLE_UPGRADE": "n"
+          },
+          "advisory_sha256": "d8464af3fd5297989387847df13e6b4da661103491b08243a4b1d837c02ca245",
+          "config": {
+            "CONFIG_ACPI_TABLE_UPGRADE": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_ACPI_TABLE_UPGRADE\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2017-6264",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2017/6xxx/CVE-2017-6264.json"
+          ],
+          "reviewed_basis": "android-driver-absent-from-reviewed-source",
+          "reviewed_proof": {
+            "advisory": "CVE-2017-6264",
+            "kernel_source_sha256": "3c2f44ef6acc021a7ad444d9a2e6ec1ef488ff09368793d0004a6080f69d621e",
+            "vulnerable_function": "gm20b_clk_throt_set_cdev_state",
+            "checked_c_and_header_files": 62158,
+            "matching_files": [],
+            "scope": "The NVIDIA CNA identifies Android and this exact GPU-driver function; the signed mainline source archive contains no such function. Upstream host1x bus support is not that Android GPU implementation."
+          },
+          "advisory_sha256": "8a7f745995858aa453001ebd2e70089957bf5863e1c47ca5b847765279b30201",
+          "config": {
+            "CONFIG_DRM": "n"
+          },
+          "rationale": "The NVIDIA CNA identifies the Android GPU function gm20b_clk_throt_set_cdev_state. None of the 62,158 C/header files in the exact signed Linux 6.18.60 source contains that function. The upstream Tegra host1x bus is a different implementation. DRM is additionally disabled in this CPU image; this decision requires the exact reviewed source and patch set."
+        },
+        {
+          "id": "CVE-2018-10902",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2018/10xxx/CVE-2018-10902.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "SND": "n"
+          },
+          "advisory_sha256": "2ad93b7bc9572d734b815e6e7758d296f06490e9aca66f3deea9f3d02313b3e0",
+          "config": {
+            "CONFIG_SND": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_SND\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2018-14625",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2018/14xxx/CVE-2018-14625.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "VSOCKETS": "n"
+          },
+          "advisory_sha256": "a9b85334a179262c982770c473fc09946d05f9ccd93f2425704e5613804f52c7",
+          "config": {
+            "CONFIG_VSOCKETS": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_VSOCKETS\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2019-14899",
+          "decision": "accepted-risk",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2019/14xxx/CVE-2019-14899.json",
+            "https://www.openwall.com/lists/oss-security/2019/12/05/1"
+          ],
+          "reviewed_basis": "stock-configuration-verified-on-both-native-CPU-ARM64-images",
+          "reviewed_proof": {
+            "limitation": "No host VPN client is shipped or configured. VPN clients and network changes remain outside the CPU alpha qualification. This is not a global kernel fix.",
+            "remaining": [
+              "Obtain explicit scoped owner approval."
+            ],
+            "configuration_clarification": "XFRM_USER is enabled for the Cilium netlink handle on both CPU architectures. The limited risk acceptance concerns the absence of a configured host VPN and excludes user network changes. No absence of IPsec APIs or universal kernel fix is claimed.",
+            "observed_images": [
+              {
+                "profile": "agent",
+                "raw_image_sha256": "c127d0143fa261397041291d25da93e655b7667aa5199449b2ad13586823e0f0",
+                "kernel_config_sha256": "0f2ab435d6e3c3d1f3bd06f4ff9e7bff6ff60efe8e9f69d7d346f56a4d3eeaa1",
+                "network_report_sha256": "d850651c0ac7a53c41a420eac07d220a6659d10730e2954d2b1cea90f1bb8016"
+              },
+              {
+                "profile": "inference",
+                "raw_image_sha256": "bc078b7b7c45db631da9dc25bf9ae72a40357de9f9c5b4792a24e2191ebecccb",
+                "kernel_config_sha256": "0f2ab435d6e3c3d1f3bd06f4ff9e7bff6ff60efe8e9f69d7d346f56a4d3eeaa1",
+                "network_report_sha256": "4262b74e006fa8713f240af7bd69d78e5849d56ce14ff9d199e5b11f1b5f79d4"
+              }
+            ]
+          },
+          "advisory_sha256": "4e3544c687ab0b2b1d901fdd9b242810958338a8b14b8b72cbc6cfc519613f49",
+          "stock_network_only": true,
+          "config": {
+            "CONFIG_WIREGUARD": "n"
+          },
+          "rationale": "Time-limited CPU alpha risk acceptance for CVE-2019-14899: the stock image ships no host VPN client or configured VPN tunnel. XFRM_USER is enabled for Cilium. This is not a universal kernel fix. Host VPN setup and user network changes are outside this qualification; users needing VPN protection must not rely on this alpha. Preserve this limitation in release notes."
+        },
+        {
+          "id": "CVE-2020-16119",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2020/16xxx/CVE-2020-16119.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "DCCP": "n"
+          },
+          "advisory_sha256": "edf399b5be9c115e1b293b44701193c59f74c8036f389b02da304b89f742b4da",
+          "config": {
+            "CONFIG_DCCP": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_DCCP\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2020-1749",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2020/1xxx/CVE-2020-1749.json",
+            "https://github.com/torvalds/linux/commit/6c8991f41546c3c472503dff1ea9daaddf9331c2"
+          ],
+          "reviewed_basis": "fixed-source-path",
+          "reviewed_proof": {
+            "flow": "VXLAN/Geneve -> udp_tunnel6_dst_lookup -> ipv6_dst_lookup_flow -> ip6_dst_lookup_flow -> xfrm_lookup_route",
+            "files": [
+              "drivers/net/geneve.c",
+              "drivers/net/vxlan/vxlan_core.c",
+              "net/ipv6/ip6_udp_tunnel.c",
+              "net/ipv6/af_inet6.c",
+              "net/ipv6/ip6_output.c"
+            ]
+          },
+          "advisory_sha256": "2777113c23163db0eaba593f3c986a17949cc16430ff64e5ed1ef7ac1eda29e4",
+          "rationale": "The reviewed Linux 6.18.60 source routes VXLAN and Geneve IPv6 destination lookup through udp_tunnel6_dst_lookup, ipv6_dst_lookup_flow and xfrm_lookup_route. The vulnerable IPsec bypass path has been replaced by the upstream fix; source and build recipe are pinned."
+        },
+        {
+          "id": "CVE-2020-27815",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2020/27xxx/CVE-2020-27815.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "JFS_FS": "n"
+          },
+          "advisory_sha256": "e19f1005bc88bc40da5e3f52be52541dbe90d051ccc02d87e7c9dc674a111073",
+          "config": {
+            "CONFIG_JFS_FS": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_JFS_FS\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2021-20194",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2021/20xxx/CVE-2021-20194.json"
+          ],
+          "reviewed_basis": "CNA-exploit-prerequisite-absent",
+          "reviewed_proof": {
+            "CONFIG_HARDENED_USERCOPY": "y"
+          },
+          "advisory_sha256": "27be21dbe4a40aadc370dca0acd7bd85f3abe7a5c4935dd2fab4e06ac962b2cb",
+          "config": {
+            "CONFIG_HARDENED_USERCOPY": "y"
+          },
+          "rationale": "The CNA describes an exploit requiring non-hardened usercopy. This exact kernel must have CONFIG_HARDENED_USERCOPY=y; a changed configuration invalidates the decision. The signed source and patch set are pinned separately."
+        },
+        {
+          "id": "CVE-2021-3864",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2021/3xxx/CVE-2021-3864.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "COREDUMP": "n"
+          },
+          "advisory_sha256": "31f166d9908a73adb5e7288f6a2b6aab5de018feb2e511d87c9e5fd0ec4bcf26",
+          "config": {
+            "CONFIG_COREDUMP": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_COREDUMP\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2022-0400",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2022/0xxx/CVE-2022-0400.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "SMC": "n"
+          },
+          "advisory_sha256": "6dd96985b8bbdff64b9becab293f6728aa2fc1a63add8f1abcc0b0480933c3bd",
+          "config": {
+            "CONFIG_SMC": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_SMC\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2022-1247",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2022/1xxx/CVE-2022-1247.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "ROSE": "n"
+          },
+          "advisory_sha256": "6434a1a5f91c466ca800471bf8eb9c905fc0d747a6eb17769f823524b89bf660",
+          "config": {
+            "CONFIG_ROSE": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_ROSE\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2022-3636",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2022/3xxx/CVE-2022-3636.json"
+          ],
+          "reviewed_basis": "CNA-no-released-version-affected",
+          "reviewed_proof": {
+            "version": "6.18.60"
+          },
+          "advisory_sha256": "eae14e116ba53a6c11b3becc9ebe72eb75069f0fa306f767db9c5d81699250e0",
+          "rationale": "The pinned CNA record states that no released Linux kernel version was affected: the faulty change was confined to an unreleased mainline interval. This decision covers only the reviewed official 6.18.60 signed release and exact approved patch set."
+        },
+        {
+          "id": "CVE-2023-3640",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2023/3xxx/CVE-2023-3640.json",
+            "https://access.redhat.com/security/cve/cve-2023-3640"
+          ],
+          "reviewed_basis": "architecture-or-CNA-fixed-vector",
+          "reviewed_proof": {
+            "arm64": "x86 cpu_entry_area code is not compiled",
+            "amd64": "Must verify RANDOMIZE_BASE=y, randomized init_cea_offsets present, and no nokaslr command line. Red Hat states the existing CVE-2023-0597 fix prevents the described attack vector."
+          },
+          "advisory_sha256": "1e4e5684ae6cf960bbb499786f7f13f52de1895f6aac9541408f96dd5dd74aca",
+          "architecture_config": {
+            "arm64": {
+              "CONFIG_X86": "n"
+            },
+            "amd64": {
+              "CONFIG_X86": "y",
+              "CONFIG_RANDOMIZE_BASE": "y"
+            }
+          },
+          "kaslr_required": true,
+          "rationale": "ARM64 does not compile the affected x86 cpu_entry_area implementation. On AMD64, the reviewed source includes randomized init_cea_offsets and the installed configuration must enable RANDOMIZE_BASE without nokaslr in the UKI. Red Hat states the CVE-2023-0597 correction prevents this attack vector."
+        },
+        {
+          "id": "CVE-2023-39179",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2023/39xxx/CVE-2023-39179.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "SMB_SERVER": "n"
+          },
+          "advisory_sha256": "707f9cac498ecebda0e6f66897ea80955868496962a8110399a022e4d4cd84c8",
+          "config": {
+            "CONFIG_SMB_SERVER": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_SMB_SERVER\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2023-39180",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2023/39xxx/CVE-2023-39180.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "SMB_SERVER": "n"
+          },
+          "advisory_sha256": "eea9cbb0e96dfa08880aa80ded3d0c466e959034033b76132904b9270f060fba",
+          "config": {
+            "CONFIG_SMB_SERVER": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_SMB_SERVER\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2023-6535",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2023/6xxx/CVE-2023-6535.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "NVME_TCP": "n"
+          },
+          "advisory_sha256": "b5e961a9e556f41e10e9c622aef3ace9db107c26d4051bfe8ca23b21adbbcb34",
+          "config": {
+            "CONFIG_NVME_TCP": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_NVME_TCP\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2023-6610",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2023/6xxx/CVE-2023-6610.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "CIFS": "n"
+          },
+          "advisory_sha256": "111685229984340a50b26331686922a6ff9c08315a0f36c6e16857baa8fafaa3",
+          "config": {
+            "CONFIG_CIFS": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_CIFS\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2025-71306",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2025/71xxx/CVE-2025-71306.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.58",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "ab8c3ccd21ff3a852d1782498f960f5bc833f5fb2b94a94fc83c59ff3e01c8a7",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-100072",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/100xxx/CVE-2026-100072.json",
+            "https://github.com/gregkh/linux/commit/a9ba4dd2f18bf3f439d9ef0d8f375f90360ba1bd"
+          ],
+          "reviewed_basis": "source-patch-applied",
+          "reviewed_proof": {
+            "cve": "CVE-2026-100072",
+            "path": "build/kernel/patches/CVE-2026-100072.patch",
+            "sha256": "d069d03e2677b18a75145600fe1910caac34f5ca695a6ae8b388548680e95d76",
+            "upstream": "https://github.com/gregkh/linux/commit/a9ba4dd2f18bf3f439d9ef0d8f375f90360ba1bd",
+            "adapted": false
+          },
+          "advisory_sha256": "88931f696977b9718613bfda9d359ebe22345af62d8d860069842ce8d8353962",
+          "patch_sha256": "d069d03e2677b18a75145600fe1910caac34f5ca695a6ae8b388548680e95d76",
+          "rationale": "The reviewed correction is applied before compilation from the exact pinned patch bytes. The source recipe, build-script digest, patch receipt and all installed kernel files are verified. Backport adaptation, if any, is recorded in the source recipe."
+        },
+        {
+          "id": "CVE-2026-23327",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/23xxx/CVE-2026-23327.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.34",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "4657f554b503938a8439c2e72e6b080e37e060849697ae89c694340be08dbc71",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-23459",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/23xxx/CVE-2026-23459.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.50",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "62ea723e742dacfffa90b156358c790ac21acebfd3e7b640d943c4f952428bc0",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-31501",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/31xxx/CVE-2026-31501.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "98c44a9f6c8d0c7fa51915c136bab521700e7c4769823a17a0ea43f345f7c440",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-31589",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/31xxx/CVE-2026-31589.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.27",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "13531acde73ac6082b014b3c7b3e6ec72fde073d71dc4378608867739efa3665",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-31709",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/31xxx/CVE-2026-31709.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.35",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "25d25b5884856d69997356c98c36d0e59fd5e0542b94d589626b938c2365bdcd",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-31771",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/31xxx/CVE-2026-31771.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "6ef8c73e439b2ae85e4c6d42b1efa2a5a9449977da48a8f0bc6b642ca05a8878",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-43009",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/43xxx/CVE-2026-43009.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.50",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "7621626447d3e62e6302e93476ef9f6bf3a43f2d59308564c05439a3395e3703",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-43042",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/43xxx/CVE-2026-43042.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "MPLS": "n"
+          },
+          "advisory_sha256": "68c0598d92762fb05be18df0369181f5d6ae1f9120e126acddd8c6b05f3d837b",
+          "config": {
+            "CONFIG_MPLS": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_MPLS\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2026-43391",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/43xxx/CVE-2026-43391.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.50",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "cfa138d423e48024a24acc7c27054e0b12d7e70ab83cbfa42679637f4de6d907",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-43414",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/43xxx/CVE-2026-43414.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "881724aaec22b832cccd335286e287500d16259be132839256747417092ae091",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-45945",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/45xxx/CVE-2026-45945.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.39",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "f8b014b74f765e6ea528ffd3d141b060648170047d8d3e1a9cc7eeb6a2b859af",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-45991",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/45xxx/CVE-2026-45991.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "27238af6ed61e2d391fdb73df9126f8776bc868430eb0f7e4e52caeae6162d5c",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-46054",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/46xxx/CVE-2026-46054.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.38",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "8cbfeca5f2e9495f689d1aa531d02fee2f23d4119d274243a8557c6a3babf865",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-46130",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/46xxx/CVE-2026-46130.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.42",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "cd26953d0709e3752e8f8d35d1cbd8242bb6ebeb0b7720641d23120b2f1018d9",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-46203",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/46xxx/CVE-2026-46203.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.36",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "2a1e41963d6d815bf10c7fc0d9b8668b7df3b2590aab4ee2c56764efc5722f4e",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-46210",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/46xxx/CVE-2026-46210.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "92fcf28499a3859b99acdfc88f61ff571f9e4c4198862c0e359a398cff2c6fc5",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-46311",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/46xxx/CVE-2026-46311.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "f89459f6bc8b81720280b6c548a1cb33e69c16b60446f1f256b93b48bd0d277f",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-46330",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/46xxx/CVE-2026-46330.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "4756fb6a55fbd71861b2148f6e554f3fa84bfb0c77e26f484a8eecf6ce802582",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-52956",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/52xxx/CVE-2026-52956.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "e5a8d7061f9576aca9af755e75c26e5970d0e4be05ba3d73e42cd90f25f9f914",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-52960",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/52xxx/CVE-2026-52960.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "ebb8c00410bc88a4442e05071b564868f3fcd0658e71528c362575233184b64b",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-52988",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/52xxx/CVE-2026-52988.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.55",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "1acfb510fba1baa5a062dd2ad2ae6a3cbbede580d8d561f6376c133630c70ec1",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53005",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53005.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.40",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "1069965af8d94e31392341184d7474979296e56355460571b91418e41a1336c6",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53009",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53009.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "d72c80eafbfe0f798b787c53dda70fdbe3c4eeb0ea0fff5b93e01db2358798a2",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53024",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53024.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "GREYBUS": "n"
+          },
+          "advisory_sha256": "a988c2db44f7c0fd3bc7d148f9b05425288906117c3ea585b4b5ca5b07ae872c",
+          "config": {
+            "CONFIG_GREYBUS": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_GREYBUS\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2026-53025",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53025.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "3d4de46ce2316fd8821481dd42c6f2843c725e05861068df0ece08d881a1569f",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53078",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53078.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.42",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "085fb272c354c2c9a95e233123871916bbdf308febaa98278f22ba6c4b87ae0d",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53089",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53089.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.49",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "8abb62bc21515f71987ea55dd7b8a3b6a028b2450a4de0873d4bc11350b3e551",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53091",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53091.json",
+            "https://github.com/gregkh/linux/commit/7564dc804d8289d2e5c6edb8173754051b71bff4"
+          ],
+          "reviewed_basis": "source-patch-applied",
+          "reviewed_proof": {
+            "cve": "CVE-2026-53091",
+            "path": "build/kernel/patches/CVE-2026-53091.patch",
+            "sha256": "d484291dd40796427772e439337d239b6e315f25fe733e8aa5e28e69fbc56820",
+            "upstream": "https://github.com/gregkh/linux/commit/7564dc804d8289d2e5c6edb8173754051b71bff4",
+            "adapted": true
+          },
+          "advisory_sha256": "c99cafd8c3ca547d4e1733f32807d0316f9b40a2ffb5ec0bbb026d3e10fee9c1",
+          "patch_sha256": "d484291dd40796427772e439337d239b6e315f25fe733e8aa5e28e69fbc56820",
+          "rationale": "The reviewed correction is applied before compilation from the exact pinned patch bytes. The source recipe, build-script digest, patch receipt and all installed kernel files are verified. Backport adaptation, if any, is recorded in the source recipe."
+        },
+        {
+          "id": "CVE-2026-53178",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53178.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.52",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "c41b18532c52f54b1bdc7e51b3a755dcfc84b435cdf715ce5861119a286ea38f",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53232",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53232.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.36",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "9f53eb52758f85e236c286322c9724ee4503c0c09505c7e65556e0d59b5c10d5",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53260",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53260.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.40",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "4100da30002ace0b81391193c38fa89e82f2e2b1767cc9c1d4f7691f9f9b7277",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-53401",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/53xxx/CVE-2026-53401.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "7fd414027437fb01ce36a86c687b83162093e49a7900a2eb9a462c2e8012c84f",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64020",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64020.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "53b604ae0ec6787b988df71d4c2986a855bbdde5181dad34eca391c6ee374579",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64057",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64057.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "e9f2a53934daf1407680455e5e9a9cea76aa53ace11d27884d8890a6df3a4a58",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64067",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64067.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "bc897f2e2c7cc61fdc0dcd0510533adf704948e52c73068dc4c8da6a41dbbe29",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64068",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64068.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.50",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "89f8c54cea31dc48549b602830942e1147ae96af6cfc00a84f1fed0ddd8e9de3",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64082",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64082.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.49",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "05937766cb3723ab7f27d6b1915a963e0bc0d55b8a3ed415d94dfae938a25828",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64117",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64117.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "37010c8fab7ede6818fe95a7ac84575d9bdcda7e12b897b901341be7b6322795",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64123",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64123.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "54f56e00856a7148d254706b9eeedf6ab2e2ac982e5caadd1a7ee85d15d90d5d",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64160",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64160.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "NETFS_SUPPORT": "n"
+          },
+          "advisory_sha256": "94b422a933d9c9fe23734f5eda7aa67a5544d355502bb0405cfe35fb7137545b",
+          "config": {
+            "CONFIG_NETFS_SUPPORT": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_NETFS_SUPPORT\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2026-64210",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64210.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.52",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "1dd4b034e5ea5d03fe247d09816a43afa2b45f62f8f2082e10fb6faf1e9c3998",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64283",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64283.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "e53d5b291536f5fd2e2be2101a1e8b545237f9a0d521c93b3cdd9c545a185f28",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64341",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64341.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.58",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "3c42afab9e48725241c0f0ec3f173c89c3c45faed31f02618073c118ea545802",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64388",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64388.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "d56bbf829a12d257741e55c24d91f619146b8ecc8cc82eff9fc619f61f40939c",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-64400",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/64xxx/CVE-2026-64400.json"
+          ],
+          "reviewed_basis": "CNA-unaffected-version-range",
+          "reviewed_proof": [
+            {
+              "version": "6.18.57",
+              "lessThanOrEqual": "6.18.*",
+              "status": "unaffected",
+              "versionType": "semver"
+            }
+          ],
+          "advisory_sha256": "b63551964a1c4a3120b881f1f2cc9d1971c4973a2babdb4fd863f3cb3ee8c09e",
+          "rationale": "The pinned Linux CNA record explicitly marks the reviewed Linux 6.18.60 release as unaffected in its version ranges. The installed kernel must match the reviewed source archive, patch set, build script and complete compiled-file receipt."
+        },
+        {
+          "id": "CVE-2026-98115",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/98xxx/CVE-2026-98115.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "SMB_SERVER": "n"
+          },
+          "advisory_sha256": "15144697422c5f4a77142075e3d07bb384bec5bc4d845e3a479e9522963afb15",
+          "config": {
+            "CONFIG_SMB_SERVER": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_SMB_SERVER\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        },
+        {
+          "id": "CVE-2026-98118",
+          "decision": "not-affected",
+          "evidence": [
+            "https://raw.githubusercontent.com/CVEProject/cvelistV5/c33643a7c87d81f18bf58ffb31dd005c917876e2/cves/2026/98xxx/CVE-2026-98118.json"
+          ],
+          "reviewed_basis": "vulnerable-subsystem-not-compiled",
+          "reviewed_proof": {
+            "NETFS_SUPPORT": "n"
+          },
+          "advisory_sha256": "cfdbe57856d6aa3248567359ddc3ae85eac56fc04f86d61c08992c89ecfc120d",
+          "config": {
+            "CONFIG_NETFS_SUPPORT": "n"
+          },
+          "rationale": "The affected subsystem is not compiled in this CPU image. The exact installed kernel configuration must satisfy {\"CONFIG_NETFS_SUPPORT\": \"n\"}. This decision is limited to the reviewed signed source and patches."
+        }
+      ],
+      "approval_proposal_sha256": "285d57fdaeb194ab1d61ef13bff656def51bc9a85ac872da47575ff31072f52a"
+    }
+  ]
 }

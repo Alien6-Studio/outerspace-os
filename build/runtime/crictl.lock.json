@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "component": "crictl",
+  "source": {
+    "repo": "kubernetes-sigs/cri-tools",
+    "version": "1.36.0",
+    "commit": "88d8ad9d40f82726fda53c2d271e6172b4c619c9",
+    "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/88d8ad9d40f82726fda53c2d271e6172b4c619c9",
+    "sha256": "0e7559231dd55918dd3a488f9ac833e939ef0f7579492d5528a0346260bcaba7",
+    "size": 7433281
+  },
+  "go_version": "go1.26.10",
+  "go_source": {
+    "url": "https://go.dev/dl/go1.26.10.src.tar.gz",
+    "sha256": "fd63e883ba2f2bfca93c1646b31ebef63e2b1e4d2b317c9789d976a68d81f36f",
+    "size": 34164741
+  },
+  "toolchains": {
+    "amd64": {
+      "url": "https://go.dev/dl/go1.26.10.linux-amd64.tar.gz",
+      "sha256": "ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5",
+      "size": 66936659
+    },
+    "arm64": {
+      "url": "https://go.dev/dl/go1.26.10.linux-arm64.tar.gz",
+      "sha256": "3f4227ce7b206a513e794f1393adb473a07b46e94d18bd15d1c684bbb7319797",
+      "size": 63827526
+    }
+  },
+  "dependency_lock_sha256": "c4504ec94e06694281539cc2dbe6e1d66a4d2c0bb2c3e9640138fce7bc3cde1e"
+}

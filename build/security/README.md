@@ -25,7 +25,7 @@ the source name alone does not prove a finding inapplicable. A missing symbol is
 not by itself proof of safety when indirect calls or another artifact can expose
 the vulnerable behavior.
 
-An exception in `policy.json` requires the exact `finding_key` from the report,
+An exception in `policy.json` requires the exact `finding_sha256` from the report,
 scope (profile, hardware profile, architecture, components-lock, Ubuntu/builder
 input-lock and source-lock digests), owner,
 authorized `approved_by`, review timestamp, expiry within 30 days, a detailed

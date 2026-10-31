@@ -11,6 +11,15 @@ CONFIG_DIR ?= $(OUT_DIR)/node-config
 include build/targets.mk
 include tests/targets.mk
 
+.PHONY: local-awake
+local-awake:
+	@if [ "$$(uname -s)" = Darwin ]; then /usr/bin/caffeinate -i -s -w "$$PPID" >/dev/null 2>&1 & fi
+
+# Keep local VMs and their certificate timers running while make owns the job.
+# The assertion ends with make; Linux runners require no power-management change.
+builder build package smoke smoke-split enrollment cpu-serving agent-isolation agent-resources \
+agent-admission agent-phases worker-comparison serving-comparison serving-admission: | local-awake
+
 .PHONY: help
 help:
 	@echo 'make check                                      Run unit and syntax checks'

@@ -119,6 +119,148 @@ class SupplementalNoticeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Missing or ambiguous'):
             self.prove()
 
+    def later_notice(self):
+        self.replace_crate(self.crate_files + [('library-1.0.0/.cargo_vcs_info.json',
+                                                json.dumps({'git': {'sha1': 'b' * 40}}).encode())])
+        config = self.supplement.pop('content_matches')[self.crate['sha256']]
+        config.update(publication_commit='b' * 40, evidence=['https://example.invalid/upstream-license-change'])
+        self.supplement['notice_backfills'] = {self.crate['sha256']: config}
+        return config
+
+    def test_later_notice_preserves_publication_and_notice_revisions(self):
+        self.later_notice()
+        proof = self.prove()[self.crate['sha256']]
+        self.assertEqual(proof['basis'], 'published-files-match-with-later-notice')
+        self.assertEqual(proof['publication_metadata']['commit'], 'b' * 40)
+        self.assertEqual(proof['commit'], 'a' * 40)
+        self.assertFalse(proof['publication_commit_proven'])
+        self.assertEqual(set(proof['matched_files']), {'Cargo.toml.orig', 'src/lib.rs'})
+
+    def test_later_notice_still_rejects_changed_code(self):
+        self.later_notice()
+        repo = self.object([(name, b'changed code' if name.endswith('lib.rs') else content)
+                            for name, content in self.repo_files])
+        self.supplement.update(repo)
+        with self.assertRaisesRegex(ValueError, 'Published crate file differs'):
+            self.prove()
+
+    def test_later_notice_requires_publication_metadata_and_evidence(self):
+        config = self.later_notice()
+        for change in [{'publication_commit': 'c' * 40}, {'evidence': []}]:
+            before = copy.deepcopy(config)
+            config.update(change)
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'original publication'):
+                self.prove()
+            config.clear()
+            config.update(before)
+
+    def metadata_notice(self, original, later):
+        self.manifest = original
+        self.packaging = b'# normalized\n' + original
+        self.crate_files = [('library-1.0.0/Cargo.toml', self.packaging),
+                            ('library-1.0.0/Cargo.toml.orig', original),
+                            ('library-1.0.0/src/lib.rs', b'pub fn library() {}\n')]
+        self.replace_crate(self.crate_files)
+        config = self.later_notice()
+        config['packaging_files']['Cargo.toml'] = hashlib.sha256(self.packaging).hexdigest()
+        self.supplement.update(self.object([
+            ('repo/library/Cargo.toml', later), self.repo_files[1], self.repo_files[2]]))
+        config['metadata_changes'] = {'Cargo.toml.orig': {
+            'published_sha256': hashlib.sha256(original).hexdigest(),
+            'upstream_sha256': hashlib.sha256(later).hexdigest()}}
+        return config
+
+    def test_notice_with_dev_metadata_preserves_both_manifests_and_matches_code(self):
+        original = self.manifest + b'\n[dev-dependencies]\nrand="0.8"\n'
+        self.metadata_notice(original, original.replace(b'"0.8"', b'"0.9"'))
+        proof = self.prove()[self.crate['sha256']]
+        self.assertEqual(proof['basis'], 'later-notice-with-metadata-differences')
+        self.assertEqual(set(proof['matched_files']), {'src/lib.rs'})
+        change = proof['metadata_changes']['Cargo.toml.orig']
+        self.assertNotEqual(change['published']['sha256'], change['upstream']['sha256'])
+
+    def test_metadata_cannot_hide_changed_runtime_build_dependencies_or_license(self):
+        original = self.manifest + b'\n[dependencies]\nserde="1"\n[build-dependencies]\ncc="1"\n'
+        later = [original.replace(b'serde="1"', b'serde="2"'),
+                 original.replace(b'cc="1"', b'cc="2"'),
+                 original.replace(b'license="MIT"', b'license="GPL-3.0-only"')]
+        for value in later:
+            with self.subTest(manifest=value):
+                # Each case needs a fresh content-match fixture before adding
+                # the later-notice mechanism.
+                self.setUp()
+                self.metadata_notice(original, value)
+                with self.assertRaisesRegex(ValueError, 'runtime/build metadata'):
+                    self.prove()
+
+    def test_metadata_cannot_exempt_code_or_unpinned_bytes(self):
+        original = self.manifest + b'\n[dev-dependencies]\nrand="0.8"\n'
+        config = self.metadata_notice(original, original.replace(b'"0.8"', b'"0.9"'))
+        config['metadata_changes']['src/lib.rs'] = {'published_sha256': 'a'*64, 'upstream_sha256': 'b'*64}
+        with self.assertRaisesRegex(ValueError, 'Only an original Cargo'):
+            self.prove()
+        del config['metadata_changes']['src/lib.rs']
+        config['metadata_changes']['Cargo.toml.orig']['upstream_sha256'] = 'a'*64
+        with self.assertRaisesRegex(ValueError, 'reviewed byte identities'):
+            self.prove()
+
+    def release_payload(self):
+        self.replace_crate(self.crate_files + [('library-1.0.0/maven/component.aar', b'generated payload')])
+        files = [(name.split('/', 1)[1], content) for name, content in self.crate_files]
+        files.append(('maven/component.aar', b'generated payload'))
+        self.payload_files = files
+        artifact = {**self.object(files), 'name': 'upstream-release-payload',
+                    'url': 'https://github.com/example/library/releases/download/v1/payload.tar'}
+        self.supplement.pop('content_matches')
+        config = {'artifact': artifact, 'source_directory': 'library', 'notice_paths': ['LICENSE'],
+                  'release_url': 'https://github.com/example/library/releases/tag/v1'}
+        self.supplement['release_payload_matches'] = {self.crate['sha256']: config}
+        return config
+
+    def test_release_payload_matches_all_generated_and_source_files(self):
+        self.release_payload()
+        result = self.prove()[self.crate['sha256']]
+        self.assertEqual(result['basis'], 'complete-upstream-release-payload-match')
+        self.assertFalse(result['generated_payload_build_proven'])
+        self.assertIn('maven/component.aar', result['published_files'])
+        self.assertEqual(set(result['matched_source_files']), {'Cargo.toml.orig', 'src/lib.rs'})
+
+    def test_release_payload_rejects_changed_or_missing_generated_bytes(self):
+        config = self.release_payload()
+        for files in [self.payload_files[:-1], self.payload_files[:-1] + [('maven/component.aar', b'altered')]]:
+            changed = self.object(files)
+            config['artifact'].update(sha256=changed['sha256'], size=changed['size'])
+            with self.assertRaisesRegex(ValueError, 'complete upstream release payload'):
+                self.prove()
+
+    def test_release_payload_cannot_substitute_another_source_revision(self):
+        self.release_payload()
+        self.supplement.update(self.object([(name, b'changed code' if name.endswith('lib.rs') else content)
+                                           for name, content in self.repo_files]))
+        with self.assertRaisesRegex(ValueError, 'source differs'):
+            self.prove()
+
+    @unittest.skipUnless(shutil.which('zstd'), 'Source archive integration requires zstd')
+    def test_release_payload_is_archived_and_rechecked_at_promotion(self):
+        self.release_payload()
+        cargo_lock = ('version=4\n[[package]]\nname="library"\nversion="1.0.0"\n'
+                      'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="' + self.crate['sha256'] + '"\n')
+        runtime = {**self.object([('project/Cargo.lock', cargo_lock.encode())]), 'commit': 'c' * 40}
+        lock = self.root / 'sources.lock.json'
+        lock.write_text(json.dumps({'sources': {'dfdaemon': runtime}, 'supplemental_sources': [self.supplement]}))
+        with patch.object(sources, 'LOCK', lock):
+            index = sources.collect(self.cache)
+        (self.root / 'source-index.json').write_text(json.dumps(index, indent=2) + '\n')
+        sources.bundle(self.cache, self.root, index)
+        self.assertEqual(sources.verify(self.root, {'sources': []}, lock)['objects'], 4)
+        entry = next(e for e in index['entries'] if e['kind'] == 'supplemental-notice-source')
+        entry['notice_provenance'][self.crate['sha256']]['payload_sha256'] = '0' * 64
+        (self.root / 'source-index.json').write_text(json.dumps(index, indent=2) + '\n')
+        (self.root / 'corresponding-source.tar.zst').unlink()
+        sources.bundle(self.cache, self.root, index)
+        with self.assertRaisesRegex(ValueError, 'notice provenance differs'):
+            sources.verify(self.root, {'sources': []}, lock)
+
     def test_notice_paths_and_source_directory_are_explicit_and_safe(self):
         config = self.supplement['content_matches'][self.crate['sha256']]
         for paths in [[], ['missing/LICENSE'], ['LICENSE', 'LICENSE'], ['library/src/lib.rs']]:

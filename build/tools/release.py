@@ -22,6 +22,23 @@ def parse_version(version):
     return stage
 
 
+def release_notes(evidence):
+    notes = evidence.get('release_notes', {})
+    fields = ['summary', 'changes', 'install', 'limitations', 'support']
+    if (not isinstance(notes, dict) or set(notes) != set(fields)
+            or any(not isinstance(notes[name], str) or not notes[name].strip()
+                   or '\x00' in notes[name] for name in fields)):
+        raise ValueError('Complete release notes are required in the qualification JSON')
+    matrix = ['- ' + '/'.join(artifact['identity'][name] for name in
+                              ['profile', 'hardware_profile', 'architecture'])
+              + ': ' + artifact['identity']['raw_image_sha256']
+              for artifact in evidence['artifacts']]
+    return ('OuterSpace OS ' + evidence['version'] + '\n\n' + notes['summary'].strip()
+            + '\n\nSource: ' + evidence['commit'] + '\n\nQualified images (SHA256):\n'
+            + '\n'.join(matrix) + '\n\n'
+            + '\n\n'.join(name.title() + ':\n' + notes[name].strip() for name in fields[1:]) + '\n')
+
+
 def validate_release(version, tag, commit, evidence, policy):
     stage = parse_version(version)
     if tag != "v" + version:
@@ -73,6 +90,7 @@ def validate_release(version, tag, commit, evidence, policy):
         raise ValueError('Evidence must qualify every required profile/hardware/architecture artifact')
     if failures:
         raise ValueError("Release gates not satisfied: " + ", ".join(failures))
+    release_notes(evidence)
     return stage
 
 

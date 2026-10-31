@@ -11,6 +11,7 @@ RUN dpkg-deb --extract /tmp/ca.deb /tmp/ca \
     && rm -rf /tmp/ca /tmp/ca.deb
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt ca-certificates curl python3 \
+    build-essential clang libclang-dev cmake pkg-config protobuf-compiler libprotobuf-dev libssl-dev \
     systemd systemd-container systemd-ukify systemd-boot-efi udev \
     ubuntu-keyring bubblewrap binutils cpio kmod jq \
     btrfs-progs cryptsetup-bin dosfstools e2fsprogs fdisk squashfs-tools \

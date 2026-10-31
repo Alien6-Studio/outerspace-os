@@ -21,7 +21,7 @@ INPUTS = native.HARNESS_INPUTS + ['tests/harness/worker-comparison.py',
     'src/image/mkosi.extra/usr/lib/systemd/system/kubelet.service',
     'src/image/mkosi.extra/etc/modules-load.d/outerspace.conf',
     'src/image/mkosi.extra/etc/sysctl.d/90-outerspace.conf',
-    'src/components.lock.json', 'build/tools/install-components.py']
+    'src/components.lock.json', 'tests/harness/reference-runtimes.py', 'build/tools/sbom.py']
 
 
 def signed_image(cache, architecture, download=True):
@@ -146,7 +146,7 @@ class ComparisonLab(native.Lab):
         payload.mkdir()
         source = ROOT / 'src/image/mkosi.extra'
         files = {
-            'install-components.py': ROOT / 'build/tools/install-components.py',
+            'reference-runtimes.py': ROOT / 'tests/harness/reference-runtimes.py',
             'setup.sh': ROOT / 'tests/integration/ubuntu-reference.sh',
             'containerd.toml': source / 'etc/containerd/config.toml',
             'containerd.service': source / 'usr/lib/systemd/system/containerd.service',
@@ -164,24 +164,12 @@ class ComparisonLab(native.Lab):
             config += '\n[plugins.\'io.containerd.service.v1.tasks-service\']\n  blockio_config_file = "/run/outerspace/agent-blockio.json"\n'
         (payload / 'containerd.toml').write_text(config)
         (payload / 'profile').write_text(profile + '\n')
-        components = json.loads((ROOT / 'src/components.lock.json').read_text())
-        # P2P is inactive in this benchmark; don't add it to a standard worker.
-        del components['components']['dfdaemon']
-        lock = payload / 'components.lock.json'
-        lock.write_text(json.dumps(components))
-        installer = native.load_script('install-components', native.BUILD_TOOLS)
-        (cache / 'components').mkdir(exist_ok=True)
-        for component in components['components'].values():
-            sha = component['artifacts'][architecture]['sha256']
-            existing = cache.parent / 'components' / sha
-            if existing.is_file():
-                installer.verify(existing, sha)
-                shutil.copyfile(existing, cache / 'components' / sha)
-        installer.fetch(cache / 'components', {'amd64': 'x86-64', 'arm64': 'arm64'}[architecture], lock)
-        (payload / 'cache').mkdir()
-        for component in components['components'].values():
-            sha = component['artifacts'][architecture]['sha256']
-            shutil.copyfile(cache / 'components' / sha, payload / 'cache' / sha)
+        # Reuse the already verified disk bytes, including patched source builds.
+        # P2P remains absent from the standard Ubuntu comparison worker.
+        run('docker', 'exec', '--user', f'{os.getuid()}:{os.getgid()}', native.RUNNER,
+            'python3', '/work/tests/harness/reference-runtimes.py', 'extract',
+            '--image', '/state/packaged.raw', '--evidence-directory', '/image',
+            '--output', '/state/payload/runtimes', '--components', '/work/src/components.lock.json')
         (payload / 'meta-data').write_text('instance-id: ubuntu-reference-' + os.urandom(6).hex() + '\n'
                                            'local-hostname: ubuntu-reference-worker\n')
         (payload / 'user-data').write_text('''#cloud-config

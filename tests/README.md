@@ -8,7 +8,6 @@ The root Makefile exposes all checks. `tests/targets.mk` owns the test commands.
 | `harness/` | QEMU boot, Kubernetes enrollment, network and model-serving orchestration |
 | `integration/` | Manifests and small programs executed by test workloads |
 | `benchmarks/` | Model/runtime lock and reproducible benchmark protocols |
-| `reports/` | Historical qualification reports bound to their tested commits |
 | `Dockerfile` | Additional networking tools for the disposable VM runner |
 
 ## Fast checks

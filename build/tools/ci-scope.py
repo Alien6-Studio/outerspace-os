@@ -25,7 +25,7 @@ def documentation_only(path):
     if not path or path.startswith('/') or '..' in parts:
         return False
     return path in DOCUMENTS or (
-        path.endswith('.md') and path.startswith(('src/docs/', 'tests/reports/', 'tests/benchmarks/'))
+        path.endswith('.md') and path.startswith(('docs/', 'src/docs/', 'tests/reports/', 'tests/benchmarks/'))
     )
 
 

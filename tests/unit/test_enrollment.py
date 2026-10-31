@@ -17,6 +17,19 @@ spec.loader.exec_module(enrollment)
 
 
 class EnrollmentEvidenceTests(unittest.TestCase):
+    def test_worker_must_boot_the_exact_packaged_kernel(self):
+        lab = object.__new__(enrollment.Lab)
+        lab.kernel_release = '6.18.60-outerspace'
+        node = {'metadata': {'name': 'oos-test'}, 'status': {
+            'addresses': [{'address': enrollment.VM_IP}],
+            'nodeInfo': {'kernelVersion': lab.kernel_release}}}
+        lab.api = Mock(return_value={'items': [node]})
+        self.assertEqual(lab.worker(), node)
+        for version in ['6.8.0-147-generic', '6.18.60-outerspace-unqualified']:
+            node['status']['nodeInfo']['kernelVersion'] = version
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                lab.worker()
+
     def io_pod(self):
         identifier = 'a' * 64
         return {'path': 'pod', 'container_id': 'containerd://' + identifier,

@@ -68,7 +68,7 @@ cannot waive those minimum gates by changing their descriptions.
    to that commit without a self-referential Git hash. Record candidate run ID,
    full source SHA and the SHA256 of each bundle's `SHA256SUMS` file.
 4. Complete [evidence.example.json](evidence.example.json). Attach version-specific
-   release notes in `build/release/notes/VERSION.md` before tagging. A human reviewer
+   release notes in its `release_notes` object. They are rendered directly into the draft. A human reviewer
    checks evidence quality; a nonempty URL alone is not proof of compliance.
 5. Run **Prepare draft release** with tag, successful candidate run ID and evidence
    JSON. It validates all gates, downloads that run's candidates, checks identity,

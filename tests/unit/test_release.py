@@ -24,6 +24,15 @@ class ReleaseGateTests(unittest.TestCase):
     def test_complete_independent_profile_evidence_passes(self):
         self.assertEqual(self.validate(), 'alpha')
 
+    def test_notes_bind_the_published_text_to_qualified_images_without_repo_markdown(self):
+        text = release.release_notes(self.evidence)
+        self.assertIn(self.evidence['commit'], text)
+        for artifact in self.evidence['artifacts']:
+            self.assertIn(artifact['identity']['raw_image_sha256'], text)
+        self.evidence['release_notes']['limitations'] = ''
+        with self.assertRaisesRegex(ValueError, 'release notes'):
+            self.validate()
+
     def test_no_dev_snapshot_can_be_mistaken_for_a_release(self):
         with self.assertRaises(ValueError):
             release.validate_release('0.1.0-dev.0', 'v0.1.0-dev.0', 'a' * 40, {}, self.policy)

@@ -186,3 +186,6 @@ class CorrelationTests(unittest.TestCase):
             self.assertEqual(result['memory_events']['oom_kill'], 1)
             for forbidden in ['private', str(root), 'kubepods', 'cri-containerd', 'prompt']:
                 self.assertNotIn(forbidden, json.dumps(result))
+            (group / 'cpu.pressure').unlink()
+            with self.assertRaisesRegex(ValueError, 'required phase accounting counter: cpu.pressure'):
+                probe.snapshot(root, request)

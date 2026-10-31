@@ -294,6 +294,7 @@ nodes:
         run('docker', 'exec', '--user', f'{os.getuid()}:{os.getgid()}', RUNNER, 'zstd', '-q', '-d', '--sparse',
             '/image/' + str(compressed[0].relative_to(self.output)), '-o', '/state/packaged.raw')
         identity = json.loads((self.output / 'build-identity.json').read_text())
+        self.kernel_release = json.loads((compressed[0].parent / 'kernel-build.json').read_text())['release']
         if digest(self.state / 'packaged.raw') != identity['raw_image_sha256']:
             raise ValueError('The decompressed packaged disk differs from its qualified identity')
         (self.state / 'packaged.raw').chmod(0o400)
@@ -312,7 +313,7 @@ nodes:
     def worker(self):
         for node in self.api('nodes')['items']:
             if any(address['address'] == VM_IP for address in node['status'].get('addresses', [])):
-                if not node['metadata']['name'].startswith('oos-') or '6.8.0-147' not in node['status']['nodeInfo']['kernelVersion']:
+                if not node['metadata']['name'].startswith('oos-') or node['status']['nodeInfo']['kernelVersion'] != self.kernel_release:
                     raise ValueError('The worker does not use the OuterSpace kernel/identity')
                 return node
 

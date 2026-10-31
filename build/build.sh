@@ -13,8 +13,10 @@ if [[ $# -gt 2 || -n $(git -C "$repo" status --porcelain --untracked-files=norma
 fi
 commit=$(git -C "$repo" rev-parse HEAD)
 output="${OUTERSPACE_OUTPUT_ROOT:-$repo/out}/$directory"
-mkdir -p "$output" "$repo/.cache"
+cache=${OUTERSPACE_CACHE_ROOT:-$repo/.cache}
+mkdir -p "$output" "$cache"
 output=$(cd "$output" && pwd)
+cache=$(cd "$cache" && pwd)
 source_tree=$(mktemp -d "${TMPDIR:-/tmp}/outerspace-source.XXXXXX")
 cleanup_source() {
     # Docker Desktop can return before releasing a nested read-only bind mount.
@@ -32,14 +34,41 @@ if ! docker image inspect "$builder" >/dev/null 2>&1; then
     docker build -t "$builder" -f "$repo/build/Dockerfile" "$repo"
 fi
 builder_id=$(docker image inspect --format '{{.Id}}' "$builder")
+# Compile the kernel in its own tool image. Existing Rust/Go caches retain their
+# original builder identity when only kernel tooling changes.
+kernel_recipe=$("${PYTHON:-python3}" - "$source_tree/tree/build/kernel/Dockerfile" "$builder_id" <<'PYCODE'
+import hashlib, pathlib, sys
+print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes() + sys.argv[2].encode()).hexdigest())
+PYCODE
+)
+kernel_builder="outerspace-kernel-builder:$kernel_recipe"
+# BuildKit's attestations can change an image ID even for fully cached layers.
+# Keep the already built, recipe-specific image instead of re-exporting it.
+if ! docker image inspect "$kernel_builder" >/dev/null 2>&1; then
+    docker build --build-arg "BUILDER=$builder" -t "$kernel_builder" \
+        -f "$source_tree/tree/build/kernel/Dockerfile" "$source_tree/tree"
+fi
+if [[ $(docker image inspect --format '{{.Id}}' "$builder") != "$builder_id" ]]; then
+    echo 'Base builder changed during kernel tooling preparation.' >&2
+    exit 1
+fi
+kernel_builder_id=$(docker image inspect --format '{{.Id}}' "$kernel_builder")
+docker run --rm --mount "type=bind,src=$source_tree/tree,dst=/repo,readonly" \
+    --mount "type=bind,src=$cache,dst=/cache" "$kernel_builder_id" \
+    python3 /repo/build/tools/kernel_build.py fetch
+docker run --rm --network none --env "OUTERSPACE_KERNEL_BUILDER_ID=$kernel_builder_id" \
+    --mount "type=bind,src=$source_tree/tree,dst=/repo,readonly" \
+    --mount "type=bind,src=$cache,dst=/cache" "$kernel_builder_id" \
+    python3 /repo/build/tools/kernel_build.py prepare
 # Privileges are confined to the disposable Linux builder. No host devices or
 # Docker socket are mounted. mkosi needs mount/user namespaces to assemble an OS.
 docker run --rm --privileged \
     --env "OUTERSPACE_SOURCE_COMMIT=$commit" \
     --env "OUTERSPACE_BUILDER_ID=$builder_id" \
+    --env "OUTERSPACE_KERNEL_BUILDER_ID=$kernel_builder_id" \
     --mount "type=bind,src=$source_tree/tree,dst=/repo,readonly" \
     --mount "type=bind,src=$source_tree/source.tar,dst=/source.tar,readonly" \
-    --mount "type=bind,src=$repo/.cache,dst=/repo/.cache,readonly" \
+    --mount "type=bind,src=$cache,dst=/repo/.cache,readonly" \
     --mount "type=bind,src=$output,dst=/out" \
-    --mount "type=bind,src=$repo/.cache,dst=/cache" \
+    --mount "type=bind,src=$cache,dst=/cache" \
     "$builder_id" bash /repo/build/assemble.sh "$profile" "$hardware"

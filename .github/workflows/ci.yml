@@ -1,9 +1,8 @@
 name: Distribution checks
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
   schedule:
     - cron: '17 4 * * 1'
@@ -14,6 +13,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   contracts:
+    # Drafts are local work in progress. Ready PRs qualify once before the
+    # protected squash merge; merging does not repeat the entire campaign.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     outputs:
       images: ${{ steps.scope.outputs.images }}
@@ -61,6 +63,8 @@ jobs:
         run: |
           if [ '${{ matrix.profile }}' = agent ]; then
             make PROFILE=agent HARDWARE=cpu agent-resources
+            # Reuse this qualified image for both phase-accounting arms.
+            make PROFILE=agent HARDWARE=cpu agent-phases
           else
             make PROFILE=inference HARDWARE=cpu cpu-serving
           fi
@@ -82,44 +86,13 @@ jobs:
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/security-review.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/redistribution-review.json
             out/${{ matrix.profile }}-cpu-${{ matrix.arch }}/supply-chain.json
-          retention-days: 7
-  agent_phases:
-    if: needs.contracts.outputs.images == 'true'
-    needs: contracts
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [amd64, arm64]
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 360
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      # Each paired benchmark uses one immutable image for both arms. Its build
-      # is independent of the native matrix and retains its own exact identity.
-      - run: make PROFILE=agent HARDWARE=cpu builder build smoke package
-      - name: Qualify trusted Agent phase accounting against an unprofiled control
-        run: make PROFILE=agent HARDWARE=cpu agent-phases
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: outerspace-agent-phases-${{ matrix.arch }}-development
-          path: |
-            out/agent-cpu-${{ matrix.arch }}/outerspace-*/*.json
-            out/agent-cpu-${{ matrix.arch }}/*.log
             out/agent-phases/**/*.json
             out/agent-phases/**/*.log
           retention-days: 7
   ci:
     name: ci
-    if: always()
-    needs: [contracts, image, agent_phases]
+    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    needs: [contracts, image]
     runs-on: ubuntu-24.04
     steps:
       - name: Require contracts and the appropriate image qualification
@@ -127,14 +100,11 @@ jobs:
           CONTRACTS: ${{ needs.contracts.result }}
           IMAGES_REQUIRED: ${{ needs.contracts.outputs.images }}
           IMAGE_RESULT: ${{ needs.image.result }}
-          PHASE_RESULT: ${{ needs.agent_phases.result }}
         run: |
           test "$CONTRACTS" = success
           if [ "$IMAGES_REQUIRED" = true ]; then
             test "$IMAGE_RESULT" = success
-            test "$PHASE_RESULT" = success
           else
             test "$IMAGES_REQUIRED" = false
             test "$IMAGE_RESULT" = skipped
-            test "$PHASE_RESULT" = skipped
           fi

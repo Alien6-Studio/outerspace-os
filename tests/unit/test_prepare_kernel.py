@@ -14,6 +14,17 @@ spec.loader.exec_module(kernel)
 
 
 class KernelPreparationTests(unittest.TestCase):
+    def test_missing_cilium_netlink_and_socket_interfaces_fail_before_assembly(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); (root / 'boot').mkdir()
+            config = root / 'boot/config-test'
+            for missing in ['CONFIG_XFRM_USER', 'CONFIG_INET_UDP_DIAG', 'CONFIG_NETFILTER_XT_TARGET_TPROXY',
+                            'CONFIG_IP_ADVANCED_ROUTER', 'CONFIG_IP_MULTIPLE_TABLES', 'CONFIG_IPV6_MULTIPLE_TABLES',
+                            'CONFIG_CGROUP_NET_CLASSID', 'CONFIG_PSI']:
+                config.write_text(''.join(name + '=y\n' for name in kernel.REQUIRED if name != missing))
+                with self.subTest(missing=missing), self.assertRaisesRegex(ValueError, missing):
+                    kernel.check_kernel(root)
+
     def image(self):
         data = bytearray(128)
         data[:2] = b'MZ'

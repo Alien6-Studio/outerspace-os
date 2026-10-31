@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "component": "containerd",
+  "source": {
+    "repo": "containerd/containerd",
+    "version": "2.3.7",
+    "commit": "6f589cf13dc01a5b493911355427e05b2ff005d7",
+    "url": "https://codeload.github.com/containerd/containerd/tar.gz/6f589cf13dc01a5b493911355427e05b2ff005d7",
+    "sha256": "80ac465c51750299f4778a19fa1a37f9d9d0a82acd9ec6435488008837caf51d",
+    "size": 11836542
+  },
+  "go_version": "go1.26.10",
+  "go_source": {
+    "url": "https://go.dev/dl/go1.26.10.src.tar.gz",
+    "sha256": "fd63e883ba2f2bfca93c1646b31ebef63e2b1e4d2b317c9789d976a68d81f36f",
+    "size": 34164741
+  },
+  "toolchains": {
+    "amd64": {
+      "url": "https://go.dev/dl/go1.26.10.linux-amd64.tar.gz",
+      "sha256": "ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5",
+      "size": 66936659
+    },
+    "arm64": {
+      "url": "https://go.dev/dl/go1.26.10.linux-arm64.tar.gz",
+      "sha256": "3f4227ce7b206a513e794f1393adb473a07b46e94d18bd15d1c684bbb7319797",
+      "size": 63827526
+    }
+  },
+  "dependency_lock_sha256": "60669b8348fccc939d1810d388df94e6248c62321091a79e557a73bbc22639d6"
+}

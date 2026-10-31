@@ -31,9 +31,10 @@ seccomp defaults and conservative host configuration. Development UKIs are
 unsigned. Secure Boot, authenticated A/B updates, complete SBOM/vulnerability
 review and independent hardening evidence remain release gates.
 
-The [CIS security target](src/docs/security.md) describes intended controls and
-exceptions. It is not a certification or a completed compliance audit. Likewise,
-checksums verify file integrity; they do not authenticate a publisher.
+The [image configuration](src/image/) defines host controls; the
+[CIS audit](https://github.com/Alien6-Studio/outerspace-os/issues/20) tracks their
+assessment. Configuration alone is not certification or completed audit evidence.
+Checksums verify file integrity; they do not authenticate a publisher.
 
 Repository protections, private reporting, secret push protection, Dependabot and
 native GitHub CodeQL complement review. They do not replace image-level auditing,

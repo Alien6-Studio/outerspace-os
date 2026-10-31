@@ -1,5 +1,60 @@
 {
   "schema": 1,
-  "approvers": ["Coopyrightdmin"],
-  "reviews": []
+  "approvers": [
+    "Coopyrightdmin"
+  ],
+  "reviews": [],
+  "notice_decisions": [
+    {
+      "name": "http-serde",
+      "version": "2.1.1",
+      "source_sha256": "0f056c8559e3757392c8d091e796416e4649d8e49e88b8d76df6c002f05027fd",
+      "scope": {
+        "hardware_profile": "cpu"
+      },
+      "decision": "select-declared-license",
+      "declared_license": "Apache-2.0 OR MIT",
+      "selected_license": "Apache-2.0",
+      "approved_by": "Coopyrightdmin",
+      "approved_at": "2026-10-30T16:43:46+00:00",
+      "rationale": "The maintainer selected Apache-2.0 from the Apache-2.0 OR MIT grant in the original http-serde 2.1.1 manifest. Preserve the original source archive and author attribution and distribute the complete Apache-2.0 text. The archive has no LICENSE/NOTICE file; this source-specific selection does not approve redistribution of the entire image.",
+      "evidence": [
+        "https://gitlab.com/kornelski/http-serde/-/blob/c2403fb3d64bc0db31a05ca5d340ff82686163b1/Cargo.toml",
+        "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      ],
+      "distributed_license": {
+        "path": "kubelet-LICENSE",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      }
+    }
+  ],
+  "material_reviews": [
+    {
+      "materials_sha256": "98f3759745175d72bbedd364106c048e49a7c3df6c32d7c77febd1c2dc1a581b",
+      "scope": {
+        "hardware_profile": "cpu",
+        "profiles": [
+          "agent",
+          "inference"
+        ],
+        "architectures": [
+          "amd64",
+          "arm64"
+        ]
+      },
+      "approved_by": "Coopyrightdmin",
+      "approved_at": "2026-10-31T06:24:43+00:00",
+      "decision": "redistributable",
+      "rationale": "Approve distribution of this exact set of original source archives, original APT copyright/common-license notices and source-specific license decisions. Ship corresponding-source and original project-source archives with each binary image, including the complete signed Linux source, applied patches, configuration, recipes and dependency manifests. Preserve all original notices, including CDDL-1.0 inferno source, Unicode/data notices and the Apache-2.0 choice for http-serde. Source or notice changes invalidate this approval; it does not license the entire distribution under Apache-2.0. GPU firmware, proprietary drivers, model weights and external workload containers are excluded.",
+      "evidence": [
+        "https://docs.kernel.org/process/license-rules.html",
+        "https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html",
+        "https://www.apache.org/licenses/LICENSE-2.0",
+        "https://opensource.org/license/cddl-1-0"
+      ],
+      "unresolved_notices": [],
+      "notice_resolutions": {},
+      "approval_proposal_sha256": "285d57fdaeb194ab1d61ef13bff656def51bc9a85ac872da47575ff31072f52a"
+    }
+  ]
 }

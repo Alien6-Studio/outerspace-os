@@ -12,21 +12,26 @@ profile=$(cat "$seed/profile")
 export DEBIAN_FRONTEND=noninteractive
 # No upgrade or substitute runtime: a version mismatch must fail the comparison.
 apt-get update
-apt-get install -y --no-install-recommends runc=1.3.4-0ubuntu1~24.04.1 \
-    linux-modules-extra-6.8.0-147-generic=6.8.0-147.147 conntrack ethtool
+apt-get install -y --no-install-recommends runc=1.3.4-0ubuntu1~24.04.1 conntrack ethtool
 architecture=$(dpkg --print-architecture)
-[[ "$architecture" != amd64 ]] || architecture=x86-64
-python3 "$seed/install-components.py" / "$architecture" "$seed/components.lock.json" "$seed/cache"
+python3 "$seed/reference-runtimes.py" install --root / --architecture "$architecture" \
+    --source "$seed/runtimes"
+kernel_release=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["kernel"]["release"])' "$seed/runtimes/runtimes.json")
+depmod "$kernel_release"
+update-initramfs -c -k "$kernel_release"
+update-grub
 install -d /var/lib/outerspace /var/lib/kubelet /etc/containerd /usr/lib/outerspace \
     /usr/share/outerspace/apparmor
 cp "$seed/containerd.toml" /etc/containerd/config.toml
 cp "$seed/agent-v1" /usr/share/outerspace/apparmor/agent-v1
 install -m 0755 "$seed/agent-io" /usr/lib/outerspace/agent-io
-# Only Agent requires a labeled device for its fixed I/O class. Inference keeps
-# Ubuntu's original root label, which its stock fstab needs after a cold boot.
+# The Agent I/O policy needs a stable device alias. Preserve Ubuntu's original
+# filesystem label so its fstab remains bootable with the matched kernel.
 if [[ "$profile" == agent ]]; then
     state=$(readlink -f "$(findmnt -nro SOURCE --target /var)")
-    e2label "$state" OOS_STATE
+    state_uuid=$(blkid -s UUID -o value "$state")
+    printf 'SUBSYSTEM=="block", ENV{ID_FS_UUID}=="%s", SYMLINK+="disk/by-label/OOS_STATE"\n' "$state_uuid" \
+        > /etc/udev/rules.d/99-outerspace-reference.rules
     udevadm trigger --action=change "/sys/class/block/${state##*/}"
     udevadm settle --timeout=30
     [[ $(readlink -f /dev/disk/by-label/OOS_STATE) == "$state" ]]
@@ -42,8 +47,7 @@ sed -i "/^\[Service\]/a Environment=OUTERSPACE_PROFILE=$profile" /etc/systemd/sy
 cp "$seed/outerspace-agent-profile.service" /etc/systemd/system/
 cp "$seed/90-outerspace.conf" /etc/sysctl.d/
 cp "$seed/modules.conf" /etc/modules-load.d/reference.conf
-while read -r module; do [[ -z "$module" || "$module" == \#* ]] || modprobe "$module"; done < "$seed/modules.conf"
-sysctl --system
+# Module loading and sysctls apply at the first boot of the matched kernel.
 cat > /etc/crictl.yaml <<'EOF'
 runtime-endpoint: unix:///run/containerd/containerd.sock
 image-endpoint: unix:///run/containerd/containerd.sock
@@ -65,6 +69,9 @@ systemctl stop apt-daily.timer apt-daily-upgrade.timer
 systemctl disable apt-daily.timer apt-daily-upgrade.timer
 dpkg-query -W -f='${Package}\t${Version}\n' > /var/lib/outerspace/reference-packages.tsv
 systemctl daemon-reload
-if [[ "$profile" == agent ]]; then systemctl enable --now outerspace-agent-profile; fi
-systemctl enable --now containerd kubelet
-echo OUTERSPACE_UBUNTU_REFERENCE_CONFIGURED
+if [[ "$profile" == agent ]]; then systemctl enable outerspace-agent-profile; fi
+systemctl enable containerd kubelet
+echo "OUTERSPACE_UBUNTU_REFERENCE_CONFIGURED kernel=$kernel_release"
+# No worker joins on Ubuntu's original kernel. Native comparison starts only
+# after the exact packaged kernel is active and both runtime units start.
+systemctl reboot --no-wall

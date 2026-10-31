@@ -8,16 +8,45 @@ import hashlib
 import io
 import json
 from pathlib import Path, PurePosixPath
+import posixpath
 import re
 import subprocess
 import tarfile
 import tempfile
 import tomllib
+import zipfile
 from urllib.parse import urlsplit
 
 from profiles import ROOT, sha256
+import go_dependencies
 
 LOCK = ROOT / 'build/sbom/sources.lock.json'
+
+
+def go_info_bytes(data):
+    """Match Go's cached .info field order without changing any metadata values."""
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate Go module metadata field')
+            result[key] = value
+        return result
+
+    info = json.loads(data, object_pairs_hook=unique)
+    fields = ('Version', 'Time', 'Origin')
+    origin_fields = ('VCS', 'URL', 'Subdir', 'Hash', 'TagPrefix', 'TagSum', 'Ref', 'RepoSum')
+    if (not isinstance(info, dict) or not {'Version', 'Time'} <= set(info) <= set(fields)
+            or not all(isinstance(info[key], str) for key in ('Version', 'Time'))):
+        raise ValueError('Invalid Go module metadata')
+    if 'Origin' in info:
+        origin = info['Origin']
+        if (not isinstance(origin, dict) or not set(origin) <= set(origin_fields)
+                or not all(isinstance(value, str) for value in origin.values())):
+            raise ValueError('Invalid Go module origin metadata')
+        info['Origin'] = {key: origin[key] for key in origin_fields if key in origin}
+    return json.dumps({key: info[key] for key in fields if key in info},
+                      separators=(',', ':'), ensure_ascii=False).encode()
 
 
 def fetch(cache, entry):
@@ -35,6 +64,11 @@ def fetch(cache, entry):
             subprocess.run(['curl', '-fsSL', '--proto', '=https', '--proto-redir', '=https', '--retry', '3',
                 '--max-time', '900', '--speed-limit', '1024', '--speed-time', '90',
                 '-o', str(temporary), entry['url']], check=True)
+            if entry.get('kind') == 'go-module-metadata' and entry.get('format') == 'info':
+                # Locks record Go's cache serialization. Proxy responses may
+                # reorder JSON keys; the resulting bytes must still match the
+                # original locked SHA256 and size, including every origin value.
+                temporary.write_bytes(go_info_bytes(temporary.read_bytes()))
             if sha256(temporary) != digest:
                 raise ValueError('Corresponding source checksum mismatch: ' + entry['url'])
             temporary.replace(path)
@@ -75,10 +109,29 @@ def cargo_inventory(source, git_sources):
     return packages
 
 
-def license_evidence(path):
+def license_evidence(path, extra_paths=()):
     """Keep declarations and exact notice bytes; never invent license decisions."""
     declarations = []
     notices = []
+    if zipfile.is_zipfile(path):
+        seen = set()
+        with zipfile.ZipFile(path) as archive:
+            for member in archive.infolist():
+                name = PurePosixPath(member.filename)
+                if (name.is_absolute() or '..' in name.parts or '\\' in member.filename
+                        or member.filename in seen):
+                    raise ValueError('Unsafe or duplicate Go source archive path')
+                seen.add(member.filename)
+                if not member.is_dir() and (name.name.upper().startswith(
+                        ('LICENSE', 'LICENCE', 'COPYING', 'NOTICE', 'COPYRIGHT'))
+                        or name.name.upper() == 'AUTHORS' or str(name) in extra_paths):
+                    data = archive.read(member)
+                    notices.append({'path': str(name), 'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)})
+        if not set(extra_paths) <= {notice['path'] for notice in notices}:
+            raise ValueError('Pinned embedded Go notice is absent from its source archive')
+        return {'declared_licenses': [], 'notices': notices}
+    if extra_paths:
+        raise ValueError('Explicit embedded notice paths require a Go source ZIP')
     with tarfile.open(path) as tar:
         for member in tar:
             name = PurePosixPath(member.name)
@@ -99,12 +152,14 @@ def license_evidence(path):
     return {'declared_licenses': sorted(set(declarations)), 'notices': notices}
 
 
-def archive_inventory(path):
+def archive_inventory(path, *, flat=False, allow_internal_links=False):
     """Hash regular files under one archive root without extracting paths."""
     files, seen, roots = {}, set(), set()
     with tarfile.open(path) as tar:
         for member in tar:
             name = PurePosixPath(member.name)
+            if flat and str(name) == '.' and member.isdir():
+                continue
             if name.is_absolute() or '..' in name.parts or not name.parts:
                 raise ValueError('Unsafe notice source archive path')
             roots.add(name.parts[0])
@@ -113,39 +168,133 @@ def archive_inventory(path):
             seen.add(str(name))
             if member.isdir():
                 continue
-            if not member.isfile() or len(name.parts) < 2:
+            relative = str(name if flat else PurePosixPath(*name.parts[1:]))
+            if member.issym() and allow_internal_links and not flat:
+                target = posixpath.normpath(str(name.parent / member.linkname))
+                if PurePosixPath(member.linkname).is_absolute() or not target.startswith(name.parts[0] + '/'):
+                    raise ValueError('Notice source link escapes its archive')
+                files[relative] = {'link': target}
+                continue
+            if not member.isfile() or (not flat and len(name.parts) < 2):
                 raise ValueError('Notice content matching requires regular files')
-            relative = str(PurePosixPath(*name.parts[1:]))
             files[relative] = {'sha256': hashlib.file_digest(tar.extractfile(member), 'sha256').hexdigest(),
                                'bytes': member.size}
-    if len(roots) != 1 or not files:
+    if (not flat and len(roots) != 1) or not files:
         raise ValueError('Notice source archive requires one nonempty root')
     return files
+
+
+def payload_entries(supplements):
+    return [{**config['artifact'], 'kind': 'supplemental-release-payload', 'for_crates': [digest]}
+            for supplement in supplements for digest, config in supplement.get('release_payload_matches', {}).items()]
+
+
+def release_payload_provenance(cache, supplement, config, digest):
+    artifact = config['artifact']
+    if (not config.get('release_url', '').startswith('https://github.com/' + supplement['name'] + '/releases/tag/')
+            or not artifact['url'].startswith('https://github.com/' + supplement['name'] + '/releases/download/')):
+        raise ValueError('Release payload must identify its upstream release')
+    published = archive_inventory(cache / digest)
+    payload = archive_inventory(cache / artifact['sha256'], flat=True)
+    if published != payload:
+        raise ValueError('Published crate differs from the complete upstream release payload')
+    source = archive_inventory(cache / supplement['sha256'], allow_internal_links=True)
+    prefix = PurePosixPath(config['source_directory'])
+    if prefix.is_absolute() or '..' in prefix.parts or str(prefix) != config['source_directory']:
+        raise ValueError('Unsafe release source directory')
+    names = {'Cargo.toml.orig'} | {name for name in published if name.startswith('src/')}
+    if 'Cargo.toml.orig' not in published or len(names) < 2:
+        raise ValueError('Release payload requires its original manifest and Rust sources')
+    matched = {}
+    for name in sorted(names):
+        target = str(prefix / ('Cargo.toml' if name == 'Cargo.toml.orig' else name))
+        if source.get(target) != published[name]:
+            raise ValueError('Release manifest or Rust source differs from its source revision')
+        matched[name] = {'source_path': target, **published[name]}
+    notices = config['notice_paths']
+    recognized = {str(PurePosixPath(n['path']).relative_to(PurePosixPath(n['path']).parts[0]))
+                  for n in license_evidence(cache / supplement['sha256'])['notices']}
+    if not notices or len(notices) != len(set(notices)) or not set(notices) <= recognized:
+        raise ValueError('Release payload requires explicit original notice files')
+    return {'basis': 'complete-upstream-release-payload-match', 'commit': supplement['commit'],
+            'release_url': config['release_url'], 'payload_sha256': artifact['sha256'],
+            'published_files': published, 'matched_source_files': matched,
+            'generated_payload_build_proven': False,
+            'notices': {name: source[name] for name in notices}}
+
+
+def notice_metadata_differences(cache, supplement, digest, config, files, source_files, prefix):
+    """Account for pinned CI/dev metadata changes without exempting source code."""
+    result = {}
+    for name, pins in config.get('metadata_changes', {}).items():
+        if name != 'Cargo.toml.orig' and not re.fullmatch(r'\.github/workflows/[A-Za-z0-9_-]+\.ya?ml', name):
+            raise ValueError('Only an original Cargo manifest or explicit CI workflow may differ')
+        target = str(prefix / ('Cargo.toml' if name == 'Cargo.toml.orig' else name))
+        before, after = files.get(name), source_files.get(target)
+        if (not before or not after or before == after
+                or set(pins) != {'published_sha256', 'upstream_sha256'}
+                or before.get('sha256') != pins['published_sha256']
+                or after.get('sha256') != pins['upstream_sha256']):
+            raise ValueError('Notice metadata differs from its reviewed byte identities')
+        if name == 'Cargo.toml.orig':
+            manifests = [tomllib.loads(archive_file(cache / digest, name).decode()),
+                         tomllib.loads(archive_file(cache / supplement['sha256'], target).decode())]
+            for manifest in manifests:
+                manifest.pop('dev-dependencies', None)
+                # Cargo historically accepted this dual-license spelling. Only
+                # these explicit equivalent spellings are normalized, not SPDX
+                # expressions generally or a different license grant.
+                if manifest['package'].get('license') in ('Apache-2.0/MIT', 'Apache-2.0 OR MIT', 'MIT OR Apache-2.0'):
+                    manifest['package']['license'] = 'Apache-2.0 OR MIT'
+            if manifests[0] != manifests[1]:
+                raise ValueError('Later notice changed runtime/build metadata or package identity')
+        result[name] = {'source_path': target, 'published': before, 'upstream': after}
+    return result
 
 
 def supplemental_provenance(cache, supplement, cargo):
     """Distinguish publication metadata from complete published-file matching."""
     crates = {e['sha256']: e for e in cargo}
     content_matches = supplement.get('content_matches', {})
-    if not set(content_matches) <= set(supplement['for_crates']):
+    backfills = supplement.get('notice_backfills', {})
+    payloads = supplement.get('release_payload_matches', {})
+    configured = list(content_matches) + list(backfills) + list(payloads)
+    if (not set(configured) <= set(supplement['for_crates']) or len(set(configured)) != len(configured)):
         raise ValueError('Content match refers to an unknown supplemental crate')
     result = {}
     source_files = None
     for digest in supplement['for_crates']:
         if digest not in crates:
             raise ValueError('Supplemental notice refers to an unknown crate')
-        if digest not in content_matches:
+        if digest in payloads:
+            manifest = tomllib.loads(archive_file(cache / digest, 'Cargo.toml').decode())['package']
+            if (manifest.get('name'), manifest.get('version')) != (crates[digest]['name'], crates[digest]['version']):
+                raise ValueError('Release payload manifest differs from Cargo lock identity')
+            result[digest] = release_payload_provenance(cache, supplement, payloads[digest], digest)
+            continue
+        if digest not in content_matches and digest not in backfills:
             vcs = json.loads(archive_file(cache / digest, '.cargo_vcs_info.json'))
             if vcs['git']['sha1'] != supplement['commit']:
                 raise ValueError('Supplemental notice source is not the crate publication revision')
             result[digest] = {'basis': 'cargo-vcs-publication-commit', 'commit': supplement['commit']}
             continue
-        config = content_matches[digest]
+        config = backfills[digest] if digest in backfills else content_matches[digest]
         prefix = PurePosixPath(config['source_directory'])
         if prefix.is_absolute() or '..' in prefix.parts or str(prefix) != config['source_directory']:
             raise ValueError('Unsafe crate source directory')
         files = archive_inventory(cache / digest)
-        if '.cargo_vcs_info.json' in files:
+        publication = None
+        if digest in backfills:
+            if '.cargo_vcs_info.json' not in files:
+                raise ValueError('A later notice requires original publication metadata')
+            vcs = json.loads(archive_file(cache / digest, '.cargo_vcs_info.json'))
+            commit = config.get('publication_commit', '')
+            if (not re.fullmatch('[a-f0-9]{40}', commit) or vcs['git']['sha1'] != commit
+                    or commit == supplement['commit'] or not config.get('evidence')
+                    or not all(str(u).startswith('https://') for u in config['evidence'])):
+                raise ValueError('Later notice does not preserve the original publication revision')
+            publication = {'commit': commit, **files['.cargo_vcs_info.json']}
+        elif '.cargo_vcs_info.json' in files:
             raise ValueError('Content matching cannot override crate publication metadata')
         # Only Cargo packaging metadata may differ. Its exact bytes must be
         # reviewed and pinned individually; no code/binary/glob exceptions.
@@ -164,9 +313,12 @@ def supplemental_provenance(cache, supplement, cargo):
             raise ValueError('Cargo packaging changed package or license identity')
         if source_files is None:
             source_files = archive_inventory(cache / supplement['sha256'])
+        if config.get('metadata_changes') and publication is None:
+            raise ValueError('Metadata differences require explicit later-notice publication evidence')
+        metadata = notice_metadata_differences(cache, supplement, digest, config, files, source_files, prefix)
         matched = {}
         for name, record in files.items():
-            if name in generated:
+            if name in generated or name in metadata or (publication is not None and name == '.cargo_vcs_info.json'):
                 continue
             target = str(prefix / ('Cargo.toml' if name == 'Cargo.toml.orig' else name))
             if source_files.get(target) != record:
@@ -181,6 +333,11 @@ def supplemental_provenance(cache, supplement, cargo):
                           'publication_commit_proven': False, 'matched_files': matched,
                           'packaging_files': {name: files[name] for name in generated},
                           'notices': {name: source_files[name] for name in notices}}
+        if publication is not None:
+            result[digest].update(basis='published-files-match-with-later-notice',
+                                  publication_metadata=publication, notice_evidence=config['evidence'])
+        if metadata:
+            result[digest].update(basis='later-notice-with-metadata-differences', metadata_changes=metadata)
     return result
 
 
@@ -207,15 +364,35 @@ def go_vendor_inventory(path):
         return modules
 
 
+def go_build_inputs(path, names=('go.mod', 'go.sum', 'vendor/modules.txt')):
+    result = {}
+    with tarfile.open(path) as tar:
+        members = tar.getmembers()
+        for name in names:
+            matches = [m for m in members if PurePosixPath(m.name).parts[1:] == PurePosixPath(name).parts]
+            if not matches and (name == 'go.work.sum' or name.endswith('/go.sum')):
+                result[name] = None  # Newly materialized by the pinned dependency update.
+                continue
+            if len(matches) != 1 or not matches[0].isfile():
+                raise ValueError('Missing or ambiguous root Go build input: ' + name)
+            result[name] = hashlib.file_digest(tar.extractfile(matches[0]), 'sha256').hexdigest()
+    return result
+
+
 def collect(cache, apt_inputs=None):
     lock = json.loads(LOCK.read_text())
-    entries = [{**entry, 'name': name, 'kind': 'runtime-source' if 'commit' in entry else 'go-standard-library'}
+    updates = {name: go_dependencies.read_lock(digest, name) for name, digest in lock.get('go_dependency_updates', {}).items()}
+    entries = [{**entry, 'name': name, 'kind': 'runtime-source' if 'commit' in entry
+                else entry.get('source_kind', 'go-standard-library')}
                for name, entry in lock['sources'].items()]
     with ThreadPoolExecutor(max_workers=6) as pool:
         list(pool.map(lambda e: fetch(cache, e), entries))
     cargo = cargo_inventory(cache / lock['sources']['dfdaemon']['sha256'], lock.get('cargo_git_sources', {}))
     entries.extend(cargo)
     entries.extend({**e, 'kind': 'supplemental-notice-source'} for e in lock.get('supplemental_sources', []))
+    entries.extend(payload_entries(lock.get('supplemental_sources', [])))
+    for config in updates.values():
+        entries.extend(go_dependencies.source_entries(config))
     if apt_inputs:
         for source in apt_inputs['sources']:
             for entry in source['files']:
@@ -225,15 +402,24 @@ def collect(cache, apt_inputs=None):
         list(pool.map(lambda e: fetch(cache, e), unique.values()))
     print('Verified source objects:', len(unique), flush=True)
     for entry in entries:
-        if entry['kind'] != 'ubuntu-source':
-            entry['licenses'] = license_evidence(cache / entry['sha256'])
+        if entry['kind'] not in ['ubuntu-source', 'go-module-metadata']:
+            entry['licenses'] = license_evidence(cache / entry['sha256'],
+                lock.get('embedded_go_notices', {}).get(entry['sha256'], []))
         if entry['kind'] == 'supplemental-notice-source':
             entry['notice_provenance'] = supplemental_provenance(cache, entry, cargo)
         if entry['kind'] == 'runtime-source' and entry['name'] in ['containerd', 'kubelet', 'crictl']:
             entry['go_vendor_modules'] = go_vendor_inventory(cache / entry['sha256'])
-    return {'schema': 1, 'source_lock_sha256': sha256(LOCK), 'entries': entries,
-            'cargo_relationship': 'Source-declared lockfile closure including target/build/test dependencies; '
-                                  'not proof that every crate is linked into the stripped upstream binary'}
+            if entry['name'] in updates:
+                entry['go_build_inputs'] = go_build_inputs(cache / entry['sha256'], updates[entry['name']]['manifests'])
+                entry['upstream_go_build_inputs'] = entry['go_build_inputs']
+                entry['upstream_go_vendor_modules'] = entry['go_vendor_modules']
+                entry['go_build_inputs'] = go_dependencies.build_inputs(updates[entry['name']])
+                entry['go_vendor_modules'] = go_dependencies.vendor_modules(updates[entry['name']])
+        if entry['kind'] == 'runtime-source' and entry['name'] == 'dfdaemon':
+            entry['cargo_lock_sha256'] = hashlib.sha256(archive_file(cache / entry['sha256'], 'Cargo.lock')).hexdigest()
+    return {'schema': 1, 'source_lock_sha256': sha256(LOCK), 'entries': entries, 'go_dependency_updates': updates,
+            'cargo_relationship': 'Archived source lock closure includes target/build/test dependencies. '
+                                  'The separate source-build receipt and disk scan identify the compiled runtime inventory.'}
 
 
 def verify(directory, apt_inputs, lock_path=LOCK):
@@ -248,14 +434,31 @@ def verify(directory, apt_inputs, lock_path=LOCK):
         raise ValueError('Sources differ from approved source lock')
     entries = index['entries']
     actual = {e['sha256']: e for e in entries}
+    # Different module versions can legitimately share identical go.mod bytes.
+    # Archive each content-addressed object once, but retain every pinned origin.
+    origins = {}
+    for entry in entries:
+        origins.setdefault(entry['sha256'], []).append(entry)
+    updates = {name: go_dependencies.read_lock(digest, name) for name, digest in lock.get('go_dependency_updates', {}).items()}
+    if index.get('go_dependency_updates', {}) != updates:
+        raise ValueError('Go dependency update differs from approved source inputs')
+    go_entries = [e for config in updates.values() for e in go_dependencies.source_entries(config)]
+    if not set(lock.get('embedded_go_notices', {})) <= {
+            e['sha256'] for e in go_entries if e['kind'] == 'go-module-source'}:
+        raise ValueError('Embedded notices must refer to a pinned Go source ZIP')
     required = (list(lock['sources'].values()) + lock.get('supplemental_sources', [])
+                + payload_entries(lock.get('supplemental_sources', []))
+                + go_entries
                 + [f for s in apt_inputs['sources'] for f in s['files']])
-    if any(e['sha256'] not in actual or any(actual[e['sha256']].get(k) != v for k, v in e.items()) for e in required):
+    if any(not any(all(candidate.get(k) == v for k, v in entry.items())
+                   for candidate in origins.get(entry['sha256'], [])) for entry in required):
         raise ValueError('Corresponding source is incomplete or changed')
     seen = set()
     cargo_lock = None
     supplements = lock.get('supplemental_sources', [])
     proof_objects = {s['sha256'] for s in supplements} | {d for s in supplements for d in s['for_crates']}
+    proof_objects.update(e['sha256'] for e in payload_entries(supplements))
+    proof_objects.update(e['sha256'] for e in go_entries if e['kind'] == 'go-module-source')
     with tempfile.TemporaryDirectory(prefix='outerspace-notice-proof-') as temporary, \
             subprocess.Popen(['zstd', '-dc', str(archive)], stdout=subprocess.PIPE) as decoder:
         proof_cache = Path(temporary)
@@ -287,9 +490,21 @@ def verify(directory, apt_inputs, lock_path=LOCK):
                             temporary.write(data); temporary.flush()
                             if runtime['name'] == 'dfdaemon':
                                 cargo_lock = cargo_inventory(Path(temporary.name), lock.get('cargo_git_sources', {}))
+                                if runtime.get('cargo_lock_sha256') != hashlib.sha256(
+                                        archive_file(Path(temporary.name), 'Cargo.lock')).hexdigest():
+                                    raise ValueError('Runtime Cargo lock digest differs from archived source')
                             elif runtime['name'] in ['containerd', 'kubelet', 'crictl']:
-                                if runtime.get('go_vendor_modules') != go_vendor_inventory(Path(temporary.name)):
+                                updated = runtime['name'] in updates
+                                vendor_key = 'upstream_go_vendor_modules' if updated else 'go_vendor_modules'
+                                if runtime.get(vendor_key) != go_vendor_inventory(Path(temporary.name)):
                                     raise ValueError('Vendored Go source inventory differs')
+                                if updated:
+                                    input_key = 'upstream_go_build_inputs' if updated else 'go_build_inputs'
+                                    if runtime.get(input_key) != go_build_inputs(Path(temporary.name), updates[runtime['name']]['manifests']):
+                                        raise ValueError('Compiled Go input digests differ from archived source')
+                                    if (runtime.get('go_build_inputs') != go_dependencies.build_inputs(updates[runtime['name']])
+                                            or runtime.get('go_vendor_modules') != go_dependencies.vendor_modules(updates[runtime['name']])):
+                                        raise ValueError('Patched Go source inventory differs from approved update')
                     elif digest not in proof_objects and hashlib.file_digest(stream, 'sha256').hexdigest() != digest:
                         raise ValueError('Source object checksum mismatch')
                     if 'size' in actual[digest] and member.size != actual[digest]['size']:
@@ -303,7 +518,8 @@ def verify(directory, apt_inputs, lock_path=LOCK):
                 if actual[supplement['sha256']].get('notice_provenance') != expected:
                     raise ValueError('Supplemental notice provenance differs from archived contents')
             for digest in proof_objects:
-                if actual[digest].get('licenses') != license_evidence(proof_cache / digest):
+                if actual[digest].get('licenses') != license_evidence(proof_cache / digest,
+                        lock.get('embedded_go_notices', {}).get(digest, [])):
                     raise ValueError('Supplemental notice inventory differs from archived contents')
         finally:
             if decoder.poll() is None:

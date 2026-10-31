@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "component": "dfdaemon",
+  "version": "1.4.9",
+  "source": {
+    "repo": "dragonflyoss/client",
+    "version": "1.4.9",
+    "commit": "1bdea4a11b7825a3bd727595e540ba2e7cacb151",
+    "url": "https://codeload.github.com/dragonflyoss/client/tar.gz/1bdea4a11b7825a3bd727595e540ba2e7cacb151",
+    "sha256": "5ee3577ee369d2f09424ffd7fe60f04c37cd2cd95a894a22463b25ac0cbaad7c",
+    "size": 483950
+  },
+  "package": "dragonfly-client",
+  "binary": "dfdaemon",
+  "features": [],
+  "default_features": true,
+  "rust_version": "1.88.0",
+  "cargo_auditable_version": "0.7.7",
+  "targets": {
+    "amd64": {
+      "triple": "x86_64-unknown-linux-gnu",
+      "tools": {
+        "rustc": {
+          "url": "https://static.rust-lang.org/dist/2025-06-26/rustc-1.88.0-x86_64-unknown-linux-gnu.tar.xz",
+          "sha256": "b049fd57fce274d10013e2cf0e05f215f68f6580865abc52178f66ae9bf43fd8"
+        },
+        "cargo": {
+          "url": "https://static.rust-lang.org/dist/2025-06-26/cargo-1.88.0-x86_64-unknown-linux-gnu.tar.xz",
+          "sha256": "856962610ee821648cee32e3d6abac667af7bb7ea6ec6f3d184cc31e66044f6b"
+        },
+        "rust-std": {
+          "url": "https://static.rust-lang.org/dist/2025-06-26/rust-std-1.88.0-x86_64-unknown-linux-gnu.tar.xz",
+          "sha256": "36d7eacf46bd5199cb433e49a9ed9c9b380d82f8a0ebc05e89b43b51c070c955"
+        },
+        "cargo-auditable": {
+          "url": "https://github.com/rust-secure-code/cargo-auditable/releases/download/v0.7.7/cargo-auditable-x86_64-unknown-linux-gnu.tar.xz",
+          "sha256": "4c8d3b08c3c34e9f2333367224dbbfb4aab68067698b43de59fe19aded3416dd"
+        }
+      }
+    },
+    "arm64": {
+      "triple": "aarch64-unknown-linux-gnu",
+      "tools": {
+        "rustc": {
+          "url": "https://static.rust-lang.org/dist/2025-06-26/rustc-1.88.0-aarch64-unknown-linux-gnu.tar.xz",
+          "sha256": "b841d40bb98b2718c6452ec8421a4a8df584fce8d41875bcd9b1af83f52f7d96"
+        },
+        "cargo": {
+          "url": "https://static.rust-lang.org/dist/2025-06-26/cargo-1.88.0-aarch64-unknown-linux-gnu.tar.xz",
+          "sha256": "5aa43865f2002914ce4fca8916b4403bfca62f17e779ad368f6a17553296a58b"
+        },
+        "rust-std": {
+          "url": "https://static.rust-lang.org/dist/2025-06-26/rust-std-1.88.0-aarch64-unknown-linux-gnu.tar.xz",
+          "sha256": "e9ac4ff3c87247a2195fcceddbf1bdeee5c4fd337f014d8f4c4e3ac99002021f"
+        },
+        "cargo-auditable": {
+          "url": "https://github.com/rust-secure-code/cargo-auditable/releases/download/v0.7.7/cargo-auditable-aarch64-unknown-linux-gnu.tar.xz",
+          "sha256": "bcb2d46002a8dd8e94d0d669cb39d38c9651db2ae5d1f3f1f1bab516ee1e212c"
+        }
+      }
+    }
+  }
+}

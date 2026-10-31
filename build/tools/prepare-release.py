@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import tarfile
 from package import sha256
-from release import ROOT, validate_release, parse_version
+from release import ROOT, validate_release, parse_version, release_notes
 from sbom import verify_inventory
 import supply_chain
 import security
@@ -81,6 +81,7 @@ def main():
     assets = ROOT / 'out/release-assets'
     assets.parent.mkdir(exist_ok=True)
     assets.mkdir(exist_ok=False)
+    accepted_risks = set()
     for artifact in evidence['artifacts']:
         identity = artifact['identity']
         key = f'{identity["profile"]}-{identity["hardware_profile"]}-{identity["architecture"]}'
@@ -97,6 +98,11 @@ def main():
                 raise ValueError('Exactly one trusted candidate attestation is required')
             attestations.verify(bundle / 'SHA256SUMS', signatures[0], commit, tag, run_id)
             verify_bundle(bundle, version, commit, artifact)
+            decisions = json.loads((bundle / security.REPORT).read_text())['review']['decisions']
+            for decision in decisions:
+                if decision['decision'] == 'accepted-risk':
+                    exception = decision['exception']
+                    accepted_risks.add(f"{decision['id']} (expires {exception['expires_at']}): {exception['rationale']}")
             archive = assets / f'outerspace-{version}-{key}.tar'
             with tarfile.open(archive, 'w') as tar:
                 for path in sorted(bundle.iterdir()):
@@ -106,8 +112,10 @@ def main():
             (assets / f'{archive.name}.sha256').write_text(f'{sha256(archive)}  {archive.name}\n')
             (assets / f'{archive.name}.attestation.jsonl').write_bytes(signatures[0].read_bytes())
     (assets / 'qualification-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
-    if not (ROOT / f'build/release/notes/{version}.md').is_file():
-        raise ValueError('Version-specific release notes are required')
+    notes = release_notes(evidence)
+    if accepted_risks:
+        notes += '\nAccepted, time-limited risks\n\n' + '\n'.join('- ' + risk for risk in sorted(accepted_risks)) + '\n'
+    (ROOT / 'out/release-notes.txt').write_text(notes)
 
 
 if __name__ == '__main__':

@@ -114,5 +114,12 @@
         }
       }
     }
-  ]
+  ],
+  "release_notes": {
+    "summary": "REPLACE_WITH_REVIEWED_SUMMARY",
+    "changes": "REPLACE_WITH_REVIEWED_CHANGES",
+    "install": "REPLACE_WITH_REVIEWED_INSTALL",
+    "limitations": "REPLACE_WITH_REVIEWED_LIMITATIONS",
+    "support": "REPLACE_WITH_REVIEWED_SUPPORT"
+  }
 }

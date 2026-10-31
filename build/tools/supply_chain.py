@@ -12,6 +12,11 @@ import re
 import shutil
 import subprocess
 from urllib.parse import quote
+import runtime_build
+import go_runtime_build
+import go_dependencies
+import kernel_build
+import kernel_inventory
 
 from profiles import ROOT, sha256
 from sbom import read_json, write_json, verify_inventory, compose
@@ -22,12 +27,24 @@ spec.loader.exec_module(sources)
 
 FILES = ('apt-inputs.json', 'apt-notices.tar', 'apt.sbom.syft.json', 'source-index.json',
          'corresponding-source.tar.zst', 'distribution.sbom.syft.json', 'distribution.sbom.cdx.json',
-         'build-provenance.json', 'builder-packages.tsv')
+         'build-provenance.json', 'builder-packages.tsv', *runtime_build.EVIDENCE_FILES,
+         *go_runtime_build.EVIDENCE_FILES, *go_runtime_build.evidence_files('containerd'),
+         *go_runtime_build.evidence_files('kubelet'), *kernel_build.EVIDENCE_FILES,
+         'kernel.sbom.syft.json')
 REPORT = 'supply-chain.json'
 POLICIES = {'inputs.lock.json': ROOT / 'build/inputs.lock.json',
             'apt.sources': ROOT / 'build/apt.sources',
             'cyclonedx-1.6-licenses.json': ROOT / 'build/sbom/cyclonedx-1.6-licenses.json',
-            'sources.lock.json': ROOT / 'build/sbom/sources.lock.json'}
+            'sources.lock.json': ROOT / 'build/sbom/sources.lock.json',
+            'kernel.lock.json': kernel_build.LOCK,
+            'kernel-release-key.gpg': kernel_build.KEYRING,
+            'dragonfly.lock.json': runtime_build.LOCK,
+            'crictl.lock.json': go_runtime_build.LOCK,
+            'crictl-dependencies.lock.json': go_dependencies.LOCK,
+            'containerd.lock.json': go_runtime_build.recipe_path('containerd'),
+            'containerd-dependencies.lock.json': go_dependencies.lock_path('containerd'),
+            'kubelet.lock.json': go_runtime_build.recipe_path('kubelet'),
+            'kubelet-dependencies.lock.json': go_dependencies.lock_path('kubelet')}
 
 
 def schema_licenses(document):
@@ -71,7 +88,7 @@ def apt_inventory(apt, manifest, native):
             raise ValueError('Native APT source identity differs')
 
 
-def compose_native(raw, apt, native, manifest, index):
+def compose_native(raw, apt, native, manifest, index, *, built_runtime=False, go_build=None, kernel=None):
     apt_inventory(apt, manifest, native)
     result = copy.deepcopy(raw)
     # ELF note guesses are replaced by the signed-package database preserved
@@ -81,7 +98,36 @@ def compose_native(raw, apt, native, manifest, index):
     result['artifactRelationships'] = [r for r in result.get('artifactRelationships', [])
                                        if r['parent'] not in removed and r['child'] not in removed]
     result['artifacts'].extend(copy.deepcopy(native['artifacts']))
+    if kernel is not None:
+        result['artifacts'].append(kernel_inventory.artifact(kernel))
+    source_builds = {}
+    for built in ([go_build] if isinstance(go_build, dict) else go_build or []):
+        # Go reports the main package as (devel) without a Git checkout. Keep
+        # that original disk scan, and bind the distribution's version to the
+        # verified source-build receipt instead of guessing a Git identity.
+        main = [a for a in result['artifacts'] if a['type'] == 'go-module'
+                and a['name'] == built['main_module']
+                and any(l['path'] == built['path'] for l in a['locations'])]
+        if len(main) != 1:
+            raise ValueError('Unexpected source-built main module inventory')
+        source_builds.setdefault(main[0]['id'], []).append(built)
+    for main in result['artifacts']:
+        proofs = source_builds.get(main['id'])
+        if not proofs:
+            continue
+        if (main['version'] != 'UNKNOWN' or len({p['path'] for p in proofs}) != len(proofs)
+                or len({(p['module_version'], p['source_sha256']) for p in proofs}) != 1
+                or {p['path'] for p in proofs} != {l['path'] for l in main['locations']}):
+            raise ValueError('Unexpected source-built main module inventory')
+        main['version'] = proofs[0]['module_version']
+        main['purl'] = 'pkg:golang/' + main['name'] + '@' + main['version']
+        main['metadata']['outerspaceSourceBuild'] = proofs
     for entry in index['entries']:
+        if built_runtime:
+            # The disk scan now reads dependencies from the compiled daemon.
+            # Keep the complete source closure in source-index.json, rather than
+            # labelling all platform/test sources as installed packages.
+            continue
         if entry['kind'] not in ['cargo-registry', 'cargo-git']:
             continue
         purl = f'pkg:cargo/{quote(entry["name"], safe="")}@{quote(entry["version"], safe="")}'
@@ -96,6 +142,70 @@ def compose_native(raw, apt, native, manifest, index):
     if len(ids) != len(set(ids)):
         raise ValueError('Duplicate combined SBOM identity')
     return result
+
+
+def rust_correspondence(directory, identity, raw, runtimes, index):
+    receipt = runtime_build.verify_receipt(directory, identity['architecture'], packaged=True)
+    runtime = next((r for r in runtimes if r['component'] == 'dfdaemon'), None)
+    if not runtime or runtime['sha256'] != receipt['binary_sha256']:
+        raise ValueError('Compiled Rust inventory targets another executable')
+    source = next((e for e in index['entries'] if e['kind'] == 'runtime-source' and e['name'] == 'dfdaemon'), {})
+    if (source.get('sha256') != receipt['source']['sha256']
+            or source.get('cargo_lock_sha256') != receipt['cargo_lock_sha256']):
+        raise ValueError('Compiled Rust inventory targets another source lock')
+    declared = {(e['name'], e['version']) for e in index['entries'] if e['kind'].startswith('cargo-')}
+    archived = [{k: e[k] for k in ['name', 'version', 'sha256', 'kind']}
+                for e in index['entries'] if e['kind'].startswith('cargo-')]
+    if sorted(archived, key=lambda e: (e['name'], e['version'])) != sorted(
+            receipt.get('cargo_sources', []), key=lambda e: (e['name'], e['version'])):
+        raise ValueError('Runtime build inputs differ from archived Cargo sources')
+    observed = {(p['name'], p['version']) for p in raw['artifacts'] if p['type'] == 'rust-crate'
+                and any(l['path'] == runtime['path'] for l in p['locations'])}
+    expected = {(p['name'], p['version']) for p in receipt['dependencies']['packages']
+                if p.get('kind', 'runtime') == 'runtime'}
+    if expected != observed:
+        raise ValueError('Disk scanner differs from embedded Rust runtime dependencies')
+    for package in receipt['dependencies']['packages']:
+        if package['source'] != 'local' and (package['name'], package['version']) not in declared:
+            raise ValueError('Compiled Rust dependency has no archived corresponding source')
+    return {'binary_sha256': runtime['sha256'], 'build_report_sha256': sha256(directory / 'dfdaemon-build.json'),
+            'runtime_packages': len(expected),
+            'build_only_packages': len(receipt['dependencies']['packages']) - len(expected),
+            'metadata_format': receipt['dependencies'].get('format', 0),
+            'scope': receipt['dependency_scope']}
+
+
+def go_build_correspondence(directory, identity, raw, runtimes, index, component='crictl', binary=None):
+    binary = binary or component
+    receipt = go_runtime_build.verify_receipt(directory, identity['architecture'], packaged=True, component=component)
+    runtime = next((r for r in runtimes if r['component'] == component and Path(r['path']).name == binary), None)
+    source = next((e for e in index['entries'] if e['kind'] == 'runtime-source' and e['name'] == component), {})
+    built = ({'sha256': receipt['binary_sha256'], 'build_info': receipt['build_info']} if binary == component
+             else receipt['additional_binaries'][binary])
+    if (not runtime or runtime['sha256'] != built['sha256']
+            or source.get('sha256') != receipt['source']['sha256']
+            or source.get('upstream_go_build_inputs') != receipt.get('upstream_source_inputs')
+            or source.get('go_build_inputs') != receipt.get('source_inputs')):
+        raise ValueError('Compiled Go inventory targets another executable or source')
+    observed = [p for p in raw['artifacts'] if p['type'] == 'go-module'
+                and any(l['path'] == runtime['path'] for l in p['locations'])]
+    expected = {name: 'UNKNOWN' if version == '(devel)' else version
+                for name, version in built['build_info']['modules'].items()}
+    main_module = go_runtime_build.COMPONENTS[component]['module']
+    expected[main_module] = 'UNKNOWN'  # Syft's representation of Go's (devel).
+    expected['stdlib'] = built['build_info']['go_version']
+    if (len(observed) != len(expected) or {p['name']: p['version'] for p in observed} != expected
+            or any(p.get('metadata', {}).get('goCompiledVersion') != expected['stdlib'] for p in observed)):
+        raise ValueError('Disk scanner differs from compiled Go dependencies or toolchain')
+    return {'binary_sha256': runtime['sha256'], 'build_report_sha256': sha256(directory / (component + '-build.json')),
+            'go_version': expected['stdlib'], 'modules': len(observed), 'path': runtime['path'],
+            'source_sha256': source['sha256'], 'main_module': main_module,
+            'module_version': 'v' + receipt['source']['version']}
+
+
+def all_go_build_correspondence(directory, identity, raw, runtimes, index):
+    return [go_build_correspondence(directory, identity, raw, runtimes, index, component, binary)
+            for component, config in go_runtime_build.COMPONENTS.items() for binary in config['binaries']]
 
 
 def source_correspondence(raw, apt, index, runtimes, components):
@@ -136,6 +246,17 @@ def source_correspondence(raw, apt, index, runtimes, components):
             'rust': index['cargo_relationship']}
 
 
+def kernel_component_inventory(raw, proof):
+    # Preserve the full distribution scan separately. This additional inventory
+    # scans the kernel's upstream identity without treating Ubuntu's backported
+    # APT binaries as unpatched upstream releases.
+    result = copy.deepcopy(raw)
+    result['artifacts'] = [kernel_inventory.artifact(proof)]
+    result['artifactRelationships'] = []
+    result['files'] = [f for f in result['files'] if f['location']['path'].lstrip('/') in proof['files']]
+    return result
+
+
 def provenance(identity, builder, packages):
     if not re.fullmatch(r'sha256:[a-f0-9]{64}', builder):
         raise ValueError('An immutable builder image ID is required')
@@ -154,17 +275,25 @@ def generate(output):
         ['apt-inputs.json', 'apt.sbom.syft.json', 'outerspace.manifest', 'source-index.json', 'sbom.syft.json']]
     if apt['notices_sha256'] != sha256(output / 'apt-notices.tar'):
         raise ValueError('APT notices were modified')
-    write_json(output / 'distribution.sbom.syft.json', compose_native(raw, apt, native, manifest, index))
+    evidence = read_json(output / 'sbom-evidence.json')
+    rust = rust_correspondence(output, identity, raw, evidence['runtimes'], index)
+    go_build = all_go_build_correspondence(output, identity, raw, evidence['runtimes'], index)
+    kernel = kernel_inventory.correspondence(output, identity, raw, index)
+    write_json(output / 'distribution.sbom.syft.json', compose_native(raw, apt, native, manifest, index,
+                                                                   built_runtime=True, go_build=go_build, kernel=kernel))
+    write_json(output / 'kernel.sbom.syft.json', kernel_component_inventory(raw, kernel))
     converted = json.loads(subprocess.check_output(['syft', 'convert',
         str(output / 'distribution.sbom.syft.json'), '--config', str(ROOT / 'build/sbom/syft.yaml'),
         '-o', 'cyclonedx-json@1.6'], text=True))
-    evidence = read_json(output / 'sbom-evidence.json')
     correspondence = source_correspondence(raw, apt, index, evidence['runtimes'], read_json(ROOT / 'src/components.lock.json'))
+    correspondence['rust_build'] = rust
+    correspondence['go_build'] = go_build
+    correspondence['kernel_build'] = kernel
     cdx = schema_licenses(compose(converted, {'packages': []}, identity, evidence['runtimes']))
     cdx['metadata']['properties'] = [p for p in cdx['metadata']['properties'] if p['name'] != 'outerspace:coverage']
     cdx['metadata']['properties'].append({'name': 'outerspace:coverage', 'value':
-        'Final disk scan, preserved installed DPKG metadata and conservative Cargo source closure. '
-        'A complete linked dependency graph and redistribution approval are not implied.'})
+        'Final disk scan, preserved installed DPKG metadata and source-built Rust dependency metadata. '
+        'Cargo build graph coverage is distinct from exact linked machine-code attribution and redistribution approval.'})
     cdx['metadata']['properties'].append({'name': 'outerspace:cargo-coverage', 'value': index['cargo_relationship']})
     write_json(output / 'distribution.sbom.cdx.json', cdx)
     shutil.copyfile('/opt/outerspace/builder-packages.tsv', output / 'builder-packages.tsv')
@@ -200,15 +329,24 @@ def verify(directory, identity, manifest_path):
             or apt.get('snapshot') != read_json(POLICIES['inputs.lock.json'])['ubuntu_snapshot']
             or apt.get('notices_sha256') != sha256(directory / 'apt-notices.tar')):
         raise ValueError('APT snapshot or notices differ')
-    if compose_native(raw, apt, native, manifest, index) != read_json(directory / 'distribution.sbom.syft.json'):
+    evidence = read_json(directory / 'sbom-evidence.json')
+    go_build = all_go_build_correspondence(directory, identity, raw, evidence['runtimes'], index)
+    kernel = kernel_inventory.correspondence(directory, identity, raw, index)
+    if compose_native(raw, apt, native, manifest, index, built_runtime=True, go_build=go_build, kernel=kernel) != read_json(directory / 'distribution.sbom.syft.json'):
         raise ValueError('Combined SBOM differs from its source evidence')
+    if kernel_component_inventory(raw, kernel) != read_json(directory / 'kernel.sbom.syft.json'):
+        raise ValueError('Kernel scan inventory differs from its verified image payload')
     p = read_json(directory / 'build-provenance.json')
     if p != provenance(identity, p['builder_image_id'], directory / 'builder-packages.tsv'):
         raise ValueError('Build provenance differs from this image')
     if sources.verify(directory, apt) != report['sources']:
         raise ValueError('Corresponding source inventory differs')
     evidence = read_json(directory / 'sbom-evidence.json')
-    if source_correspondence(raw, apt, index, evidence['runtimes'], read_json(ROOT / 'src/components.lock.json')) != report['correspondence']:
+    correspondence = source_correspondence(raw, apt, index, evidence['runtimes'], read_json(ROOT / 'src/components.lock.json'))
+    correspondence['rust_build'] = rust_correspondence(directory, identity, raw, evidence['runtimes'], index)
+    correspondence['go_build'] = go_build
+    correspondence['kernel_build'] = kernel
+    if correspondence != report['correspondence']:
         raise ValueError('Runtime/source correspondence differs')
     cdx = read_json(directory / 'distribution.sbom.cdx.json')
     if cdx['metadata']['component']['hashes'] != [{'alg': 'SHA-256', 'content': identity['raw_image_sha256']}]:

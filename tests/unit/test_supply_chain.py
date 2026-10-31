@@ -12,6 +12,7 @@ import shutil
 import tarfile
 import tempfile
 import unittest
+import zipfile
 from unittest.mock import patch
 
 from image_fixtures import identity, BUILD_TOOLS
@@ -27,6 +28,24 @@ spec.loader.exec_module(apt_inputs)
 
 
 class AptSourceTests(unittest.TestCase):
+    def test_shared_go_main_module_requires_source_proof_for_every_binary(self):
+        paths = ['/usr/bin/containerd', '/usr/bin/ctr']
+        raw = {'artifacts': [{'id': 'main', 'type': 'go-module', 'name': 'example.org/runtime',
+                'version': 'UNKNOWN', 'locations': [{'path': p} for p in paths], 'metadata': {}}]}
+        proofs = [{'main_module': 'example.org/runtime', 'path': p,
+                   'source_sha256': 'a' * 64, 'module_version': 'v1.0.0'} for p in paths]
+        def compose(selected):
+            return supply_chain.compose_native(raw, {'packages': [], 'sources': []}, {'artifacts': []},
+                {'packages': []}, {'entries': []}, go_build=selected)
+        result = compose(proofs)['artifacts'][0]
+        self.assertEqual(result['version'], 'v1.0.0')
+        self.assertEqual(result['metadata']['outerspaceSourceBuild'], proofs)
+        self.assertEqual(raw['artifacts'][0]['version'], 'UNKNOWN')
+        for changed in [proofs[:1], [proofs[0], proofs[0]],
+                        [proofs[0], {**proofs[1], 'source_sha256': 'b' * 64}]]:
+            with self.subTest(proofs=changed), self.assertRaises(ValueError):
+                compose(changed)
+
     def test_newer_spdx_identifiers_remain_declared_names_in_cyclonedx_16(self):
         original = {'components': [{'licenses': [{'license': {'id': 'MIT'}},
                                   {'license': {'id': 'SMAIL-GPL'}}, {'license': {'id': 'Artistic-dist'}}]}]}
@@ -67,6 +86,42 @@ class AptSourceTests(unittest.TestCase):
 
 
 class SourceArchiveTests(unittest.TestCase):
+    def test_go_proxy_field_order_preserves_the_exact_locked_metadata(self):
+        expected = (b'{"Version":"v0.6.2","Time":"2024-04-09T20:07:04Z","Origin":'
+                    b'{"VCS":"git","URL":"https://github.com/Microsoft/go-winio",'
+                    b'"Hash":"3c9576c9346a1892dee136329e7e15309e82fb4f","Ref":"refs/tags/v0.6.2"}}')
+        proxy = json.dumps(json.loads(expected), sort_keys=True, indent=2).encode()
+        entry = {'sha256': hashlib.sha256(expected).hexdigest(), 'size': len(expected),
+                 'url': 'https://proxy.golang.org/github.com/!microsoft/go-winio/@v/v0.6.2.info',
+                 'kind': 'go-module-metadata', 'format': 'info'}
+        changed = [proxy.replace(b'3c9576c9', b'4c9576c9'),
+                   proxy.replace(b'2024-04-09', b'2024-04-10'),
+                   proxy.replace(b'"Origin": {', b'"Unexpected": "value", "Origin": {'),
+                   proxy.replace(b'"VCS": "git"', b'"VCS": "git", "VCS": "git"')]
+        for payload, accept in [(proxy, True)] + [(data, False) for data in changed]:
+            with self.subTest(payload=payload), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                def download(command, **kwargs):
+                    Path(command[command.index('-o') + 1]).write_bytes(payload)
+                with patch.object(supply_chain.sources.subprocess, 'run', side_effect=download):
+                    if accept:
+                        self.assertEqual(supply_chain.sources.fetch(root, entry).read_bytes(), expected)
+                    else:
+                        with self.assertRaises(ValueError):
+                            supply_chain.sources.fetch(root, entry)
+                        self.assertEqual(list(root.iterdir()), [])
+
+    def test_embedded_notice_requires_an_explicit_pinned_path(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'source.zip'
+            with zipfile.ZipFile(path, 'w') as archive:
+                archive.writestr('example.org/pkg@v1/Readme', b'Original embedded notice')
+            self.assertEqual(supply_chain.sources.license_evidence(path)['notices'], [])
+            result = supply_chain.sources.license_evidence(path, ['example.org/pkg@v1/Readme'])
+            self.assertEqual(result['notices'][0]['sha256'], hashlib.sha256(b'Original embedded notice').hexdigest())
+            with self.assertRaisesRegex(ValueError, 'absent'):
+                supply_chain.sources.license_evidence(path, ['example.org/pkg@v1/missing'])
+
     def archive(self, root, entries):
         path = root / 'source.tar.gz'
         with tarfile.open(path, 'w:gz') as tar:
@@ -75,6 +130,32 @@ class SourceArchiveTests(unittest.TestCase):
                 member.size = len(data)
                 tar.addfile(member, io.BytesIO(data))
         return path
+
+    @unittest.skipUnless(shutil.which('zstd'), 'Source archive integration requires zstd')
+    def test_identical_source_bytes_keep_each_pinned_origin(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); cache = root / 'cache'; cache.mkdir()
+            cargo = b'version=4\n[[package]]\nname="workspace"\nversion="1.0.0"\n'
+            path = self.archive(root, {'project/Cargo.lock': cargo})
+            digest = security.sha256(path); shutil.copyfile(path, cache / digest)
+            source = {'sha256': digest, 'url': 'https://example.invalid/source', 'size': path.stat().st_size}
+            shared = b'one metadata object for two pinned origins'
+            digest = hashlib.sha256(shared).hexdigest(); (cache / digest).write_bytes(shared)
+            first = {'sha256': digest, 'size': len(shared), 'url': 'https://example.invalid/v1.mod'}
+            second = {**first, 'url': 'https://example.invalid/v2.mod'}
+            lockfile = root / 'sources.lock.json'
+            security.write_json(lockfile, {'sources': {'dfdaemon': source, 'v1': first, 'v2': second}})
+            entries = [{**source, 'kind': 'runtime-source', 'name': 'dfdaemon',
+                        'cargo_lock_sha256': hashlib.sha256(cargo).hexdigest()},
+                       {**first, 'kind': 'go-module-metadata'}, {**second, 'kind': 'go-module-metadata'}]
+            index = {'schema': 1, 'source_lock_sha256': security.sha256(lockfile), 'entries': entries}
+            security.write_json(root / 'source-index.json', index)
+            supply_chain.sources.bundle(cache, root, index)
+            self.assertEqual(supply_chain.sources.verify(root, {'sources': []}, lockfile)['objects'], 2)
+            entries.pop()
+            security.write_json(root / 'source-index.json', index)
+            with self.assertRaisesRegex(ValueError, 'incomplete or changed'):
+                supply_chain.sources.verify(root, {'sources': []}, lockfile)
 
     def test_cargo_transitive_input_requires_checksums_and_approved_git_origin(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -127,7 +208,8 @@ class SourceArchiveTests(unittest.TestCase):
                 lockfile = root / 'sources.lock.json'
                 security.write_json(lockfile, {'sources': {'dfdaemon': entry}})
                 index = {'schema': 1, 'source_lock_sha256': security.sha256(lockfile),
-                         'entries': [{**entry, 'name': 'dfdaemon', 'kind': 'runtime-source'}]}
+                         'entries': [{**entry, 'name': 'dfdaemon', 'kind': 'runtime-source',
+                                      'cargo_lock_sha256': hashlib.sha256(lock_text.encode()).hexdigest()}]}
                 security.write_json(root / 'source-index.json', index)
                 supply_chain.sources.bundle(cache, root, index)
                 if dependency:
@@ -177,6 +259,8 @@ class VulnerabilityReviewTests(unittest.TestCase):
         self.now = datetime(2026, 10, 27, 12, tzinfo=timezone.utc)
         self.subject = identity('agent', 'arm64')
         self.policy = security.read_json(security.POLICY)
+        # Synthetic October 27 evidence must not inherit real, dated image approvals.
+        self.policy['exceptions'] = []
         self.database = {'built': '2026-10-27T06:00:00Z', 'valid': True, 'sha256': 'd'*64,
                          'from': 'https://example.invalid/db', 'schemaVersion': 'v6'}
         self.match = {'artifact': {'name': 'library', 'version': '1.0.0', 'type': 'go-module',
@@ -192,7 +276,7 @@ class VulnerabilityReviewTests(unittest.TestCase):
         return security.evaluate(self.scan, self.database, self.subject, self.policy, self.now)
 
     def exception(self):
-        self.policy['exceptions'] = [{'finding_key': security.finding(self.match)['key'],
+        self.policy['exceptions'] = [{'finding_sha256': security.finding(self.match)['key'],
             'scope': security.exception_scope(self.subject),
             'reviewed_at': '2026-10-27T11:00:00Z', 'expires_at': '2026-11-03T11:00:00Z',
             'approved_by': 'Coopyrightdmin', 'owner': 'synthetic test owner', 'decision': 'not-affected',
@@ -219,6 +303,19 @@ class VulnerabilityReviewTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError): self.evaluate()
             e[key] = original
 
+    def test_kernel_decisions_require_exact_image_and_configuration_bindings(self):
+        self.match['artifact']['name'] = 'linux_kernel'
+        decision = self.exception()
+        with self.assertRaisesRegex(ValueError, 'both compiled image and configuration'):
+            self.evaluate()
+        release = security.read_json(security.ROOT / 'build/kernel/kernel.lock.json')['release']
+        decision['binary_sha256'] = {'/usr/lib/modules/' + release + '/vmlinuz': 'a' * 64,
+                                    '/usr/lib/modules/' + release + '/config': 'b' * 64}
+        self.assertEqual(self.evaluate()['status'], 'passed')
+        decision['binary_sha256']['/boot/../../escape'] = 'c' * 64
+        with self.assertRaisesRegex(ValueError, 'binary binding'):
+            self.evaluate()
+
     def test_changed_dependency_path_or_version_cannot_reuse_exception(self):
         self.exception()
         self.match['artifact']['version'] = '1.0.1'
@@ -242,6 +339,25 @@ class VulnerabilityReviewTests(unittest.TestCase):
     def test_hidden_scanner_ignores_are_rejected(self):
         self.scan['descriptor']['configuration']['ignore'].append({'vulnerability': 'TEST-CVE'})
         with self.assertRaisesRegex(ValueError, 'ignore'): self.evaluate()
+
+    def test_kernel_findings_block_even_when_the_distribution_scan_passes(self):
+        kernel = copy.deepcopy(self.scan)
+        self.scan['matches'] = []
+        result = security.evaluate(self.scan, self.database, self.subject, self.policy, self.now, kernel)
+        self.assertEqual(result['status'], 'blocked')
+        self.assertEqual(result['decisions'][0]['id'], 'TEST-CVE')
+        kernel['ignoredMatches'] = [kernel['matches'][0]]
+        with self.assertRaisesRegex(ValueError, 'ignore'):
+            security.evaluate(self.scan, self.database, self.subject, self.policy, self.now, kernel)
+
+    def test_kernel_scan_cannot_duplicate_or_use_a_different_database(self):
+        kernel = copy.deepcopy(self.scan)
+        with self.assertRaisesRegex(ValueError, 'Duplicate'):
+            security.evaluate(self.scan, self.database, self.subject, self.policy, self.now, kernel)
+        self.scan['matches'] = []
+        kernel['descriptor']['db']['status']['built'] = '2026-10-27T05:00:00Z'
+        with self.assertRaisesRegex(ValueError, 'recorded'):
+            security.evaluate(self.scan, self.database, self.subject, self.policy, self.now, kernel)
 
     def test_filtering_unfixed_findings_and_unknown_severity_cannot_pass(self):
         self.scan['descriptor']['configuration']['only-fixed'] = True
@@ -282,3 +398,16 @@ class ProvenanceTests(unittest.TestCase):
         self.assertEqual(len(review['source_archives_without_notice_files']), 1)
         other = redistribution.assess(identity('inference'), apt, index, redistribution.read_json(redistribution.POLICY))
         self.assertNotEqual(review['subject_sha256'], other['subject_sha256'])
+
+    def test_go_metadata_does_not_hide_missing_module_notice(self):
+        index = {'source_lock_sha256': 'b'*64, 'entries': [
+            {'name': 'example.org/module', 'version': 'v1.0.0', 'sha256': 'c'*64,
+             'kind': 'go-module-source', 'licenses': {'notices': []}},
+            {'name': 'example.org/module', 'version': 'v1.0.0', 'sha256': 'd'*64,
+             'kind': 'go-module-metadata'}], 'cargo_relationship': 'declared source closure'}
+        result = redistribution.assess(identity(), {'packages': []}, index, redistribution.read_json(redistribution.POLICY))
+        self.assertEqual([p['sha256'] for p in result['source_archives_without_notice_files']], ['c'*64])
+        index['entries'][0]['licenses']['notices'] = [{'path': 'LICENSE', 'sha256': 'e'*64}]
+        result = redistribution.assess(identity(), {'packages': []}, index, redistribution.read_json(redistribution.POLICY))
+        self.assertEqual(result['source_archives_without_notice_files'], [])
+        self.assertEqual(result['status'], 'review-required')

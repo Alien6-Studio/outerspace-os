@@ -15,6 +15,8 @@ import subprocess
 import tarfile
 import tempfile
 from urllib.parse import quote
+import runtime_build
+import go_runtime_build
 
 from profiles import ROOT, architecture, sha256, verify_identity
 
@@ -102,9 +104,25 @@ def runtime_files(components, architecture):
             yield name, component['version'], artifact, member, '/usr/bin/' + Path(member).name, bool(binaries)
 
 
-def verified_runtimes(root, components, architecture, cache):
+def verified_runtimes(root, components, architecture, cache, output=None):
     result = []
     for name, version, artifact, member, path, archive in runtime_files(components, architecture):
+        if artifact.get('source_build'):
+            if name not in ['dfdaemon', *go_runtime_build.COMPONENTS] or output is None:
+                raise ValueError('Missing source runtime build evidence')
+            builder = runtime_build if name == 'dfdaemon' else go_runtime_build
+            receipt = builder.verify_receipt(output, architecture, packaged=True,
+                **({'component': name} if name != 'dfdaemon' else {}))
+            expected = (receipt['binary_sha256'] if Path(path).name == name else
+                        receipt.get('additional_binaries', {}).get(Path(path).name, {}).get('sha256'))
+            installed = root / path.lstrip('/')
+            if (installed.is_symlink() or not installed.resolve().is_relative_to(root.resolve())
+                    or sha256(installed) != expected
+                    or (name == 'dfdaemon' and runtime_build.audit_data(installed, architecture) != receipt['dependencies'])):
+                raise ValueError('Installed runtime differs from verified source build')
+            result.append({'component': name, 'version': version, 'path': path,
+                           'sha256': expected, 'artifact': artifact})
+            continue
         source = cache / artifact['sha256']
         if source.is_symlink() or not source.is_file() or sha256(source) != artifact['sha256']:
             raise ValueError('Runtime cache differs from approved input: ' + name)
@@ -261,7 +279,7 @@ def generate(output, destination, profile, hardware, commit, cache):
             embedded = read_json(root / 'usr/share/outerspace/image-identity.json')
             if any(identity.get(k) != v for k, v in embedded.items()) or not embedded:
                 raise ValueError('Mounted disk identity differs from the candidate')
-            runtimes = verified_runtimes(root, components, identity['architecture'], cache)
+            runtimes = verified_runtimes(root, components, identity['architecture'], cache, output)
             # Explicit config plus a minimal environment; no developer override,
             # registry access, update check or external license lookup is allowed.
             run(scanner, 'scan', 'dir:' + str(root), '--config', CONFIG,

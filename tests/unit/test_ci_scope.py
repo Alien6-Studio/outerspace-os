@@ -16,18 +16,18 @@ spec.loader.exec_module(scope)
 
 
 class CIScopeTests(unittest.TestCase):
-    def test_required_gate_includes_native_and_parallel_phase_jobs(self):
+    def test_required_gate_includes_complete_image_qualification(self):
         workflow = (Path(__file__).resolve().parents[2] / '.github/workflows/ci.yml').read_text()
         gate = workflow.split('  ci:\n', 1)[1]
-        self.assertIn('needs: [contracts, image, agent_phases]', gate)
+        self.assertIn('needs: [contracts, image]', gate)
         script = textwrap.dedent(gate.split('        run: |\n', 1)[1])
         for required in ['true', 'false']:
             expected = 'success' if required == 'true' else 'skipped'
             values = {'CONTRACTS': 'success', 'IMAGES_REQUIRED': required,
-                      'IMAGE_RESULT': expected, 'PHASE_RESULT': expected}
+                      'IMAGE_RESULT': expected}
             passed = subprocess.run(['bash', '-e', '-c', script], env={**os.environ, **values})
             self.assertEqual(passed.returncode, 0)
-            for key in ['CONTRACTS', 'IMAGE_RESULT', 'PHASE_RESULT']:
+            for key in ['CONTRACTS', 'IMAGE_RESULT']:
                 for result in ['success', 'failure', 'cancelled', 'skipped']:
                     if result == values[key]:
                         continue
@@ -36,8 +36,23 @@ class CIScopeTests(unittest.TestCase):
                         failed = subprocess.run(['bash', '-e', '-c', script], env={**os.environ, **changed})
                         self.assertNotEqual(failed.returncode, 0)
 
+    def test_native_or_phase_failure_fails_the_image_job(self):
+        workflow = (Path(__file__).resolve().parents[2] / '.github/workflows/ci.yml').read_text()
+        step = workflow.split('      - name: Qualify the packaged worker on its own kernel\n', 1)[1]
+        script = textwrap.dedent(step.split('        run: |\n', 1)[1].split('      - uses:', 1)[0])
+        fake_make = 'make() { printf "%s\\n" "${*: -1}"; [[ "${*: -1}" != "$FAIL_TARGET" ]]; };\n'
+        for profile, targets in [('agent', ['agent-resources', 'agent-phases']), ('inference', ['cpu-serving'])]:
+            for failure in ['', *targets]:
+                with self.subTest(profile=profile, failure=failure):
+                    result = subprocess.run(['bash', '-e', '-c', fake_make + script.replace('${{ matrix.profile }}', profile)],
+                        env={**os.environ, 'FAIL_TARGET': failure}, text=True, capture_output=True)
+                    self.assertEqual(result.returncode == 0, not failure)
+                    self.assertEqual(result.stdout.splitlines(), targets if not failure else targets[:targets.index(failure) + 1])
+
     def test_docs_only_can_skip_but_mixed_changes_cannot(self):
-        docs = ['README.md', 'build/README.md', 'src/docs/architecture.md', '.github/ISSUE_TEMPLATE/bug_report.yml']
+        # Both sides of a documentation move must remain documentation-only.
+        docs = ['README.md', 'build/README.md', 'docs/architecture.md',
+                'src/docs/architecture.md', '.github/ISSUE_TEMPLATE/bug_report.yml']
         self.assertFalse(scope.requires_images('pull_request', docs))
         for runtime in ['src/image/mkosi.conf', 'src/components.lock.json', 'tests/targets.mk',
                         'build/targets.mk', '.github/workflows/ci.yml', 'tests/unit/test_release.py', 'VERSION',
@@ -49,7 +64,8 @@ class CIScopeTests(unittest.TestCase):
         for event in ['schedule', 'workflow_dispatch', 'unknown']:
             self.assertTrue(scope.requires_images(event, ['README.md']))
         self.assertTrue(scope.requires_images('push', []))
-        for path in ['src/docs/../image/README.md', '/README.md', 'src/docs/data.json']:
+        for path in ['src/docs/../image/README.md', 'docs/../src/image/README.md',
+                     '/README.md', 'src/docs/data.json', 'docs/data.json']:
             self.assertTrue(scope.requires_images('push', [path]))
 
     def test_git_diff_includes_deletions_renames_and_unusual_names(self):

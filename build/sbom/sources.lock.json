@@ -57,6 +57,18 @@
       "url": "https://go.dev/dl/go1.26.10.src.tar.gz",
       "sha256": "fd63e883ba2f2bfca93c1646b31ebef63e2b1e4d2b317c9789d976a68d81f36f",
       "size": 34164741
+    },
+    "rust1.88.0": {
+      "url": "https://static.rust-lang.org/dist/2025-06-26/rust-src-1.88.0.tar.xz",
+      "sha256": "d6e7462e5b5e53bde515d8846ffdd4da246b79ba2d7b2872a33b46cc12cf76c7",
+      "source_kind": "rust-standard-library"
+    },
+    "linux": {
+      "url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.60.tar.xz",
+      "sha256": "3c2f44ef6acc021a7ad444d9a2e6ec1ef488ff09368793d0004a6080f69d621e",
+      "size": 154827264,
+      "version": "6.18.60",
+      "source_kind": "linux-kernel-source"
     }
   },
   "cargo_git_sources": {
@@ -362,6 +374,106 @@
           ]
         }
       }
+    },
+    {
+      "name": "eira-fransham/crunchy",
+      "commit": "313e516a63d460ae504131ecbbd36aa971df6c83",
+      "url": "https://codeload.github.com/eira-fransham/crunchy/tar.gz/313e516a63d460ae504131ecbbd36aa971df6c83",
+      "sha256": "375fdf2fb648db5e8c5fb9cf981d437c4ff3a1ccd19c39bfaa1ca6ed6b3f3b8f",
+      "size": 3342,
+      "for_crates": [
+        "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
+      ],
+      "notice_backfills": {
+        "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7": {
+          "publication_commit": "1bf90cf2d0a8cfcb2c5592275a23ab028dff6468",
+          "source_directory": ".",
+          "packaging_files": {
+            "Cargo.toml": "5238a96db3efb623481ac00afca51748372d99e472bc4943f2d1762ad4cc6cf0"
+          },
+          "notice_paths": [
+            "LICENSE"
+          ],
+          "evidence": [
+            "https://github.com/eira-fransham/crunchy/pull/7",
+            "https://github.com/eira-fransham/crunchy/issues/6#issuecomment-1564403942"
+          ]
+        }
+      }
+    },
+    {
+      "name": "rustls/rustls-platform-verifier",
+      "commit": "669ace0a801ef4be8e0e23d9c534849497ee5782",
+      "url": "https://codeload.github.com/rustls/rustls-platform-verifier/tar.gz/669ace0a801ef4be8e0e23d9c534849497ee5782",
+      "sha256": "0368e30a89fef6f3f8c8bbe1e663204901fc660ff447390678b670ec761cf05a",
+      "size": 138402,
+      "for_crates": [
+        "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
+      ],
+      "release_payload_matches": {
+        "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f": {
+          "artifact": {
+            "name": "rustls-platform-verifier-android-release-0.3.3",
+            "url": "https://github.com/rustls/rustls-platform-verifier/releases/download/v/0.3.3/android-artifacts.tar",
+            "sha256": "e5847a5c55cc401c4a12f899d34aafd4416383c57492a50fafaffcfa3561ef9e",
+            "size": 30720
+          },
+          "release_url": "https://github.com/rustls/rustls-platform-verifier/releases/tag/v/0.3.3",
+          "source_directory": "android-release-support",
+          "notice_paths": [
+            "LICENSE-APACHE",
+            "LICENSE-MIT"
+          ]
+        }
+      }
+    },
+    {
+      "name": "zowens/crc32c",
+      "commit": "66c7c4905a6cf624cb1e1cbc21e7dd3cbce6faa1",
+      "url": "https://codeload.github.com/zowens/crc32c/tar.gz/66c7c4905a6cf624cb1e1cbc21e7dd3cbce6faa1",
+      "sha256": "048516a99c48d101e8781bc49a23f70ed07d583c3f82e1f6b2139339b7cb3249",
+      "size": 14684,
+      "for_crates": [
+        "3a47af21622d091a8f0fb295b88bc886ac74efcc613efc19f5d0b21de5c89e47"
+      ],
+      "notice_backfills": {
+        "3a47af21622d091a8f0fb295b88bc886ac74efcc613efc19f5d0b21de5c89e47": {
+          "publication_commit": "254a861f7cc71bfe455e86f0e1d86e3c83c33390",
+          "source_directory": ".",
+          "packaging_files": {
+            "Cargo.toml": "ffe61d0e558aff076c6be396c1a1cd46bcaa9b56a0f0e9d609767fcdc7eb1d6d"
+          },
+          "notice_paths": [
+            "LICENSE-APACHE",
+            "LICENSE-MIT"
+          ],
+          "evidence": [
+            "https://github.com/zowens/crc32c/commit/66c7c4905a6cf624cb1e1cbc21e7dd3cbce6faa1",
+            "https://github.com/zowens/crc32c/compare/254a861f7cc71bfe455e86f0e1d86e3c83c33390...66c7c4905a6cf624cb1e1cbc21e7dd3cbce6faa1"
+          ],
+          "metadata_changes": {
+            ".github/workflows/build.yml": {
+              "published_sha256": "cc4b34ab10fbb5c284275532d4d9f58d860a33c8ce3c4f8cf677b2126be5ab30",
+              "upstream_sha256": "ce41f2c16cf416785a38261339b380c39a97bf4797c47b32c3c6373b26875fd3"
+            },
+            "Cargo.toml.orig": {
+              "published_sha256": "99342c77e539bf3d549262dadd7d7ed646ce309b6dabde67a5a35b7c0faaca31",
+              "upstream_sha256": "4a3bc6fb744cb5dee3c3e7c620c28e8b17cded6e0e6e5fee4442ec1e8acef9a9"
+            }
+          }
+        }
+      }
     }
-  ]
+  ],
+  "go_dependency_updates": {
+    "crictl": "c4504ec94e06694281539cc2dbe6e1d66a4d2c0bb2c3e9640138fce7bc3cde1e",
+    "containerd": "60669b8348fccc939d1810d388df94e6248c62321091a79e557a73bbc22639d6",
+    "kubelet": "baf5ba5ddd45a2953811e62e30e746bc253f3bd6d836d85e1569f582cd4e6e5b"
+  },
+  "embedded_go_notices": {
+    "ebd95653aaca6182184a1b9b309a65d55eb4c7c833c5e790aee11efd73d4722c": [
+      "github.com/kr/logfmt@v0.0.0-20140226030751-b84e30acd515/Readme",
+      "github.com/kr/logfmt@v0.0.0-20140226030751-b84e30acd515/unquote.go"
+    ]
+  }
 }

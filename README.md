@@ -2,91 +2,99 @@
 
 <img src="src/branding/outerspace-mark.svg" alt="OuterSpace OS" width="96">
 
-A minimal Ubuntu-based Linux distribution for Kubernetes workers running inference
-and agent workloads. The host provides the kernel, container runtime, node
-identity and immutable root filesystem. Application engines, models and their
-language dependencies run in containers.
+**An immutable Linux OS for Kubernetes workers running AI agents and inference.**
 
-[![Distribution checks](https://github.com/Alien6-Studio/outerspace-os/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Alien6-Studio/outerspace-os/actions/workflows/ci.yml?query=branch%3Amain)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+OuterSpace OS gives your cluster a dedicated host for containerized agent tasks
+and model serving. Built on Ubuntu, it keeps the system read-only and node state
+persistent. Your agent tools, serving engines and models run in containers, so you
+can change workloads independently of the host image.
 
-**Current version: `0.1.0-alpha.1` — qualified CPU alpha, release in draft.**
-[Execution foundation](https://github.com/Alien6-Studio/outerspace-os/milestone/1)
-is complete: all seven delivery issues are closed. The four candidate images have
-passed their own boot, native workload, recovery and supply-chain checks.
-Public downloads will appear on [GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases)
-when the draft is published.
+[Website](https://os.outerspace.sh/) · [Get started](https://os.outerspace.sh/getting-started/)
+· [Releases](https://github.com/Alien6-Studio/outerspace-os/releases)
 
-## CPU alpha
+## Why OuterSpace OS?
 
-| Profile | Architectures | Qualified behavior |
+- **A host focused on your workers.** Linux, the container runtime and Kubernetes
+  node services are assembled into one OS image. Application dependencies stay
+  with your workloads.
+- **A consistent system across restarts.** The read-only root separates the host
+  from writable container storage, logs and node identity. An enrolled worker
+  keeps its identity when it reboots.
+- **Two profiles for different jobs.** Choose bounded execution for agent tasks
+  or a worker for CPU model serving, on either AMD64 or ARM64.
+
+OuterSpace is for teams evaluating dedicated AI workers in a **self-managed
+Kubernetes cluster**. You provide the control plane and deploy Cilium, your
+applications and their models separately.
+
+## Choose your worker
+
+| Profile | Use it for | What it provides |
 | --- | --- | --- |
-| Agent | AMD64, ARM64 | Native OCI admission/isolation, enforced resource limits and recovery after worker restart |
-| Inference | AMD64, ARM64 | Real CPU model serving, workload replacement/drain and recovery after worker restart |
+| **Agent** | Running small, containerized agent tasks and tools under operator-controlled policies | Restricted container execution, default-deny networking, and enforced CPU, memory, process, I/O and workspace limits |
+| **Inference** | Serving models on CPU through your chosen containerized engine | A persistent Kubernetes worker for model serving, workload replacement, node draining and recovery after restart |
 
-Both profiles boot through UEFI, join Kubernetes with Cilium and retain their
-rotated node identity after reboot. Distribution bundles include checksums,
-GitHub attestations, SBOMs, corresponding sources and original notices.
-The [version tag](https://github.com/Alien6-Studio/outerspace-os/tree/v0.1.0-alpha.1)
-and [candidate qualification](https://github.com/Alien6-Studio/outerspace-os/actions/runs/41219970340)
-identify the exact shipped images. The [roadmap](https://github.com/Alien6-Studio/outerspace-os/issues/7)
-tracks the remaining Agent security and Fleet qualification milestones.
+Both profiles share an Ubuntu-based Core with containerd, kubelet and a read-only
+root protected by dm-verity. The Inference profile has been exercised with
+llama.cpp. Serving engines and model weights are separate from the OS.
 
-Use disposable UEFI VMs for evaluation; the native qualification used four vCPUs
-and 4 GiB RAM with Secure Boot disabled. This alpha has no production support,
-qualified bare-metal/GPU matrix or authenticated A/B updater. The state partition
-is unencrypted. The accepted **CVE-2019-14899** risk expires on **14 November 2026
-at 06:24 UTC** and covers only the stock CPU configuration without host VPNs or
-custom networking. See the release notes and [release policy](build/release/README.md)
-before using an image.
+The Agent alpha is deliberately bounded: one container per task, up to 1 CPU and
+256 MiB RAM, with temporary workspace and no network access by default. It uses
+a shared kernel within one trusted administrative domain. See the
+[profile guide](https://os.outerspace.sh/features/) before choosing it for your
+agent architecture.
 
-## Repository
+## Try the CPU alpha
 
-| Directory | Responsibility |
-| --- | --- |
-| [src/](src/README.md) | OS image configuration, systemd services, cluster integration, runtime locks and upstream notices |
-| [build/](build/README.md) | Builder, image assembly, packaging and release preparation |
-| [tests/](tests/README.md) | Unit tests, QEMU/Kubernetes harness, workloads and benchmark protocols |
-| [docs/adr/](docs/adr/) | Architectural decisions, alternatives and consequences |
+**0.1.0-alpha.1 is an experimental preview for disposable UEFI VMs.** Agent and
+Inference images cover AMD64 and ARM64. The release is currently a draft; public
+downloads will appear on [GitHub Releases](https://github.com/Alien6-Studio/outerspace-os/releases)
+when published. You can build the tagged source today.
 
-`out/` contains generated images, bundles, logs and reports. `.cache/` contains
-reusable downloads. Both are excluded from version control.
+Use a VM with **4 vCPUs and 4 GiB RAM**, with Secure Boot disabled, and a separate
+Kubernetes 1.36 control plane using the supplied Cilium configuration.
 
-## Build and qualify
+1. Choose the profile and architecture for your workload.
+2. Build the image, or verify a release bundle when downloads are available.
+3. Configure the worker to join your cluster, then deploy your workload.
 
-Install Make, Python 3.11+ and Docker with Linux containers. The builder uses
-Docker's native architecture: arm64 on Apple Silicon, amd64 on x86 machines.
+The [getting-started guide](https://os.outerspace.sh/getting-started/) covers image
+verification, VM setup and cluster enrollment.
+
+To build locally, install Make, Python 3.11+ and Docker running Linux containers:
 
 ```sh
-make check
-# Build from committed source, with an explicit profile.
-make PROFILE=agent builder build smoke package
-make PROFILE=inference build smoke package
+git clone https://github.com/Alien6-Studio/outerspace-os.git
+cd outerspace-os
+git checkout v0.1.0-alpha.1
+make PROFILE=agent HARDWARE=cpu builder build smoke package
+# Use PROFILE=inference to build a model-serving worker.
 ```
 
-Run `make help` for available commands. The [build guide](build/README.md) covers
-artifacts, firmware variants and image identity. The [test guide](tests/README.md)
-covers Kubernetes enrollment and real CPU model serving.
+The build uses Docker's native architecture: ARM64 on Apple Silicon, AMD64 on
+x86 hosts. Outputs are written under `out/<profile>-cpu-<architecture>/`.
+See the [build guide](build/README.md) for options.
 
-The base image uses a read-only dm-verity root, persistent `/var`, containerd,
-kubelet, AppArmor and default seccomp. Agent state starts at 2 GiB; Inference
-state starts at 8 GiB. CPU images target amd64 and arm64. Secure Boot, A/B updates,
-GPU profiles, physical hardware and production service behavior have separate
-qualification gates.
+## Alpha limits
 
-## Documentation
+This preview is for evaluation. GPU support, a qualified bare-metal hardware
+matrix, Secure Boot and an authenticated update/rollback path are not available.
+Persistent state is unencrypted; keep important data externally. There is no
+production support commitment or performance guarantee.
 
-- [Architecture decisions](docs/adr/) and [milestones](https://github.com/Alien6-Studio/outerspace-os/milestones).
-- [Worker configuration and cluster integration](src/cluster/README.md).
-- [Security policy](SECURITY.md).
-- [Contributing](CONTRIBUTING.md) and [release process](build/release/README.md).
+The accepted **CVE-2019-14899** risk is limited to the stock CPU configuration
+without host VPNs or custom networking and expires on **14 November 2026 at
+06:24:43 UTC**. Read the [security scope](https://os.outerspace.sh/security/)
+before using the alpha.
 
-The [website](https://os.outerspace.sh/) is maintained on the separate
-[`gh-pages`](https://github.com/Alien6-Studio/outerspace-os/tree/gh-pages) branch.
+## Explore and contribute
 
-## License
+- [Worker configuration](src/cluster/README.md) and [architecture decisions](docs/adr/).
+- [Roadmap](https://github.com/Alien6-Studio/outerspace-os/issues/7) and [contributing](CONTRIBUTING.md).
+- [Report a bug](https://github.com/Alien6-Studio/outerspace-os/issues) or [report a vulnerability privately](SECURITY.md).
 
 OuterSpace source is licensed under [Apache-2.0](LICENSE). Bundled components
 retain their [upstream licenses and notices](src/third_party/README.md); see
-[NOTICE](NOTICE). An [Alien6](https://alien6.com) project, part of
-[OuterSpace](https://outerspace.sh/).
+[NOTICE](NOTICE).
+
+By [Alien6](https://alien6.com) · Part of [OuterSpace](https://outerspace.sh/).

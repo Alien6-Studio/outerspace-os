@@ -38,6 +38,11 @@ def fetch(cache, entry):
             subprocess.run(['curl', '-fsSL', '--proto', '=https', '--proto-redir', '=https', '--retry', '3',
                 '--max-time', '900', '--speed-limit', '1024', '--speed-time', '90',
                 '-o', str(temporary), entry['url']], check=True)
+            if entry.get('kind') == 'go-module-metadata' and entry.get('format') == 'info':
+                # Locks record Go's cache serialization. Proxy responses may
+                # reorder JSON keys; the resulting bytes must still match the
+                # original locked SHA256 and size, including every origin value.
+                temporary.write_bytes(go_dependencies.info_bytes(temporary.read_bytes()))
             if sha256(temporary) != digest:
                 raise ValueError('Corresponding source checksum mismatch: ' + entry['url'])
             temporary.replace(path)

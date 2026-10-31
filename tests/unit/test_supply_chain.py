@@ -86,6 +86,31 @@ class AptSourceTests(unittest.TestCase):
 
 
 class SourceArchiveTests(unittest.TestCase):
+    def test_go_proxy_field_order_preserves_the_exact_locked_metadata(self):
+        expected = (b'{"Version":"v0.6.2","Time":"2024-04-09T20:07:04Z","Origin":'
+                    b'{"VCS":"git","URL":"https://github.com/Microsoft/go-winio",'
+                    b'"Hash":"3c9576c9346a1892dee136329e7e15309e82fb4f","Ref":"refs/tags/v0.6.2"}}')
+        proxy = json.dumps(json.loads(expected), sort_keys=True, indent=2).encode()
+        entry = {'sha256': hashlib.sha256(expected).hexdigest(), 'size': len(expected),
+                 'url': 'https://proxy.golang.org/github.com/!microsoft/go-winio/@v/v0.6.2.info',
+                 'kind': 'go-module-metadata', 'format': 'info'}
+        changed = [proxy.replace(b'3c9576c9', b'4c9576c9'),
+                   proxy.replace(b'2024-04-09', b'2024-04-10'),
+                   proxy.replace(b'"Origin": {', b'"Unexpected": "value", "Origin": {'),
+                   proxy.replace(b'"VCS": "git"', b'"VCS": "git", "VCS": "git"')]
+        for payload, accept in [(proxy, True)] + [(data, False) for data in changed]:
+            with self.subTest(payload=payload), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                def download(command, **kwargs):
+                    Path(command[command.index('-o') + 1]).write_bytes(payload)
+                with patch.object(supply_chain.sources.subprocess, 'run', side_effect=download):
+                    if accept:
+                        self.assertEqual(supply_chain.sources.fetch(root, entry).read_bytes(), expected)
+                    else:
+                        with self.assertRaises(ValueError):
+                            supply_chain.sources.fetch(root, entry)
+                        self.assertEqual(list(root.iterdir()), [])
+
     def test_embedded_notice_requires_an_explicit_pinned_path(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / 'source.zip'

@@ -1,5 +1,5 @@
 Types: deb deb-src
-URIs: https://snapshot.ubuntu.com/ubuntu/20261027T000000Z/
+URIs: mirror+file:/etc/apt/outerspace-mirrors.list
 Suites: noble noble-updates noble-security
 Components: main universe
 Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg

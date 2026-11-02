@@ -7,6 +7,8 @@ hardware=${2:?Select a hardware profile}
 python3 /repo/build/tools/profiles.py directory --profile "$profile" --hardware "$hardware"
 cmp /repo/build/inputs.lock.json /opt/outerspace/inputs.lock.json
 cmp /repo/build/apt.sources /opt/outerspace/sandbox/etc/apt/sources.list.d/mkosi.sources
+cmp /repo/build/apt.mirrorlist /opt/outerspace/sandbox/etc/apt/outerspace-mirrors.list
+cmp /repo/build/apt.conf /opt/outerspace/sandbox/etc/apt/apt.conf.d/99outerspace
 profiles="$profile"
 if [[ "$hardware" == cpu-full-firmware ]]; then profiles+=,full-firmware; fi
 python3 /repo/build/tools/install-components.py fetch /cache/components "$(uname -m)" /repo/src/components.lock.json

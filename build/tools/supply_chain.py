@@ -34,6 +34,10 @@ FILES = ('apt-inputs.json', 'apt-notices.tar', 'apt.sbom.syft.json', 'source-ind
 REPORT = 'supply-chain.json'
 POLICIES = {'inputs.lock.json': ROOT / 'build/inputs.lock.json',
             'apt.sources': ROOT / 'build/apt.sources',
+            'apt.mirrorlist': ROOT / 'build/apt.mirrorlist',
+            'apt.conf': ROOT / 'build/apt.conf',
+            'apt-snapshot.tar.gz': ROOT / 'build/apt-snapshot.tar.gz',
+            'apt_snapshot.py': ROOT / 'build/tools/apt_snapshot.py',
             'cyclonedx-1.6-licenses.json': ROOT / 'build/sbom/cyclonedx-1.6-licenses.json',
             'sources.lock.json': ROOT / 'build/sbom/sources.lock.json',
             'kernel.lock.json': kernel_build.LOCK,

@@ -61,9 +61,16 @@ def fetch(cache, entry):
         with tempfile.NamedTemporaryFile(dir=cache, prefix='fetch-', delete=False) as stream:
             temporary = Path(stream.name)
         try:
-            subprocess.run(['curl', '-fsSL', '--proto', '=https', '--proto-redir', '=https', '--retry', '3',
-                '--max-time', '900', '--speed-limit', '1024', '--speed-time', '90',
-                '-o', str(temporary), entry['url']], check=True)
+            urls = source_urls(entry)
+            for index, url in enumerate(urls):
+                try:
+                    subprocess.run(['curl', '-fsSL', '--proto', '=https', '--proto-redir', '=https', '--retry', '3',
+                        '--max-time', '900', '--speed-limit', '1024', '--speed-time', '90',
+                        '-o', str(temporary), url], check=True)
+                    break
+                except subprocess.CalledProcessError:
+                    if index == len(urls) - 1:
+                        raise
             if entry.get('kind') == 'go-module-metadata' and entry.get('format') == 'info':
                 # Locks record Go's cache serialization. Proxy responses may
                 # reorder JSON keys; the resulting bytes must still match the
@@ -77,6 +84,20 @@ def fetch(cache, entry):
     if sha256(path) != digest or ('size' in entry and path.stat().st_size != entry['size']):
         raise ValueError('Corresponding source cache corruption: ' + entry['url'])
     return path
+
+
+def source_urls(entry):
+    """Use official pool mirrors for snapshot sources, with unchanged checksums."""
+    url = entry['url']
+    parsed = urlsplit(url)
+    match = re.fullmatch(r'/ubuntu/[0-9]{8}T[0-9]{6}Z/(pool/[A-Za-z0-9_./+~-]+)', parsed.path)
+    if (entry.get('kind') != 'ubuntu-source' or parsed.scheme != 'https'
+            or parsed.netloc != 'snapshot.ubuntu.com' or parsed.query or parsed.fragment
+            or not match or '..' in Path(match.group(1)).parts):
+        return [url]
+    pool_path = match.group(1)
+    return ['https://archive.ubuntu.com/ubuntu/' + pool_path,
+            'https://ports.ubuntu.com/ubuntu-ports/' + pool_path, url]
 
 
 def archive_file(path, suffix):

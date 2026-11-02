@@ -1,10 +1,12 @@
 # Per-image software and source inventory
 
 The builder uses the Ubuntu snapshot, signed APT indexes, base-image digest and
-mkosi archive in `build/inputs.lock.json`. `build/apt.sources` configures both the
-builder and mkosi, including the security pocket. The CA bootstrap package is
-fetched over HTTPS and checksum-verified before APT runs. The exact builder image
-ID and installed builder package versions accompany each image.
+mkosi archive in `build/inputs.lock.json`. `build/apt.sources`, `apt.mirrorlist`,
+`apt.conf` and the locked signed-index archive configure both the builder and
+mkosi, including the security pocket. APT verifies Ubuntu's signed metadata and
+the package checksums when it uses an official pool mirror. The CA bootstrap
+package is fetched over HTTPS and checksum-verified before APT runs. The exact
+builder image ID and installed builder package versions accompany each image.
 
 Pinned Syft scans the completed GPT disk outside the shipping OS. Root, state and
 EFI partitions are mounted read-only, without replaying ext4 journals or executing

@@ -1,6 +1,6 @@
 # Release and maintenance policy
 
-Current channel: **development**, `0.1.0-dev.0`. No supported production release,
+Current channel: **development**, `0.1.0-dev.1`. No supported production release,
 public alpha, CIS certification or published performance guarantee exists.
 
 ## Version identity

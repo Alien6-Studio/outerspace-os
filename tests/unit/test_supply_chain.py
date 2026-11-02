@@ -86,6 +86,46 @@ class AptSourceTests(unittest.TestCase):
 
 
 class SourceArchiveTests(unittest.TestCase):
+    def test_ubuntu_source_mirrors_preserve_locked_checksum_and_fall_back(self):
+        payload = b'original Ubuntu source'
+        entry = {'url': 'https://snapshot.ubuntu.com/ubuntu/20261027T000000Z/pool/main/a/example/example_1.orig.tar.gz',
+                 'sha256': hashlib.sha256(payload).hexdigest(), 'size': len(payload), 'kind': 'ubuntu-source'}
+        calls = []
+
+        def download(command, **kwargs):
+            calls.append(command[-1])
+            if len(calls) == 1:
+                raise subprocess.CalledProcessError(22, command)
+            Path(command[command.index('-o') + 1]).write_bytes(payload)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(supply_chain.sources.subprocess, 'run', side_effect=download):
+                self.assertEqual(supply_chain.sources.fetch(Path(temporary), entry).read_bytes(), payload)
+        self.assertEqual(calls, [
+            'https://archive.ubuntu.com/ubuntu/pool/main/a/example/example_1.orig.tar.gz',
+            'https://ports.ubuntu.com/ubuntu-ports/pool/main/a/example/example_1.orig.tar.gz'])
+
+        def altered(command, **kwargs):
+            calls.append(command[-1])
+            Path(command[command.index('-o') + 1]).write_bytes(b'altered source')
+
+        calls.clear()
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(supply_chain.sources.subprocess, 'run', side_effect=altered):
+                with self.assertRaisesRegex(ValueError, 'checksum mismatch'):
+                    supply_chain.sources.fetch(Path(temporary), entry)
+            self.assertEqual(list(Path(temporary).iterdir()), [])
+        self.assertEqual(len(calls), 1)
+
+    def test_ubuntu_mirror_rewrite_rejects_other_origins_and_unsafe_paths(self):
+        safe = {'kind': 'ubuntu-source', 'url': 'https://snapshot.ubuntu.com/ubuntu/20261027T000000Z/pool/main/a/example/source.tar.gz'}
+        self.assertEqual(len(supply_chain.sources.source_urls(safe)), 3)
+        for url in [safe['url'].replace('snapshot.ubuntu.com', 'example.invalid'),
+                    safe['url'].replace('/pool/main/', '/pool/../'), safe['url'] + '?unexpected=1']:
+            with self.subTest(url=url):
+                self.assertEqual(supply_chain.sources.source_urls({**safe, 'url': url}), [url])
+        self.assertEqual(supply_chain.sources.source_urls({**safe, 'kind': 'runtime-source'}), [safe['url']])
+
     def test_go_proxy_field_order_preserves_the_exact_locked_metadata(self):
         expected = (b'{"Version":"v0.6.2","Time":"2024-04-09T20:07:04Z","Origin":'
                     b'{"VCS":"git","URL":"https://github.com/Microsoft/go-winio",'

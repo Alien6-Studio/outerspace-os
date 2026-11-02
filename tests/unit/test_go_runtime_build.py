@@ -99,6 +99,7 @@ class GoRuntimeBuildTests(unittest.TestCase):
                   'builder_script_sha256': builder.sha256(Path(builder.__file__)),
                   'extraction_script_sha256': builder.sha256(Path(builder.runtime_build.__file__)),
                   'dependency_script_sha256': builder.sha256(Path(builder.go_dependencies.__file__)),
+                  'compatibility_inputs': builder.compatibility_inputs('containerd'),
                   'dependency_lock_sha256': self.lock['dependency_lock_sha256'],
                   'source_inputs': builder.go_dependencies.build_inputs(builder.go_dependencies.read_lock(
                       self.lock['dependency_lock_sha256'], 'containerd')),
@@ -120,6 +121,11 @@ class GoRuntimeBuildTests(unittest.TestCase):
         path = self.root / 'runtime-build.json'
         path.write_text(json.dumps(report))
         builder.verify(self.root, 'arm64', component='containerd')
+        changed = copy.deepcopy(report)
+        changed['compatibility_inputs'] = {}
+        path.write_text(json.dumps(changed))
+        with self.assertRaisesRegex(ValueError, 'approved inputs'):
+            builder.verify(self.root, 'arm64', component='containerd')
         for name in ['ctr', 'containerd-shim-runc-v2']:
             changed = copy.deepcopy(report)
             del changed['additional_binaries'][name]

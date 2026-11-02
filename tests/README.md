@@ -113,3 +113,12 @@ node recovery. Stacked/multiple state devices remain unsupported and must fail
 Agent runtime preparation rather than silently disabling I/O limits.
 The [Agent profile](../src/cluster/README.md#native-oci-agent-v1-profile) describes
 the administrative trust boundary, allowed workspace and static limits.
+
+`integration/containerd-oci-compat.sh` runs the upstream containerd OCI tests
+against a fully staged, vendored source tree using the pinned Linux Go 1.26.10
+compiler without network access. It skips `TestOpenUserFileCapsReads`, whose
+10-MiB group-line expectation predates the security limit in moby/sys/user
+v0.4.1, and adds tests for accepted short lines, rejection at the 1-MiB parser
+limit and containerd's independent total-file read limit. Pass the staged
+containerd source directory as the sole argument. The source-built containerd
+pipeline runs this check offline; it is not part of `make check`.

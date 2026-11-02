@@ -1,0 +1,6 @@
+file:/etc/apt/outerspace-snapshot/	priority:1 type:index
+https://archive.ubuntu.com/ubuntu/	priority:2 type:index suite:noble
+https://ports.ubuntu.com/ubuntu-ports/	priority:3 type:index suite:noble
+https://archive.ubuntu.com/ubuntu/	priority:1 type:deb arch:amd64 arch:all
+https://ports.ubuntu.com/ubuntu-ports/	priority:1 type:deb arch:arm64 arch:all
+https://snapshot.ubuntu.com/ubuntu/20261027T000000Z/	priority:2 type:deb

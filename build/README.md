@@ -93,6 +93,20 @@ candidate's review and qualification are complete. Existing alpha tags and their
 artifacts remain immutable.
 
 Ubuntu packages use the signed Noble snapshot locked in `inputs.lock.json`.
+The locked `apt-snapshot.tar.gz` contains the exact signed releases and the
+update/security indexes for both architectures. APT verifies the signatures and
+index checksums, fetches the unchanged Noble base indexes by signed hash, and
+downloads matching package bytes from official Ubuntu archive/ports mirrors.
+The snapshot service remains a package fallback. Corresponding-source downloads
+also try official pool mirrors and always verify the previously locked SHA256.
+
+When refreshing the snapshot, fetch its three original `InRelease` files and the
+main/universe source, amd64 and arm64 `.xz` indexes for both update and security
+pockets into their original `dists/` paths. Run
+`python3 build/tools/freeze-apt-snapshot.py --snapshot TIMESTAMP --index-root DIR --output FILE`
+on a Linux host with the Ubuntu archive keyring, review the printed digests, and
+update the lock, archive and snapshot fallback URL together. The tool verifies
+Ubuntu's signatures and every index checksum before creating the archive.
 Builder identity, full corresponding-source archives, native package source
 metadata and security/redistribution decisions accompany every bundle. Independent
 build comparisons record remaining nondeterminism; bit-identical output is not

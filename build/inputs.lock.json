@@ -1,13 +1,19 @@
 {
   "schema": 1,
   "ubuntu_snapshot": "20261027T000000Z",
+  "snapshot_metadata_sha256": "b1d012781035fd33d3fc3f150bd35b3a024128bdad117d0016f20db92094a6a3",
+  "snapshot_release_sha256": {
+    "noble": "cdb2f31d809f589719a53c6ad15f255b27569c4059542ada282aaa21b8e164b0",
+    "noble-updates": "c607e7ab2685b82c6d37a57261f8413d68c82b01a6a4225e1c6292fcb95691b4",
+    "noble-security": "25fe752bf07eb17eb5db1fd5a1fe4e40c0382dc2308a602ee9da1abb9d49bac7"
+  },
   "ubuntu_release": "noble",
   "ubuntu_components": ["main", "universe"],
   "ubuntu_suites": ["noble", "noble-updates", "noble-security"],
   "ubuntu_archive_keyring": "/usr/share/keyrings/ubuntu-archive-keyring.gpg",
   "builder": "ubuntu:24.04@sha256:68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac",
   "bootstrap_ca": {
-    "url": "https://snapshot.ubuntu.com/ubuntu/20261027T000000Z/pool/main/c/ca-certificates/ca-certificates_20260816ubuntu0.24.04.1_all.deb",
+    "url": "https://archive.ubuntu.com/ubuntu/pool/main/c/ca-certificates/ca-certificates_20260816ubuntu0.24.04.1_all.deb",
     "sha256": "8a0a754aaafed72cc8efb8c1731808133284a84fbfc76a4fcc73fce9e01b4187"
   },
   "mkosi": {

@@ -70,6 +70,28 @@ Both packaging and promotion require the exact SBOM and recheck its hashes,
 image subject, installed runtime entries and reconstruction from raw inputs.
 Older images must be rebuilt through this pipeline before candidate packaging.
 
+## Go runtime dependency updates
+
+The files under `build/runtime/{crictl,containerd,kubelet}/` are frozen build
+inputs, not standalone applications. Kubernetes staging modules are part of the
+complete kubelet workspace. A dependency proposal that edits only one staging
+`go.mod` or `go.sum` cannot be merged independently.
+
+Resolve updates against the pinned upstream source and Go toolchain, synchronize
+the whole workspace, verify downloaded modules and regenerate its vendor
+inventory. Preserve every resulting manifest, the selected module archives and
+historical graph metadata with their Go checksums and SHA256/size records in the
+component's `*-dependencies.lock.json`. Update that lock's digest in both the
+runtime recipe and `sbom/sources.lock.json`; `make check` rejects mismatched
+manifests or source locks. The build independently reconstructs the vendor tree
+offline and verifies the compiled binary's dependencies.
+
+Compile and test the affected runtime, then qualify both OS profiles on each
+native architecture. New source inputs invalidate prior security and source/notice
+reviews. Keep development changes on a unique `-dev.N` version until the new
+candidate's review and qualification are complete. Existing alpha tags and their
+artifacts remain immutable.
+
 Ubuntu packages use the signed Noble snapshot locked in `inputs.lock.json`.
 Builder identity, full corresponding-source archives, native package source
 metadata and security/redistribution decisions accompany every bundle. Independent

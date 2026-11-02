@@ -2,9 +2,9 @@
   "schema": 1,
   "component": "containerd",
   "manifests": {
-    "go.mod": "1608c9db4b86270adcb369bf7563ee45f53f18f853e4e0eef163d62769f54065",
-    "go.sum": "b365f591deb5c860be3f440e4af19ad374740beb24a1747dd2dd4621892a26e9",
-    "vendor/modules.txt": "c65985ba76c22174f2cd4d0a4c96fd0cf458c06c53b7e7faef855c42eb9c74bc"
+    "go.mod": "3e74fdefb7f08db16e41951601e5b14e7bdcf3068211d34248a1f75d0a0875a1",
+    "go.sum": "e8c7e54cc04330a80f1d013b190def88b60991c747ab98a03b29fb77e30d34ee",
+    "vendor/modules.txt": "c33ab155869b7dac0af838a07d64121ccbf400684129e2679519f3df4e04ec93"
   },
   "modules": [
     {
@@ -262,24 +262,24 @@
     },
     {
       "path": "github.com/BurntSushi/toml",
-      "version": "v1.5.0",
-      "sum": "h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=",
+      "version": "v1.6.0",
+      "sum": "h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk=",
       "go_mod_sum": "h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/!burnt!sushi/toml/@v/v1.5.0.zip",
-          "sha256": "a10c8d3d6c4a9b73dc885464245eec6b27d64f430d6979389cd9c58adde15855",
-          "size": 352548
+          "url": "https://proxy.golang.org/github.com/!burnt!sushi/toml/@v/v1.6.0.zip",
+          "sha256": "01f03d6c3f4bfee108bda3202407b54ac0c295b8302a1315512f12ac05011fd8",
+          "size": 462127
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/!burnt!sushi/toml/@v/v1.5.0.mod",
+          "url": "https://proxy.golang.org/github.com/!burnt!sushi/toml/@v/v1.6.0.mod",
           "sha256": "45d78b80571999b6a258da0f21673da39e6b501349c033a4acd169437411d733",
           "size": 43
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/!burnt!sushi/toml/@v/v1.5.0.info",
-          "sha256": "fcea2d580134e3df8d7d3fbe5e4d4ff6c14e886c9e4c2d719f816973c47ed8bc",
-          "size": 191
+          "url": "https://proxy.golang.org/github.com/!burnt!sushi/toml/@v/v1.6.0.info",
+          "sha256": "aa91a54240d8c4d6215196f8dd045867e9fcc5dbe6596615b5d6ee16272540ff",
+          "size": 166
         }
       }
     },
@@ -1044,23 +1044,23 @@
     },
     {
       "path": "github.com/cilium/ebpf",
-      "version": "v0.16.0",
-      "sum": "h1:+BiEnHL6Z7lXnlGUsXQPPAE7+kenAd4ES8MQ5min0Ok=",
-      "go_mod_sum": "h1:L7u2Blt2jMM/vLAVgjxluxtBKlz3/GWjB0dMOEngfwE=",
+      "version": "v0.22.0",
+      "sum": "h1:v2ktp0roffpMOj2MMf3idtCQZOsAoC4BJbAJN+ke2bY=",
+      "go_mod_sum": "h1:CDzZbe2hC5JjlDC+CY3KFCzlYwN4gbxppYM+Z10bQt4=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/cilium/ebpf/@v/v0.16.0.zip",
-          "sha256": "94f18289e55ece887579f7f3bd5117301c02a4413837fd6b5ff956962c8995cf",
-          "size": 2148798
+          "url": "https://proxy.golang.org/github.com/cilium/ebpf/@v/v0.22.0.zip",
+          "sha256": "6a8dcf130ef62f80312dfccd84e78e1318ba3c47599865c93fcd41787b000548",
+          "size": 2633132
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/cilium/ebpf/@v/v0.16.0.mod",
-          "sha256": "52f7c88e08ff3f861824d3485f576ed215b1f483b95023fae5e1054cd0ed6915",
-          "size": 609
+          "url": "https://proxy.golang.org/github.com/cilium/ebpf/@v/v0.22.0.mod",
+          "sha256": "2fe07824e5781842d5776c06878efbeeef8758f82af4c8e18530542c67482b57",
+          "size": 2070
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/cilium/ebpf/@v/v0.16.0.info",
-          "sha256": "33e6d2aa2598fcfba2572d50672b1e8a92905f872b5fe93313d783e590b2ae47",
+          "url": "https://proxy.golang.org/github.com/cilium/ebpf/@v/v0.22.0.info",
+          "sha256": "2b6f81cfa1a2c13dbefcafcad1cc4657c9d00a140d6041f9e404ef77ec01891c",
           "size": 189
         }
       }
@@ -1573,23 +1573,23 @@
     },
     {
       "path": "github.com/containerd/stargz-snapshotter/estargz",
-      "version": "v0.15.1",
-      "sum": "h1:eXJjw9RbkLFgioVaTG+G/ZW/0kEe2oEKCdS/ZxIyoCU=",
-      "go_mod_sum": "h1:gr2RNwukQ/S9Nv33Lt6UC7xEx58C+LHRdoqbEKjz1Kk=",
+      "version": "v0.16.3",
+      "sum": "h1:7evrXtoh1mSbGj/pfRccTampEyKpjpOnS3CyiV1Ebr8=",
+      "go_mod_sum": "h1:uyr4BfYfOj3G9WBVE8cOlQmXAbPN9VEQpBBeJIuOipU=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/containerd/stargz-snapshotter/estargz/@v/v0.15.1.zip",
-          "sha256": "5a688abbc0fbdc7fa57c23312d018918ff70d69ac7782d5ef53f7354d617e93b",
-          "size": 61428
+          "url": "https://proxy.golang.org/github.com/containerd/stargz-snapshotter/estargz/@v/v0.16.3.zip",
+          "sha256": "287193ec03ed7f2be25a908464e42cdf4573c682e849f20832d2c77358948c64",
+          "size": 61439
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/containerd/stargz-snapshotter/estargz/@v/v0.15.1.mod",
-          "sha256": "4807d3d728440a2be5e55960bd70ed677de7cbd3ef916515e2d602b10ec6975f",
-          "size": 224
+          "url": "https://proxy.golang.org/github.com/containerd/stargz-snapshotter/estargz/@v/v0.16.3.mod",
+          "sha256": "361bc1fe42e4f6936590020d457f3007591b3e37dcc42363ed3b418a17a1e389",
+          "size": 227
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/containerd/stargz-snapshotter/estargz/@v/v0.15.1.info",
-          "sha256": "8aed2d7528b56d903300e97563aefd3c2e2f7be7ef782913d3df3dd23dffd6c5",
+          "url": "https://proxy.golang.org/github.com/containerd/stargz-snapshotter/estargz/@v/v0.16.3.info",
+          "sha256": "349450242b7fba7f2059024d72a7d1e042ca41569db17ac96b6d11e8d9746a59",
           "size": 234
         }
       }
@@ -1964,23 +1964,23 @@
     },
     {
       "path": "github.com/docker/docker-credential-helpers",
-      "version": "v0.7.0",
-      "sum": "h1:xtCHsjxogADNZcdv1pKUHXryefjlVRqWqIhk/uXJp0A=",
-      "go_mod_sum": "h1:rETQfLdHNT3foU5kuNkFR1R1V12OJRRO5lzt2D1b5X0=",
+      "version": "v0.9.3",
+      "sum": "h1:gAm/VtF9wgqJMoxzT3Gj5p4AqIjCBS4wrsOh9yRqcz8=",
+      "go_mod_sum": "h1:x+4Gbw9aGmChi3qTLZj8Dfn0TD20M/fuWy0E5+WDeCo=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/docker/docker-credential-helpers/@v/v0.7.0.zip",
-          "sha256": "590d8e508408951109c1763683560d6858aea3a598cf906df09115a019d2192e",
-          "size": 53703
+          "url": "https://proxy.golang.org/github.com/docker/docker-credential-helpers/@v/v0.9.3.zip",
+          "sha256": "d1d7e8680253fa217273bf0df542ae9183b07716a7e52582b7d51347db4db661",
+          "size": 61494
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/docker/docker-credential-helpers/@v/v0.7.0.mod",
-          "sha256": "cf4b120e89319690b72a913045d554ac5f4bf677abbcd4e9e78df030e8c9622d",
-          "size": 164
+          "url": "https://proxy.golang.org/github.com/docker/docker-credential-helpers/@v/v0.9.3.mod",
+          "sha256": "fa52c94e6d351a9c30a16358af50f2381de1eb386069d76eddc536c4552d713b",
+          "size": 391
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/docker/docker-credential-helpers/@v/v0.7.0.info",
-          "sha256": "88542101ced89c7b61363d87ca86be35da853128f08d58b34a2d1d1b04ecbae8",
+          "url": "https://proxy.golang.org/github.com/docker/docker-credential-helpers/@v/v0.9.3.info",
+          "sha256": "ed7410d5df71d356c7151ac1825e0c1fe15923604fb374f6825989150b772c09",
           "size": 208
         }
       }
@@ -2355,23 +2355,23 @@
     },
     {
       "path": "github.com/go-logr/logr",
-      "version": "v1.4.3",
-      "sum": "h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=",
+      "version": "v1.4.4",
+      "sum": "h1:tG4xh9yMsRCAiodLVTxyrkzSZ9+o0L1Kg/+cPVcbP/8=",
       "go_mod_sum": "h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.3.zip",
-          "sha256": "523d7a3587fe73f61ef41c8bc627f7d7f38de8104d46278154b307e60770ad70",
-          "size": 90797
+          "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.4.zip",
+          "sha256": "3ab107c1d280ce798eaa744efd595982fa709d4023f3f38d24189827483c1710",
+          "size": 91231
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.3.mod",
+          "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.4.mod",
           "sha256": "c496f30d700f02b49a1b50bc2486a27c2f74df3dce75d9db6d2d43975b381727",
           "size": 40
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.3.info",
-          "sha256": "49e5a9cbaf5847edf504cc818dad527b6a7135fbc38622aa227df79b256cc0da",
+          "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.4.info",
+          "sha256": "2fb556eeb8cdf7d913bc075a96ee5f23203a4ec8ccf958ba8222e11550c16b0f",
           "size": 188
         }
       }
@@ -2516,24 +2516,24 @@
     },
     {
       "path": "github.com/go-quicktest/qt",
-      "version": "v1.101.0",
-      "sum": "h1:O1K29Txy5P2OK0dGo59b7b0LR6wKfIhttaAhHUyn7eI=",
-      "go_mod_sum": "h1:14Bz/f7NwaXPtdYEgzsx46kqSxVwTbzVZsDC26tQJow=",
+      "version": "v1.101.1-0.20240301121107-c6c8733fa1e6",
+      "sum": "h1:teYtXy9B7y5lHTp8V9KPxpYRAVA7dozigQcMiBust1s=",
+      "go_mod_sum": "h1:p4lGIVX+8Wa6ZPNDvqcxq36XpUDLh42FLetFU7odllI=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/go-quicktest/qt/@v/v1.101.0.zip",
-          "sha256": "9d2e17cfeef165f9d859926dcd4b0586bc78785cb575a31a76effd195d0e5580",
-          "size": 35661
+          "url": "https://proxy.golang.org/github.com/go-quicktest/qt/@v/v1.101.1-0.20240301121107-c6c8733fa1e6.zip",
+          "sha256": "2bf9745599b05b604074a7fe1f0d15f5f5a199b82ccca898500097a301e60ad3",
+          "size": 37461
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/go-quicktest/qt/@v/v1.101.0.mod",
-          "sha256": "426979baa4c0dfd12362f1e0b977a271e8f9bf1405ae65ba9cee91fcd52cfc2f",
+          "url": "https://proxy.golang.org/github.com/go-quicktest/qt/@v/v1.101.1-0.20240301121107-c6c8733fa1e6.mod",
+          "sha256": "2f9fe3cadcc7baeeee7068510a4ae02486bd3807b222113e8711e81b14a5ad65",
           "size": 504
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/go-quicktest/qt/@v/v1.101.0.info",
-          "sha256": "d1a5662e4610083eb4630b018e62734aeb65dccc9bd6aa9e7bcb16f02866f382",
-          "size": 195
+          "url": "https://proxy.golang.org/github.com/go-quicktest/qt/@v/v1.101.1-0.20240301121107-c6c8733fa1e6.info",
+          "sha256": "5f8b98dabd0d769dbde50a387ec5429717b063de37017eed229dc5000d3d656d",
+          "size": 198
         }
       }
     },
@@ -2930,23 +2930,23 @@
     },
     {
       "path": "github.com/google/go-containerregistry",
-      "version": "v0.20.1",
-      "sum": "h1:eTgx9QNYugV4DN5mz4U8hiAGTi1ybXn0TPi4Smd8du0=",
-      "go_mod_sum": "h1:YCMFNQeeXeLF+dnhhWkqDItx/JSkH01j1Kis4PsjzFI=",
+      "version": "v0.20.6",
+      "sum": "h1:cvWX87UxxLgaH76b4hIvya6Dzz9qHB31qAwjAohdSTU=",
+      "go_mod_sum": "h1:T0x8MuoAoKX/873bkeSfLD2FAkwCDf9/HZgsFJ02E2Y=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/google/go-containerregistry/@v/v0.20.1.zip",
-          "sha256": "6a981f24fd52237c4173a10ffffa0bbe28cbba0c3f303e6dd729bc8703330782",
-          "size": 1978802
+          "url": "https://proxy.golang.org/github.com/google/go-containerregistry/@v/v0.20.6.zip",
+          "sha256": "df1671d352daf96efbc0d06ffa4797dc44b002eef6a706982d89df1aeb27cd79",
+          "size": 1980158
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/google/go-containerregistry/@v/v0.20.1.mod",
-          "sha256": "27ea393b640dc08875a09439844637242a17160f67188ace315aaee103ab2df1",
-          "size": 1885
+          "url": "https://proxy.golang.org/github.com/google/go-containerregistry/@v/v0.20.6.mod",
+          "sha256": "c017a3918e11b8f089b426c4582f9f28c08c5f939243ae9da22ba986ddf909b5",
+          "size": 2440
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/google/go-containerregistry/@v/v0.20.1.info",
-          "sha256": "85e53d9cb81521013d6ac9dec6d9e1ad4c6c538fbe85c0ce8f9bc84b3bbc8fb8",
+          "url": "https://proxy.golang.org/github.com/google/go-containerregistry/@v/v0.20.6.info",
+          "sha256": "3e51ea426a02789b7f91bd230dea5862613e60a9ee138426398e168d99f52d04",
           "size": 205
         }
       }
@@ -3206,23 +3206,23 @@
     },
     {
       "path": "github.com/grpc-ecosystem/grpc-gateway/v2",
-      "version": "v2.28.0",
-      "sum": "h1:HWRh5R2+9EifMyIHV7ZV+MIZqgz+PMpZ14Jynv3O2Zs=",
-      "go_mod_sum": "h1:JfhWUomR1baixubs02l85lZYYOm7LV6om4ceouMv45c=",
+      "version": "v2.29.0",
+      "sum": "h1:5VipnvEpbqr2gA2VbM+nYVbkIF28c5ZQfqCBQ5g2xfk=",
+      "go_mod_sum": "h1:Hyl3n6Twe1hvtd9XUXDec4pTvgMSEixRuQKPTMH2bNs=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/v2/@v/v2.28.0.zip",
-          "sha256": "a8cd8e77d733dbf48594cc74ebc41e7a9af65d4d760c3f8d6000e9ccc840dca1",
-          "size": 1235170
+          "url": "https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/v2/@v/v2.29.0.zip",
+          "sha256": "92aa0dbc15037aeddca97ff7f8e4c61bdc3841a34a0df9bc27af30265e598f2d",
+          "size": 1242184
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/v2/@v/v2.28.0.mod",
-          "sha256": "3ab0b3ec9ac8368213c9c9275f10af85dafb3ca8286b0e66b847ad806cf65f78",
+          "url": "https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/v2/@v/v2.29.0.mod",
+          "sha256": "0d759d4a6c23af4bd39f85fd0c9f4de3931ce0d480432683e806c5bd116ffa45",
           "size": 683
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/v2/@v/v2.28.0.info",
-          "sha256": "28d00c3de2c7d38d567c8b03281aba8c5cd95617a698a62a2e8c738e0c392ffd",
+          "url": "https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/v2/@v/v2.29.0.info",
+          "sha256": "c396be1041fd6085e8b285a38dc6a1c472b6919b6d73ad5d251df55e6109a5a1",
           "size": 205
         }
       }
@@ -3551,23 +3551,23 @@
     },
     {
       "path": "github.com/klauspost/compress",
-      "version": "v1.18.5",
-      "sum": "h1:/h1gH5Ce+VWNLSWqPzOVn6XBO+vJbCNGvjoaGBFW2IE=",
+      "version": "v1.18.7",
+      "sum": "h1:aUyZsS4kH3QTKurYhAOwAHxllVPnOthb3vPfnF1Ehjw=",
       "go_mod_sum": "h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.18.5.zip",
-          "sha256": "e1fdde95d97978146243f1e793ce18a09b107d6cd6032347fcb5b9115181497d",
-          "size": 39200513
+          "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.18.7.zip",
+          "sha256": "4e5cef30576a158c16e824ebb9c1ded91d8331bf339655e95ebb19710050c39c",
+          "size": 39201868
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.18.5.mod",
+          "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.18.7.mod",
           "sha256": "0d66d6069d9e2fb875c5b464d15b2c80232cfc8991e6f88336ce461ca810e0cf",
           "size": 201
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.18.5.info",
-          "sha256": "0a3299081c169106cdc26343326ccd58e11018ca07b5a9084da309d9fa3bdd5e",
+          "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.18.7.info",
+          "sha256": "1d09230c387b39d92c4b3cd34219a2360a772cbd3ce1c64b9a181982889f9f50",
           "size": 196
         }
       }
@@ -4310,23 +4310,23 @@
     },
     {
       "path": "github.com/moby/sys/user",
-      "version": "v0.4.0",
-      "sum": "h1:jhcMKit7SA80hivmFJcbB1vqmw//wU61Zdui2eQXuMs=",
-      "go_mod_sum": "h1:bG+tYYYJgaMtRKgEmuueC0hJEAZWwtIbZTB+85uoHjs=",
+      "version": "v0.4.1",
+      "sum": "h1:RgjRlaDKi/Xmyrz4t8lyzXT6v2ooFeO/7xtchmhVWE0=",
+      "go_mod_sum": "h1:E9QsW5WRe1kUAf7kW8hXKwu1uhsZEAdPLYHYSDudF4Y=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/moby/sys/user/@v/v0.4.0.zip",
-          "sha256": "4b96521752263905b26acd41c982be7bfb73d45243d070707e3cdd57f9fb3a91",
-          "size": 20379
+          "url": "https://proxy.golang.org/github.com/moby/sys/user/@v/v0.4.1.zip",
+          "sha256": "acfdb68bda18ee112adacf55e0b20752a1f5633c55fb020f2a10a9b2eeaec46a",
+          "size": 22548
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/moby/sys/user/@v/v0.4.0.mod",
-          "sha256": "96fb39eca560683a8b331bfae7c0c73f1119ef8b6c26d2a0b5ecb54ebbf2f0c5",
+          "url": "https://proxy.golang.org/github.com/moby/sys/user/@v/v0.4.1.mod",
+          "sha256": "b32137c4588ee86da690b1cbdd5d6d086fb2254625893b6cb590fb2c02672cb6",
           "size": 266
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/moby/sys/user/@v/v0.4.0.info",
-          "sha256": "8f3e1b604af6fc5941b22984a8f8dd64bd661e62790708679a331b23f6cee7c1",
+          "url": "https://proxy.golang.org/github.com/moby/sys/user/@v/v0.4.1.info",
+          "sha256": "fba02d3057df0ed2f80e3133e50e957c17465e287653245af3deb523ca1046dd",
           "size": 205
         }
       }
@@ -5644,23 +5644,23 @@
     },
     {
       "path": "github.com/vbatts/tar-split",
-      "version": "v0.11.5",
-      "sum": "h1:3bHCTIheBm1qFTcgh9oPu+nNBtX+XJIupG/vacinCts=",
-      "go_mod_sum": "h1:yZbwRsSeGjusneWgA781EKej9HF8vme8okylkAeNKLk=",
+      "version": "v0.12.1",
+      "sum": "h1:CqKoORW7BUWBe7UL/iqTVvkTBOF8UvOMKOIZykxnnbo=",
+      "go_mod_sum": "h1:eF6B6i6ftWQcDqEn3/iGFRFRo8cBIMSJVOpnNdfTMFA=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/vbatts/tar-split/@v/v0.11.5.zip",
-          "sha256": "2d5ad051453b36174ab2831115cdcdc4fa2ef34d9706db3fd82764142e4da248",
-          "size": 116314
+          "url": "https://proxy.golang.org/github.com/vbatts/tar-split/@v/v0.12.1.zip",
+          "sha256": "0ca76b83470a764642c1b146903d69e35f7c2c61a95ff3bc840f8b193d90c3c7",
+          "size": 120298
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/vbatts/tar-split/@v/v0.11.5.mod",
-          "sha256": "9990f85387778550caa411cc8d412e503028878927cc28318d50946cf4725b3a",
-          "size": 447
+          "url": "https://proxy.golang.org/github.com/vbatts/tar-split/@v/v0.12.1.mod",
+          "sha256": "fbeeabea5027d4d4bc3cef235d74e32614051573bd1e04dbd15fd1ff54ee9172",
+          "size": 618
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/vbatts/tar-split/@v/v0.11.5.info",
-          "sha256": "2d07aa2edd66affc71a529daf1c02784aa7cd5bdb79581bd0312e3b3bdb99c08",
+          "url": "https://proxy.golang.org/github.com/vbatts/tar-split/@v/v0.12.1.info",
+          "sha256": "9ac6e142a2d6dc11332cbc8f783102886db7c5074694a8aa75a0e1f196b6c1e1",
           "size": 194
         }
       }
@@ -6104,23 +6104,23 @@
     },
     {
       "path": "go.opentelemetry.io/otel",
-      "version": "v1.44.0",
-      "sum": "h1:JjwHmHpA4iZ3wBxluu2fbbE7j4kqlE8jXyAyPXH7HqU=",
-      "go_mod_sum": "h1:BMgjTHL9WPRlRjL2oZCBTL4whCGtXch2H4BhOPIAyYc=",
+      "version": "v1.45.0",
+      "sum": "h1:pdrWmLHofpubmArBv1LgFSv1Z0Ie/ppdZzu+kUN5EeU=",
+      "go_mod_sum": "h1:XZxIqPapzEYnhNSScF5DIqXhm/rYi0FzCe2XddAwZfQ=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.44.0.zip",
-          "sha256": "4b7ef50caaf3dc6fc1a058f9ce2ccda6aad2ab3e8657acc4c8bb3102f79c53bc",
-          "size": 3561245
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.45.0.zip",
+          "sha256": "65b5fc93c93f4eaef740b4bba81fd2543f248d5df85cf4d1ddf9ab459b30f7a2",
+          "size": 4274588
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.44.0.mod",
-          "sha256": "f466441934839f12a009415b4c16a77d221e1aa5d767f878e2af5888f1ad839f",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.45.0.mod",
+          "sha256": "5fbed2c6d71624dd869501048d52436832e3d8b2da7bea539d44b982b62d6fe0",
           "size": 635
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.44.0.info",
-          "sha256": "11c81234ccfb0528043ec5a8184309be4cf892bf7837c9d94b4d81674b4af4d0",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.45.0.info",
+          "sha256": "7eed5c74008e999667bdb0b7b24f25fa51b8eb9a3ca3f6b72563b19c78d49c50",
           "size": 209
         }
       }
@@ -6173,69 +6173,69 @@
     },
     {
       "path": "go.opentelemetry.io/otel/exporters/otlp/otlptrace",
-      "version": "v1.43.0",
-      "sum": "h1:88Y4s2C8oTui1LGM6bTWkw0ICGcOLCAI5l6zsD1j20k=",
-      "go_mod_sum": "h1:Vl1/iaggsuRlrHf/hfPJPvVag77kKyvrLeD10kpMl+A=",
+      "version": "v1.45.0",
+      "sum": "h1:QRefszxJmfPdjXUUm3j6iDzY03mTPXMjqErFqQ67vUg=",
+      "go_mod_sum": "h1:Tiz03lTBVBrm7eWZBOidzEaYaJa8tjwGUGv6d8mlTyk=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/@v/v1.43.0.zip",
-          "sha256": "11649f39d7bef9c2c6f10da9ad4c09b95eb3eaef2d464ea8de9c8792cea5c524",
-          "size": 23974
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/@v/v1.45.0.zip",
+          "sha256": "17e5b206e5ea76d8a1e4e8ef340d888894a0776fc1d66848530346347e0b47c3",
+          "size": 25093
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/@v/v1.43.0.mod",
-          "sha256": "928d17a4a475d0a54c60f0135906be9b043a4c4a7861964d33cf931582cffec6",
-          "size": 1093
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/@v/v1.45.0.mod",
+          "sha256": "d95c37571c16ae53c04144b74c4eac22df7ca1b349d1c9cfdcbc87131db2688e",
+          "size": 1145
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/@v/v1.43.0.info",
-          "sha256": "aff0a925f368f228068bf208b273085eae1bf94f0b3898ec127f204515ec5556",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/@v/v1.45.0.info",
+          "sha256": "cbeaf6c85398a169d8eafd18a69cdc31e3146755f2cd8ccc275b4ed2bfc8f22b",
           "size": 270
         }
       }
     },
     {
       "path": "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
-      "version": "v1.43.0",
-      "sum": "h1:RAE+JPfvEmvy+0LzyUA25/SGawPwIUbZ6u0Wug54sLc=",
-      "go_mod_sum": "h1:AGmbycVGEsRx9mXMZ75CsOyhSP6MFIcj/6dnG+vhVjk=",
+      "version": "v1.45.0",
+      "sum": "h1:fG5MCxGz8+2VtrN/WgqSpJFctVz24gpxj8CxkKmc8Ww=",
+      "go_mod_sum": "h1:BmAYTn+3ysbRe+IU2msxmf5Rx3g6DHvex+tWI3LdhYI=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/@v/v1.43.0.zip",
-          "sha256": "065275002f900c84cc3e2efd7538d00b0908cb8b80ed8455c811b35fa555be3a",
-          "size": 71238
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/@v/v1.45.0.zip",
+          "sha256": "0cacecb3afc00395bf88712ec047e32e39a7e69575ba313254314673c1f1087e",
+          "size": 72526
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/@v/v1.43.0.mod",
-          "sha256": "a8e5bdeb989adfb10cf25d08aa04409a582df29d5a140cc3563a5c85e7f4334d",
-          "size": 1653
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/@v/v1.45.0.mod",
+          "sha256": "5bdfdbe5b1877e402b8ef6c1decd97e7d25e589c834a0f25f71c44e25c377545",
+          "size": 1708
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/@v/v1.43.0.info",
-          "sha256": "c7b6951e83869f5c0fa3d13e4d5507e5475137b7a021c30840a62f2f458bae03",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/@v/v1.45.0.info",
+          "sha256": "3960d690af6a22bf94ea1c0a0055060f152b02cd771da31fe7f77f2023e90ae7",
           "size": 298
         }
       }
     },
     {
       "path": "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
-      "version": "v1.43.0",
-      "sum": "h1:3iZJKlCZufyRzPzlQhUIWVmfltrXuGyfjREgGP3UUjc=",
-      "go_mod_sum": "h1:/G+nUPfhq2e+qiXMGxMwumDrP5jtzU+mWN7/sjT2rak=",
+      "version": "v1.45.0",
+      "sum": "h1:QBajQ2SrwQijzHyZbQlPsuIzpl/ll8DY6wPWsajeGcI=",
+      "go_mod_sum": "h1:08ZQLjrPLQ6R4kAXvuOvODEer5Yh4CoFvll5qB2BCI8=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/@v/v1.43.0.zip",
-          "sha256": "b76a9de6c464ed2c820975f155be8e3790e8b60ff4a67f41a5aec7638afa668c",
-          "size": 66968
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/@v/v1.45.0.zip",
+          "sha256": "8eea4ce8ed5af97d4c77d1b7c5800f17f24f47aebd7ef1a78ddd27cf9000fc13",
+          "size": 70349
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/@v/v1.43.0.mod",
-          "sha256": "bf17b406ef15ac58ac9153a36686e9c87579b2a3f3f4163da64908f7618801b2",
-          "size": 1626
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/@v/v1.45.0.mod",
+          "sha256": "98985f8b17f02c46bcedbf7881ff315d7a23642612f5212cb48076095c027c4c",
+          "size": 1693
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/@v/v1.43.0.info",
-          "sha256": "0dea086fc36e0ad961a011db42b019dfa9edc8ac131097546d1df51009e34e3b",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/@v/v1.45.0.info",
+          "sha256": "3691b6fb368e60b05c90c3cd1411f9528444ff2d315428eaec736f99a2623927",
           "size": 298
         }
       }
@@ -6288,115 +6288,115 @@
     },
     {
       "path": "go.opentelemetry.io/otel/metric",
-      "version": "v1.44.0",
-      "sum": "h1:1w0gILTcHdr3YI+ixLyjemwrVnsMURbTZFrSYCdDdmc=",
-      "go_mod_sum": "h1:8O7hanEPBNgEMmybD3s2VBKcgWOCsA6tzHBPODAiquo=",
+      "version": "v1.45.0",
+      "sum": "h1:7Eg1uH7CJ5cXv9is6tnBe1FI6rj1nwUdbFypRm3br/M=",
+      "go_mod_sum": "h1:HAPbm1nd3p1PmFH7v2dR+6BjXxw+Lq4a2+pndMAm08s=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.44.0.zip",
-          "sha256": "4442ba5f269f81251f549acb14ac16176f23967f4a0706163440b0df91592f96",
-          "size": 37850
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.45.0.zip",
+          "sha256": "8f30ef0039306bf3a4421b8c08e3fc8922d13503dce53b3438e860b3628faecd",
+          "size": 38554
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.44.0.mod",
-          "sha256": "328a1fe2bc702b8c26765f18a9a26fc08748283bdbba26d538d4037b0fcb6afb",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.45.0.mod",
+          "sha256": "d5abe3973aa7d3f6c4302641b1f95a13fa9976a46d79717020f7583748842998",
           "size": 612
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.44.0.info",
-          "sha256": "aa05b63561fbb844cf7d87e956796906020a7c7ff3dcd314f2524caff95c1541",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.45.0.info",
+          "sha256": "7a46869c95397fbf27445828b05250e7d0229ea0fcafb283be37a423e625a75e",
           "size": 234
         }
       }
     },
     {
       "path": "go.opentelemetry.io/otel/sdk",
-      "version": "v1.44.0",
-      "sum": "h1:nHYwb9lK+fJPU/dnT6s7W7Z8itMWyqrnVfbheVYrZ58=",
-      "go_mod_sum": "h1:Osuydd3Se74nqjAKxid74N5eC+jfEqfTegHRnq58oK0=",
+      "version": "v1.45.0",
+      "sum": "h1:4VVSMgQ83dUgW2aoX5f6JgLvHwIvzcuLnF9lUdCSpCw=",
+      "go_mod_sum": "h1:Sr40LgXV7DsKMMJMKOhUWOgMWTfAaqvm2kF0g7ilwuA=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/@v/v1.44.0.zip",
-          "sha256": "36533893b3f21a777f89620bac33557e42cd2d608176979f2d1bafe71b75c2fd",
-          "size": 163455
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/@v/v1.45.0.zip",
+          "sha256": "ad0e63fa1cfc01dffec2a90a8f2d2c1bc0f55d0462940176dc41b7ada0d03258",
+          "size": 174147
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/@v/v1.44.0.mod",
-          "sha256": "1ed05d21feab2b3bf987b687ca7343fe7b695bc53b9326a8a40d31ca6d1a0844",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/@v/v1.45.0.mod",
+          "sha256": "ff9df2ce87f84e675122c83844b544b6da1c4aa9f4723ead3d825b4237010239",
           "size": 957
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/@v/v1.44.0.info",
-          "sha256": "82036161ae5b85956ae070dc92629e93eab8933eefd13ffe1e6ba544b78d9b7b",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/@v/v1.45.0.info",
+          "sha256": "b196d854727a04ef4b142c3eb1f6da4b7cf06d73623f95a75f12757837b4ec03",
           "size": 228
         }
       }
     },
     {
       "path": "go.opentelemetry.io/otel/sdk/metric",
-      "version": "v1.44.0",
-      "sum": "h1:3LlKgI+VjbVsjNRFZJZAJ30WjXC5VkNRks6si09iEfI=",
-      "go_mod_sum": "h1:5B5pMARnXxKhltooO4xUuCBorl65a4EpnTalObqOigA=",
+      "version": "v1.45.0",
+      "sum": "h1:oVFszMfyj1Am6s24Vtc7wBb8BKLcwepJjNEYILuiE3o=",
+      "go_mod_sum": "h1:vUWUxDZvu1WVRj8JA8S0AdhsPrZoDpA2DdZauIh4mDA=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/metric/@v/v1.44.0.zip",
-          "sha256": "86fa30d460efc36ed8d5e47f680ffb8af4c5a1bdad96edd21a40a95b0971a65e",
-          "size": 195896
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/metric/@v/v1.45.0.zip",
+          "sha256": "535731f380b12313c4ed5d7adb4b7d3a357609b212b03c8b7dc437809787be91",
+          "size": 212284
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/metric/@v/v1.44.0.mod",
-          "sha256": "5f52df5d5f791931de752c32f98795cde604edf12f668c9000babd0e2602938a",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/metric/@v/v1.45.0.mod",
+          "sha256": "cd1f44b4ed257620aab5a9bef05e8cf13c73092ca37fe1530778aeb21c396793",
           "size": 984
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/metric/@v/v1.44.0.info",
-          "sha256": "0e9e2ef10669380831f53ba1406a2e5dd8fa9b14407f76a5eacb25e41251993b",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/metric/@v/v1.45.0.info",
+          "sha256": "1f8d02076910dc40a1cef4d7eb82c2c76da6989737c55ef9c3e9e446841c68c6",
           "size": 242
         }
       }
     },
     {
       "path": "go.opentelemetry.io/otel/trace",
-      "version": "v1.44.0",
-      "sum": "h1:jxF5CsGYCe74MCRx2X4g7WsY/VBKRqqpNvXlX/6gtIk=",
-      "go_mod_sum": "h1:oLl1jrMQAVo6v3GAggN+1VH9VIz9iUSvW53sW1Q8PIE=",
+      "version": "v1.45.0",
+      "sum": "h1:l/mP6Uv7oNO7/TblbhpbgMidxhq1uO/rPsikOyVhxag=",
+      "go_mod_sum": "h1:qoJJA2xNMnxRrdISU/kLtfUH2wNeQbiv+jhs/CxI8bc=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.44.0.zip",
-          "sha256": "cd1abf8dcec62fe9788fae9105760db1711e6e994d2e31cdda57ccb467e7ceec",
-          "size": 76671
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.45.0.zip",
+          "sha256": "32d7d64ea5991378184b03a9ed7b7822b17691a239508a6905fdd73819cb6c6f",
+          "size": 77639
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.44.0.mod",
-          "sha256": "24b803fb358fb3456f788a98a7c18fb391685bc5a708a118f02116b8969a03c4",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.45.0.mod",
+          "sha256": "8deb258105daad00ccd15be702c3afd78517327191cb0c4903dec33ff466c92d",
           "size": 457
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.44.0.info",
-          "sha256": "997138a118c66ac4cc4e08ce286332598b8c37760efad5d48550954873d914d6",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.45.0.info",
+          "sha256": "8610e999ada88c9c695e4b0d206bc82915b0d71b6466bb1c62e13c56317e2226",
           "size": 232
         }
       }
     },
     {
       "path": "go.opentelemetry.io/proto/otlp",
-      "version": "v1.10.0",
-      "sum": "h1:IQRWgT5srOCYfiWnpqUYz9CVmbO8bFmKcwYxpuCSL2g=",
-      "go_mod_sum": "h1:/CV4QoCR/S9yaPj8utp3lvQPoqMtxXdzn7ozvvozVqk=",
+      "version": "v1.11.0",
+      "sum": "h1:5rrYs0Ykyj50sdU/JU0x8etU+LubXWb+gED6TbEdMIk=",
+      "go_mod_sum": "h1:SmVizdCOAm3XBtG1g1NnOdhW6jtddT72hLMhv8VwA8E=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/proto/otlp/@v/v1.10.0.zip",
-          "sha256": "199278343f9a66953023278601384dbc9f42896c2e0581bfbd65bd5f044a9a66",
-          "size": 73555
+          "url": "https://proxy.golang.org/go.opentelemetry.io/proto/otlp/@v/v1.11.0.zip",
+          "sha256": "790b98d472e7095511fa7feddd04e1d85bd844226e03ba482bd4105ef2217e09",
+          "size": 73562
         },
         "mod": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/proto/otlp/@v/v1.10.0.mod",
-          "sha256": "f140713fa137d4f5ac6182dfc9f159833b55c715c1597389dd5bd11b5c9a6221",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/proto/otlp/@v/v1.11.0.mod",
+          "sha256": "1c64c5758bc16721f8ee0f1405be68cc464252de31f12eba72bb8a73228fe720",
           "size": 490
         },
         "info": {
-          "url": "https://proxy.golang.org/go.opentelemetry.io/proto/otlp/@v/v1.10.0.info",
-          "sha256": "11982a7e827fd51ab4cd53fc6f6c82d5a00b01bbc2e04e36243b33f61b9b174c",
+          "url": "https://proxy.golang.org/go.opentelemetry.io/proto/otlp/@v/v1.11.0.info",
+          "sha256": "cd2bddd447c9ca74202ff0df60bf0aa39dba90beda6153af62d4a0445a25490c",
           "size": 236
         }
       }
@@ -6605,6 +6605,29 @@
           "url": "https://proxy.golang.org/golang.org/x/exp/@v/v0.0.0-20241108190413-2d47ceb2692f.info",
           "sha256": "f831b0c58be7c197dbdc99d4cf1d62837add2f8721ce93577943db5fc9ce89c0",
           "size": 191
+        }
+      }
+    },
+    {
+      "path": "golang.org/x/exp/typeparams",
+      "version": "v0.0.0-20260209203927-2842357ff358",
+      "sum": "h1:qWFG1Dj7TBjOjOvhEOkmyGPVoquqUKnIU0lEVLp8xyk=",
+      "go_mod_sum": "h1:4Mzdyp/6jzw9auFDJ3OMF5qksa7UvPnzKqTVGcb04ms=",
+      "files": {
+        "zip": {
+          "url": "https://proxy.golang.org/golang.org/x/exp/typeparams/@v/v0.0.0-20260209203927-2842357ff358.zip",
+          "sha256": "865b8051531a4a65fe629090d2dc999d1a10b9bb19bad34b412e7f8e0a3cda4f",
+          "size": 47492
+        },
+        "mod": {
+          "url": "https://proxy.golang.org/golang.org/x/exp/typeparams/@v/v0.0.0-20260209203927-2842357ff358.mod",
+          "sha256": "55b580c18fa54ef821e63bf75791ca545cba87c65953510b648ac9c158c9f06c",
+          "size": 46
+        },
+        "info": {
+          "url": "https://proxy.golang.org/golang.org/x/exp/typeparams/@v/v0.0.0-20260209203927-2842357ff358.info",
+          "sha256": "621933fa0d18f6491b908f67fa6991a63182ee89d49a42d6c554c0c6dfabba4c",
+          "size": 213
         }
       }
     },
@@ -7001,46 +7024,46 @@
     },
     {
       "path": "google.golang.org/genproto/googleapis/api",
-      "version": "v0.0.0-20260526163538-3dc84a4a5aaa",
-      "sum": "h1:Kjn0N0tCrDgiAFW+lGO4JZ3ck44CehvJQMAwj9QF0G8=",
-      "go_mod_sum": "h1:q4lMZS6kskjT5HvCPrnnypcDPVJqT/f4nfxmkE7gryY=",
+      "version": "v0.0.0-20260803160001-6ac0973c030d",
+      "sum": "h1:FarXi840EJWSHYTN3ERkADbPWjl307+FGrA22KAVjjc=",
+      "go_mod_sum": "h1:K/+WGbmBY7aNW1HDw1fJnKYo10i0DkAX6pows00dLig=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/api/@v/v0.0.0-20260526163538-3dc84a4a5aaa.zip",
-          "sha256": "358fa722934401c762695c29893bb0f35e5e90545f6a1d6208df3207d63c11fd",
-          "size": 235337
+          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/api/@v/v0.0.0-20260803160001-6ac0973c030d.zip",
+          "sha256": "81fb4ff242fb2e9ec4328eed36190bf5ba96307ff85a057e2327fbd171b47650",
+          "size": 241053
         },
         "mod": {
-          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/api/@v/v0.0.0-20260526163538-3dc84a4a5aaa.mod",
-          "sha256": "38b62d3d945082dc65f684d35c9ae3f2670a8b62ec920f6de0d09d16d4260deb",
+          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/api/@v/v0.0.0-20260803160001-6ac0973c030d.mod",
+          "sha256": "50df61364dd170ad7f5449d31af2d6e1f5b4ed1bd249ea4f12618bf4496b6141",
           "size": 348
         },
         "info": {
-          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/api/@v/v0.0.0-20260526163538-3dc84a4a5aaa.info",
-          "sha256": "58afb3e84905afd1212c112d04fb3b38e1c5e8c4bd895c4297deb2505b05e26f",
+          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/api/@v/v0.0.0-20260803160001-6ac0973c030d.info",
+          "sha256": "750a69e0f9ddcdcdd3e9df81402955016ea9a36b7d0dde987f4f57e7e4bf6fc9",
           "size": 227
         }
       }
     },
     {
       "path": "google.golang.org/genproto/googleapis/rpc",
-      "version": "v0.0.0-20260526163538-3dc84a4a5aaa",
-      "sum": "h1:mZHHdPZl0dbGHCflZgAq/Q468DWVFcU2whhB2KAo8fk=",
+      "version": "v0.0.0-20260803160001-6ac0973c030d",
+      "sum": "h1:IL4hdHzcUv2l/gcg98/Rj3FbtE6axwqslOW8SW0C+S0=",
       "go_mod_sum": "h1:4Hqkh8ycfw05ld/3BWL7rJOSfebL2Q+DVDeRgYgxUU8=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260526163538-3dc84a4a5aaa.zip",
-          "sha256": "55f932b106d6f4f8cb76ae869e44f5d6d8400965fa441ee3532d09c96d64aac1",
-          "size": 39931
+          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260803160001-6ac0973c030d.zip",
+          "sha256": "a17ff826d2b2e39c2179f99cea77e36137af38f193a718c6445570d326784111",
+          "size": 40888
         },
         "mod": {
-          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260526163538-3dc84a4a5aaa.mod",
+          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260803160001-6ac0973c030d.mod",
           "sha256": "67711b6f9adde7cd2d23ba3512bf371ddc628709a4b7ff598794e638607e9987",
           "size": 105
         },
         "info": {
-          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260526163538-3dc84a4a5aaa.info",
-          "sha256": "64c0fa7180e6fcbed3328c841c2fd70831efcd7fd8d496dbd0ca2191ec9910af",
+          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260803160001-6ac0973c030d.info",
+          "sha256": "2169fd1dbd4558b7d28e38a2f3f32367fe6ed9812bd0d4e1b8905f3f58cb3dfa",
           "size": 227
         }
       }
@@ -7253,25 +7276,48 @@
       }
     },
     {
-      "path": "honnef.co/go/tools",
-      "version": "v0.0.0-20190523083050-ea95bdfd59fc",
-      "sum": "h1:/hemPrYIhOhy8zYrNj+069zDB68us2sMGsfkFJO0iZs=",
-      "go_mod_sum": "h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=",
+      "path": "gotest.tools/v3",
+      "version": "v3.5.0",
+      "sum": "h1:Ljk6PdHdOhAb5aDMWXjDLMMhph+BpztA4v1QdqEW2eY=",
+      "go_mod_sum": "h1:isy3WKz7GK6uNw/sbHzfKBLvlvXwUyV06n6brMxxopU=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/honnef.co/go/tools/@v/v0.0.0-20190523083050-ea95bdfd59fc.zip",
-          "sha256": "eeaa82700e96ac5e803d7a9c32363332504beff8fbb1202492b4d43d5a5e7360",
-          "size": 449180
+          "url": "https://proxy.golang.org/gotest.tools/v3/@v/v3.5.0.zip",
+          "sha256": "13b971808efc5af05b072470555a1756a0c7a0b9d730542b9078d201a09a0423",
+          "size": 99002
         },
         "mod": {
-          "url": "https://proxy.golang.org/honnef.co/go/tools/@v/v0.0.0-20190523083050-ea95bdfd59fc.mod",
-          "sha256": "b1c60837ea61335f14df64f3194c3cd92e0f628f6064806718950f0d7a1dbe9e",
-          "size": 26
+          "url": "https://proxy.golang.org/gotest.tools/v3/@v/v3.5.0.mod",
+          "sha256": "b9e135766b50633228484c9c1b4d6b7ad507c03638c27c27a4a5ceb5449b0310",
+          "size": 192
         },
         "info": {
-          "url": "https://proxy.golang.org/honnef.co/go/tools/@v/v0.0.0-20190523083050-ea95bdfd59fc.info",
-          "sha256": "9da7ae5e63d6935651a4e12b7c3e2abdb5a3f7f971f0b316fce753e9a077f15c",
-          "size": 78
+          "url": "https://proxy.golang.org/gotest.tools/v3/@v/v3.5.0.info",
+          "sha256": "eb716397a283157ba1d57279006546f759346f68b054045aea2c20f9a0f363fa",
+          "size": 203
+        }
+      }
+    },
+    {
+      "path": "honnef.co/go/tools",
+      "version": "v0.7.0",
+      "sum": "h1:w6WUp1VbkqPEgLz4rkBzH/CSU6HkoqNLp6GstyTx3lU=",
+      "go_mod_sum": "h1:pm29oPxeP3P82ISxZDgIYeOaf9ta6Pi0EWvCFoLG2vc=",
+      "files": {
+        "zip": {
+          "url": "https://proxy.golang.org/honnef.co/go/tools/@v/v0.7.0.zip",
+          "sha256": "dcecbd9ba78cbd2f9012b9cc4cafd5992eff37ea0addba1a57151864c4ac415a",
+          "size": 982220
+        },
+        "mod": {
+          "url": "https://proxy.golang.org/honnef.co/go/tools/@v/v0.7.0.mod",
+          "sha256": "fa1d2244391cd5c94e71f42bdf86333107c1582b53c7dc9aa3995f9d824810ed",
+          "size": 454
+        },
+        "info": {
+          "url": "https://proxy.golang.org/honnef.co/go/tools/@v/v0.7.0.info",
+          "sha256": "b91b58303399029aa1015d9d87b195b4ca1d830b497cfe1241ae133b2a6c574e",
+          "size": 193
         }
       }
     },
@@ -7763,6 +7809,18 @@
       }
     },
     {
+      "path": "github.com/cilium/ebpf",
+      "version": "v0.16.0",
+      "go_mod_sum": "h1:L7u2Blt2jMM/vLAVgjxluxtBKlz3/GWjB0dMOEngfwE=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/github.com/cilium/ebpf/@v/v0.16.0.mod",
+          "sha256": "52f7c88e08ff3f861824d3485f576ed215b1f483b95023fae5e1054cd0ed6915",
+          "size": 609
+        }
+      }
+    },
+    {
       "path": "github.com/davecgh/go-spew",
       "version": "v1.1.0",
       "go_mod_sum": "h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=",
@@ -7854,6 +7912,18 @@
         "mod": {
           "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.2.2.mod",
           "sha256": "519b1d6da5eeef675b4a1857d628f05f110a2b8cb3c423b715fea80d0975a518",
+          "size": 40
+        }
+      }
+    },
+    {
+      "path": "github.com/go-logr/logr",
+      "version": "v1.4.3",
+      "go_mod_sum": "h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/github.com/go-logr/logr/@v/v1.4.3.mod",
+          "sha256": "c496f30d700f02b49a1b50bc2486a27c2f74df3dce75d9db6d2d43975b381727",
           "size": 40
         }
       }
@@ -8135,6 +8205,18 @@
       }
     },
     {
+      "path": "github.com/grpc-ecosystem/grpc-gateway/v2",
+      "version": "v2.28.0",
+      "go_mod_sum": "h1:JfhWUomR1baixubs02l85lZYYOm7LV6om4ceouMv45c=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/github.com/grpc-ecosystem/grpc-gateway/v2/@v/v2.28.0.mod",
+          "sha256": "3ab0b3ec9ac8368213c9c9275f10af85dafb3ca8286b0e66b847ad806cf65f78",
+          "size": 683
+        }
+      }
+    },
+    {
       "path": "github.com/json-iterator/go",
       "version": "v1.1.6",
       "go_mod_sum": "h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=",
@@ -8167,6 +8249,30 @@
           "url": "https://proxy.golang.org/github.com/julienschmidt/httprouter/@v/v1.2.0.mod",
           "sha256": "91419d7ed83ae8ed754f26db1570f05b97ff6a615fbc91cb7fe8148af567fb25",
           "size": 43
+        }
+      }
+    },
+    {
+      "path": "github.com/klauspost/compress",
+      "version": "v1.18.5",
+      "go_mod_sum": "h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/github.com/klauspost/compress/@v/v1.18.5.mod",
+          "sha256": "0d66d6069d9e2fb875c5b464d15b2c80232cfc8991e6f88336ce461ca810e0cf",
+          "size": 201
+        }
+      }
+    },
+    {
+      "path": "github.com/moby/sys/user",
+      "version": "v0.4.0",
+      "go_mod_sum": "h1:bG+tYYYJgaMtRKgEmuueC0hJEAZWwtIbZTB+85uoHjs=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/github.com/moby/sys/user/@v/v0.4.0.mod",
+          "sha256": "96fb39eca560683a8b331bfae7c0c73f1119ef8b6c26d2a0b5ecb54ebbf2f0c5",
+          "size": 266
         }
       }
     },
@@ -8527,6 +8633,107 @@
           "url": "https://proxy.golang.org/github.com/yuin/goldmark/@v/v1.2.1.mod",
           "sha256": "e2c763f861ada05c6150c32f804bca31c96a18b944320e0ee9bbf0d6c6075ad7",
           "size": 41
+        }
+      }
+    },
+    {
+      "path": "go.opentelemetry.io/otel",
+      "version": "v1.44.0",
+      "go_mod_sum": "h1:BMgjTHL9WPRlRjL2oZCBTL4whCGtXch2H4BhOPIAyYc=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/@v/v1.44.0.mod",
+          "sha256": "f466441934839f12a009415b4c16a77d221e1aa5d767f878e2af5888f1ad839f",
+          "size": 635
+        }
+      }
+    },
+    {
+      "path": "go.opentelemetry.io/otel/exporters/otlp/otlptrace",
+      "version": "v1.43.0",
+      "go_mod_sum": "h1:Vl1/iaggsuRlrHf/hfPJPvVag77kKyvrLeD10kpMl+A=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/@v/v1.43.0.mod",
+          "sha256": "928d17a4a475d0a54c60f0135906be9b043a4c4a7861964d33cf931582cffec6",
+          "size": 1093
+        }
+      }
+    },
+    {
+      "path": "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc",
+      "version": "v1.43.0",
+      "go_mod_sum": "h1:AGmbycVGEsRx9mXMZ75CsOyhSP6MFIcj/6dnG+vhVjk=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/@v/v1.43.0.mod",
+          "sha256": "a8e5bdeb989adfb10cf25d08aa04409a582df29d5a140cc3563a5c85e7f4334d",
+          "size": 1653
+        },
+        "info": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc/@v/v1.43.0.info",
+          "sha256": "c7b6951e83869f5c0fa3d13e4d5507e5475137b7a021c30840a62f2f458bae03",
+          "size": 298
+        }
+      }
+    },
+    {
+      "path": "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp",
+      "version": "v1.43.0",
+      "go_mod_sum": "h1:/G+nUPfhq2e+qiXMGxMwumDrP5jtzU+mWN7/sjT2rak=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp/@v/v1.43.0.mod",
+          "sha256": "bf17b406ef15ac58ac9153a36686e9c87579b2a3f3f4163da64908f7618801b2",
+          "size": 1626
+        }
+      }
+    },
+    {
+      "path": "go.opentelemetry.io/otel/metric",
+      "version": "v1.44.0",
+      "go_mod_sum": "h1:8O7hanEPBNgEMmybD3s2VBKcgWOCsA6tzHBPODAiquo=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/metric/@v/v1.44.0.mod",
+          "sha256": "328a1fe2bc702b8c26765f18a9a26fc08748283bdbba26d538d4037b0fcb6afb",
+          "size": 612
+        }
+      }
+    },
+    {
+      "path": "go.opentelemetry.io/otel/sdk",
+      "version": "v1.44.0",
+      "go_mod_sum": "h1:Osuydd3Se74nqjAKxid74N5eC+jfEqfTegHRnq58oK0=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/sdk/@v/v1.44.0.mod",
+          "sha256": "1ed05d21feab2b3bf987b687ca7343fe7b695bc53b9326a8a40d31ca6d1a0844",
+          "size": 957
+        }
+      }
+    },
+    {
+      "path": "go.opentelemetry.io/otel/trace",
+      "version": "v1.44.0",
+      "go_mod_sum": "h1:oLl1jrMQAVo6v3GAggN+1VH9VIz9iUSvW53sW1Q8PIE=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/otel/trace/@v/v1.44.0.mod",
+          "sha256": "24b803fb358fb3456f788a98a7c18fb391685bc5a708a118f02116b8969a03c4",
+          "size": 457
+        }
+      }
+    },
+    {
+      "path": "go.opentelemetry.io/proto/otlp",
+      "version": "v1.10.0",
+      "go_mod_sum": "h1:/CV4QoCR/S9yaPj8utp3lvQPoqMtxXdzn7ozvvozVqk=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/go.opentelemetry.io/proto/otlp/@v/v1.10.0.mod",
+          "sha256": "f140713fa137d4f5ac6182dfc9f159833b55c715c1597389dd5bd11b5c9a6221",
+          "size": 490
         }
       }
     },
@@ -9815,6 +10022,30 @@
       }
     },
     {
+      "path": "google.golang.org/genproto/googleapis/api",
+      "version": "v0.0.0-20260526163538-3dc84a4a5aaa",
+      "go_mod_sum": "h1:q4lMZS6kskjT5HvCPrnnypcDPVJqT/f4nfxmkE7gryY=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/api/@v/v0.0.0-20260526163538-3dc84a4a5aaa.mod",
+          "sha256": "38b62d3d945082dc65f684d35c9ae3f2670a8b62ec920f6de0d09d16d4260deb",
+          "size": 348
+        }
+      }
+    },
+    {
+      "path": "google.golang.org/genproto/googleapis/rpc",
+      "version": "v0.0.0-20260526163538-3dc84a4a5aaa",
+      "go_mod_sum": "h1:4Hqkh8ycfw05ld/3BWL7rJOSfebL2Q+DVDeRgYgxUU8=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/google.golang.org/genproto/googleapis/rpc/@v/v0.0.0-20260526163538-3dc84a4a5aaa.mod",
+          "sha256": "67711b6f9adde7cd2d23ba3512bf371ddc628709a4b7ff598794e638607e9987",
+          "size": 105
+        }
+      }
+    },
+    {
       "path": "google.golang.org/grpc",
       "version": "v1.19.0",
       "go_mod_sum": "h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=",
@@ -10025,6 +10256,18 @@
       "files": {
         "mod": {
           "url": "https://proxy.golang.org/honnef.co/go/tools/@v/v0.0.0-20190102054323-c2f93a96b099.mod",
+          "sha256": "b1c60837ea61335f14df64f3194c3cd92e0f628f6064806718950f0d7a1dbe9e",
+          "size": 26
+        }
+      }
+    },
+    {
+      "path": "honnef.co/go/tools",
+      "version": "v0.0.0-20190523083050-ea95bdfd59fc",
+      "go_mod_sum": "h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/honnef.co/go/tools/@v/v0.0.0-20190523083050-ea95bdfd59fc.mod",
           "sha256": "b1c60837ea61335f14df64f3194c3cd92e0f628f6064806718950f0d7a1dbe9e",
           "size": 26
         }

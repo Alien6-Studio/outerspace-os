@@ -466,8 +466,8 @@
     }
   ],
   "go_dependency_updates": {
-    "crictl": "c4504ec94e06694281539cc2dbe6e1d66a4d2c0bb2c3e9640138fce7bc3cde1e",
-    "containerd": "60669b8348fccc939d1810d388df94e6248c62321091a79e557a73bbc22639d6",
+    "crictl": "f98848feb9b4a1c74ecb9740b5b7ebbacb0e34bcd2500cc589333d3640bbf6a2",
+    "containerd": "b6981ea03743eec44edd6fdf9f99c0f2ae6cb59e5883c8200370e1b5c3634ad4",
     "kubelet": "bd0b56ec575910eea8b4ce368a9d78f1b7a77284fea7114068f73595abbc99bd"
   },
   "embedded_go_notices": {

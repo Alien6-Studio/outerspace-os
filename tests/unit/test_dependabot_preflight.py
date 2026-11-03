@@ -3,6 +3,7 @@
 import copy
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
+import fnmatch
 import io
 import json
 from pathlib import Path
@@ -192,6 +193,22 @@ class DependabotPreflightTests(unittest.TestCase):
                 patch.object(sys, 'argv', args + ['--preview']), redirect_stdout(io.StringIO()):
             preflight.main()
         self.assertEqual(json.loads(report.read_text())['status'], 'preview')
+
+    def test_all_frozen_go_manifests_are_covered_by_the_dependabot_update_exclusion(self):
+        root = Path(__file__).resolve().parents[2]
+        config = (root / '.github/dependabot.yml').read_text()
+        self.assertEqual(config.count('  - package-ecosystem: gomod\n'), 1)
+        block = config.split('  - package-ecosystem: gomod\n', 1)[1].split('\n  - package-ecosystem:', 1)[0]
+        self.assertIn('    open-pull-requests-limit: 0\n', block)
+        self.assertIn('      - dependency-name: "*"\n', block)
+        patterns = [line.strip()[2:] for line in block.splitlines()
+                    if line.startswith('      - /build/runtime/')]
+        manifests = list((root / 'build/runtime').rglob('go.mod'))
+        self.assertTrue(manifests)
+        for manifest in manifests:
+            directory = '/' + str(manifest.parent.relative_to(root))
+            with self.subTest(directory=directory):
+                self.assertTrue(any(fnmatch.fnmatchcase(directory, pattern) for pattern in patterns))
 
 
 if __name__ == '__main__':

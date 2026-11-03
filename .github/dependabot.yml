@@ -17,3 +17,17 @@ updates:
     ignore:
       - dependency-name: ubuntu
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+  # These Go manifests are frozen inventories, not complete upstream source
+  # trees. Dependabot's updater prunes them; maintainers must rebuild the full
+  # lock set after reviewing the still-enabled Dependabot alerts.
+  - package-ecosystem: gomod
+    directories:
+      - /build/runtime/containerd
+      - /build/runtime/crictl
+      - /build/runtime/kubelet
+      - /build/runtime/kubelet/staging/src/k8s.io/*
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"

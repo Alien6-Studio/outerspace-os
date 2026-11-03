@@ -165,7 +165,10 @@ reproducibility must not be claimed without passing comparisons.
   Ubuntu snapshot; refresh vulnerability data; preserve logs/inventories and
   reproducibility differences; run contract and boot tests. Snapshot updates
   require a reviewed input-lock change and whole-image requalification.
-  Dependabot proposes Docker base-image and GitHub Actions updates in PRs.
+  Dependabot proposes Docker base-image and GitHub Actions updates in PRs. Its
+  Go security and version update PRs are ignored only for the frozen runtime
+  manifests because they cannot regenerate the complete source locks; alerts
+  remain enabled and must be reviewed by the preflight and maintainers.
 - **Weekly maintainer review:** Ubuntu security notices, kernel ABI, containerd LTS,
   Kubernetes skew/support, Cilium and Dragonfly releases. The custom component lock
   is updated by reviewed PR with upstream digest verification, not Dependabot.

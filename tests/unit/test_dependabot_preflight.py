@@ -142,25 +142,70 @@ class DependabotPreflightTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.evaluate([bad], [])
 
-    def test_snapshot_checks_default_branch_before_and_after_paginated_alerts(self):
+    def test_snapshot_checks_default_branch_and_cross_checks_inventory(self):
         commit = 'a' * 40
-        responses = [{'default_branch': 'main'}, {'sha': commit}, [[self.alert]], {'sha': commit}]
-        with patch.object(preflight, 'require_alerts_enabled'), patch.object(preflight, 'gh_json', side_effect=responses):
-            branch, default_head, alerts = preflight.github_snapshot('owner/repo', commit)
-        self.assertEqual(branch, 'main')
-        self.assertEqual(default_head, commit)
-        self.assertEqual(alerts, [self.alert])
-        responses[-1] = {'sha': 'b' * 40}
-        with patch.object(preflight, 'require_alerts_enabled'), patch.object(preflight, 'gh_json', side_effect=responses), self.assertRaisesRegex(ValueError, 'changed'):
+        counts = {'open': 1, 'dismissed': 0, 'auto_dismissed': 0}
+        with patch.object(preflight, 'require_alerts_enabled'), \
+                patch.object(preflight, 'gh_json', side_effect=[{'default_branch': 'main'}, {'sha': commit}, {'sha': commit}]), \
+                patch.object(preflight, 'inventory_counts', return_value=counts), \
+                patch.object(preflight, 'inventory_records', return_value=([self.alert], [preflight.alert_record(self.alert)])):
+            self.assertEqual(preflight.github_snapshot('owner/repo', commit), ('main', commit, [self.alert]))
+        with patch.object(preflight, 'require_alerts_enabled'), \
+                patch.object(preflight, 'gh_json', side_effect=[{'default_branch': 'main'}, {'sha': commit}, {'sha': 'b' * 40}]), \
+                patch.object(preflight, 'inventory_counts', return_value=counts), \
+                patch.object(preflight, 'inventory_records', return_value=([self.alert], [preflight.alert_record(self.alert)])), \
+                self.assertRaisesRegex(ValueError, 'changed'):
             preflight.github_snapshot('owner/repo', commit)
+
+    def test_incomplete_or_changing_inventories_fail_closed(self):
+        commit = 'a' * 40
+        counts = {'open': 1, 'dismissed': 0, 'auto_dismissed': 0}
+        empty = {'open': 0, 'dismissed': 0, 'auto_dismissed': 0}
+        record = preflight.alert_record(self.alert)
+        changed = dict(record, vulnerable_range='< 3.0.0')
+        cases = [([counts, counts], [([], []), ([], [])]),
+                 ([counts, empty], [([self.alert], [record]), ([self.alert], [record])]),
+                 ([counts, counts], [([self.alert], [record]), ([self.alert], [changed])]),
+                 ([empty, counts], [([], []), ([self.alert], [record])])]
+        for count_reads, alert_reads in cases:
+            with self.subTest(count_reads=count_reads, alert_reads=alert_reads), \
+                    patch.object(preflight, 'require_alerts_enabled'), \
+                    patch.object(preflight, 'gh_json', side_effect=[{'default_branch': 'main'}, {'sha': commit}]), \
+                    patch.object(preflight, 'inventory_counts', side_effect=count_reads), \
+                    patch.object(preflight, 'inventory_records', side_effect=alert_reads), \
+                    self.assertRaisesRegex(ValueError, 'inventory'):
+                preflight.github_snapshot('owner/repo', commit)
+
+    def test_paginated_inventory_rejects_missing_pages_and_duplicates(self):
+        other = copy.deepcopy(self.alert)
+        other['number'] = 11
+        with patch.object(preflight, 'gh_json', return_value=[[self.alert], [other]]):
+            alerts, records = preflight.inventory_records('owner/repo')
+        self.assertEqual(len(alerts), 2)
+        self.assertEqual([record['number'] for record in records], [10, 11])
+        for pages in ([], [[self.alert], [self.alert]], [None]):
+            with patch.object(preflight, 'gh_json', return_value=pages), self.assertRaises(ValueError):
+                preflight.inventory_records('owner/repo')
+
+    def test_inventory_count_rejects_graphql_errors_and_bad_counts(self):
+        for response in ({'errors': [{'message': 'denied'}]}, {'data': {'repository': None}},
+                         {'data': {'repository': {'open': {'totalCount': False},
+                                                  'dismissed': {'totalCount': 0},
+                                                  'auto_dismissed': {'totalCount': 0}}}}):
+            with patch.object(preflight, 'gh_json', return_value=response), self.assertRaises(ValueError):
+                preflight.inventory_counts('owner/repo')
 
     def test_preview_may_inspect_another_commit_but_is_not_the_release_check(self):
         default, target = 'a' * 40, 'b' * 40
-        responses = [{'default_branch': 'main'}, {'sha': default}, [[]], {'sha': default}]
-        with patch.object(preflight, 'require_alerts_enabled'), patch.object(preflight, 'gh_json', side_effect=responses):
-            branch, observed, alerts = preflight.github_snapshot('owner/repo', target, preview=True)
-        self.assertEqual((branch, observed, alerts), ('main', default, []))
-        with patch.object(preflight, 'require_alerts_enabled'), patch.object(preflight, 'gh_json', side_effect=responses), self.assertRaisesRegex(ValueError, 'default branch'):
+        counts = {'open': 0, 'dismissed': 0, 'auto_dismissed': 0}
+        with patch.object(preflight, 'require_alerts_enabled'), \
+                patch.object(preflight, 'gh_json', side_effect=[{'default_branch': 'main'}, {'sha': default}, {'sha': default}]), \
+                patch.object(preflight, 'inventory_counts', return_value=counts), \
+                patch.object(preflight, 'inventory_records', return_value=([], [])):
+            self.assertEqual(preflight.github_snapshot('owner/repo', target, preview=True), ('main', default, []))
+        with patch.object(preflight, 'require_alerts_enabled'), \
+                patch.object(preflight, 'gh_json', side_effect=[{'default_branch': 'main'}, {'sha': default}]), \
+                self.assertRaisesRegex(ValueError, 'default branch'):
             preflight.github_snapshot('owner/repo', target)
 
     def test_api_or_json_failure_is_not_treated_as_no_alerts(self):

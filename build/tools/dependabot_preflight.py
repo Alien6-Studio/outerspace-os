@@ -193,6 +193,37 @@ def require_alerts_enabled(repo):
         raise ValueError('Dependabot alerts disabled or token lacks administration read permission')
 
 
+def inventory_counts(repo):
+    owner, name = repo.split('/')
+    query = ('query($owner:String!, $name:String!){repository(owner:$owner,name:$name){'
+             'open:vulnerabilityAlerts(first:1,states:OPEN){totalCount} '
+             'dismissed:vulnerabilityAlerts(first:1,states:DISMISSED){totalCount} '
+             'auto_dismissed:vulnerabilityAlerts(first:1,states:AUTO_DISMISSED){totalCount}}}')
+    response = gh_json('graphql', '-f', 'owner=' + owner, '-f', 'name=' + name, '-f', 'query=' + query)
+    try:
+        if response.get('errors'):
+            raise ValueError('GitHub GraphQL returned errors')
+        data = response['data']['repository']
+        counts = {state: data[state]['totalCount'] for state in ('open', 'dismissed', 'auto_dismissed')}
+    except (KeyError, TypeError, AttributeError):
+        raise ValueError('Invalid GitHub Dependabot inventory count') from None
+    if any(type(count) is not int or count < 0 for count in counts.values()):
+        raise ValueError('Invalid GitHub Dependabot inventory count')
+    return counts
+
+
+def inventory_records(repo):
+    pages = gh_json('--paginate', '--slurp', 'repos/' + repo
+                    + '/dependabot/alerts?state=open,dismissed,auto_dismissed&per_page=100')
+    if not isinstance(pages, list) or not pages or any(not isinstance(page, list) for page in pages):
+        raise ValueError('Invalid paginated Dependabot alert response')
+    alerts = [item for page in pages for item in page]
+    records = [alert_record(alert) for alert in alerts]
+    if len({record['number'] for record in records}) != len(records):
+        raise ValueError('Duplicate Dependabot alert')
+    return alerts, sorted(records, key=lambda record: record['number'])
+
+
 def github_snapshot(repo, commit, *, preview=False):
     if not REPO.fullmatch(repo) or not SHA.fullmatch(commit):
         raise ValueError('Expected repository owner/name and full commit SHA')
@@ -207,13 +238,17 @@ def github_snapshot(repo, commit, *, preview=False):
         raise ValueError('Missing default branch commit')
     if not preview and default_head != commit:
         raise ValueError('Candidate must match the current default branch for Dependabot alert scope')
-    pages = gh_json('--paginate', '--slurp', 'repos/' + repo
-                    + '/dependabot/alerts?state=open,dismissed,auto_dismissed&per_page=100')
-    if not isinstance(pages, list) or any(not isinstance(page, list) for page in pages):
-        raise ValueError('Invalid paginated Dependabot alert response')
+    counts_before = inventory_counts(repo)
+    alerts, records = inventory_records(repo)
+    _, repeated_records = inventory_records(repo)
+    counts_after = inventory_counts(repo)
+    actual_counts = {state: sum(record['state'] == state for record in records)
+                     for state in ('open', 'dismissed', 'auto_dismissed')}
+    if counts_before != actual_counts or counts_after != actual_counts or records != repeated_records:
+        raise ValueError('Dependabot inventory changed or GitHub API results disagree; retry before release')
     if gh_json(endpoint).get('sha') != default_head:
         raise ValueError('Default branch changed while reading Dependabot alerts')
-    return branch, default_head, [item for page in pages for item in page]
+    return branch, default_head, alerts
 
 
 def main():

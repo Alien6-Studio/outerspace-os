@@ -112,7 +112,10 @@ rotate it in GitHub's secret settings; an installation token expires and should
 not be stored as a long-lived secret. The default Actions token cannot be
 assumed to have that permission. Do not put tokens in source, evidence, logs or PRs. Missing access,
 disabled alerts, API errors, malformed responses and a default-branch change during the query
-stop the release before the image matrix. Until release-branch alert scoping is
+stop the release before the image matrix. The preflight compares two REST alert
+inventories with GraphQL state counts before and after; disagreement or changed
+alert details blocks the release and requires a retry. Both APIs depend on
+GitHub’s underlying data and may share the same ingestion delay. Until release-branch alert scoping is
 implemented, the candidate commit must equal the current default-branch head.
 
 The preflight records all active and dismissed alerts and blocks unreviewed

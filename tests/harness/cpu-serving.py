@@ -21,11 +21,19 @@ LAB_NAMESPACE = 'outerspace-enrollment'
 DELIVERY_TIMEOUT_SECONDS = 3600
 READINESS_TIMEOUT_SECONDS = 1200
 START_TIMEOUT_SECONDS = DELIVERY_TIMEOUT_SECONDS + READINESS_TIMEOUT_SECONDS
-READINESS_PROBE = {
+STARTUP_PROBE = {
     'exec': {'command': ['/bin/sh', '-ec',
         'curl --fail --silent --max-time 50 -H "Content-Type: application/json" '
         '--data \'{"prompt":"Hello","n_predict":1,"temperature":0,"cache_prompt":false}\' '
         'http://127.0.0.1:8080/completion | grep -Eq \'"tokens_predicted"[[:space:]]*:[[:space:]]*1([,}])\'']},
+    'periodSeconds': 60, 'timeoutSeconds': 60, 'failureThreshold': 20}
+# Do not generate tokens on every health check: with one inference slot, a
+# probe can queue behind a valid request, time out, and remove a healthy pod
+# from the Service during sustained load. Startup still proves token generation.
+READINESS_PROBE = {
+    'exec': {'command': ['/bin/sh', '-ec',
+        'curl --fail --silent --max-time 50 http://127.0.0.1:8080/health '
+        '| grep -Eq \'"status"[[:space:]]*:[[:space:]]*"ok"\'']},
     'periodSeconds': 60, 'timeoutSeconds': 60, 'failureThreshold': 3}
 SERVER_ARGS = ('--model', '/models/model.gguf', '--host', '0.0.0.0', '--port', '8080',
                '--n-gpu-layers', '0', '--threads', '2', '--ctx-size', '256',
@@ -151,8 +159,10 @@ def verify_runtime_pod(pod, node, lock):
         raise ValueError('Serving pod lacks the locked image, resource or filesystem controls')
     if server.get('command') or server.get('args') != list(SERVER_ARGS):
         raise ValueError('Serving must use the locked local model and CPU execution settings')
+    if any(server.get('startupProbe', {}).get(key) != value for key, value in STARTUP_PROBE.items()):
+        raise ValueError('Serving startup must require actual token generation')
     if any(server.get('readinessProbe', {}).get(key) != value for key, value in READINESS_PROBE.items()):
-        raise ValueError('Serving readiness must require actual token generation')
+        raise ValueError('Serving readiness must require the model health endpoint')
 
 
 class Serving:
@@ -396,6 +406,7 @@ class Serving:
                                 'securityContext': self.security(),
                                 'resources': {'requests': {'cpu': '500m', 'memory': '256Mi'},
                                               'limits': {'cpu': '2', 'memory': '512Mi'}},
+                                'startupProbe': copy.deepcopy(STARTUP_PROBE),
                                 'readinessProbe': copy.deepcopy(READINESS_PROBE),
                                 'volumeMounts': [{'name': 'model', 'mountPath': '/models', 'readOnly': True},
                                                  {'name': 'scratch', 'mountPath': '/tmp'}]}],
@@ -442,7 +453,7 @@ class Serving:
                 transition = {'pod_uid': pod['metadata']['uid'] if pod else None,
                               'container_id': server.get('containerID'),
                               'state': state, 'restart_count': server.get('restartCount'),
-                              'ready': server.get('ready', False),
+                              'ready': server.get('ready', False), 'started': server.get('started'),
                               'observed_generation': status.get('observedGeneration')}
                 if transition != previous:
                     record['transitions'].append({'elapsed_seconds': now - started, **transition})
@@ -495,7 +506,7 @@ class Serving:
                         raise RuntimeError('Serving runtime was replaced during readiness qualification')
                     pod_ready = any(c.get('type') == 'Ready' and c.get('status') == 'True'
                                     for c in pod.get('status', {}).get('conditions', []))
-                    if (server.get('ready') and pod_ready and len(pods) == 1
+                    if (server.get('started') is True and server.get('ready') and pod_ready and len(pods) == 1
                             and all(status.get(k) == 1 for k in
                                     ['replicas', 'updatedReplicas', 'readyReplicas', 'availableReplicas'])):
                         record['status'] = 'passed'

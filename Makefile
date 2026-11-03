@@ -23,6 +23,7 @@ agent-admission agent-phases worker-comparison serving-comparison serving-admiss
 .PHONY: help
 help:
 	@echo 'make check                                      Run unit and syntax checks'
+	@echo 'make dependabot-preview                         Review default-branch Dependabot alerts before CI'
 	@echo 'make PROFILE=agent builder build smoke package   Build and qualify an image'
 	@echo 'make PROFILE=inference enrollment                Qualify Kubernetes enrollment'
 	@echo 'make PROFILE=inference cpu-serving               Qualify real CPU model serving'

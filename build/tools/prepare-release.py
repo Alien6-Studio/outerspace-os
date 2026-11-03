@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
 """Validate external qualification evidence and stage immutable CI candidates."""
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -16,6 +17,37 @@ import supply_chain
 import security
 import attestations
 import redistribution
+import dependabot_preflight
+
+
+def dependabot_accepted_risks(report, repo, commit):
+    """Surface explicitly accepted Dependabot risks in the draft release notes."""
+    if (report.get('schema') != 1 or report.get('repository') != repo
+            or report.get('commit') != commit or report.get('default_branch_commit') != commit
+            or report.get('preview') is not False or report.get('status') != 'pass'
+            or report.get('blockers') != [] or not isinstance(report.get('alerts'), list)):
+        raise ValueError('A passing current-source Dependabot promotion report is required')
+    now = datetime.now(timezone.utc)
+    checked = dependabot_preflight.timestamp(report.get('evaluated_at'))
+    if not 0 <= (now - checked).total_seconds() <= 900:
+        raise ValueError('Dependabot promotion report must be recent')
+    result = set()
+    for item in report['alerts']:
+        if (not isinstance(item, dict) or item.get('decision') not in ('unreviewed', 'not-affected', 'accepted-risk')
+                or item.get('severity') not in ('critical', 'high', 'medium', 'low', 'unknown')
+                or (item.get('severity') in ('critical', 'high', 'unknown') and item['decision'] == 'unreviewed')):
+            raise ValueError('Invalid or unreviewed Dependabot finding in promotion report')
+        if item['decision'] != 'unreviewed' and dependabot_preflight.timestamp(item.get('expires_at')) <= now:
+            raise ValueError('Dependabot review has expired')
+        if item.get('decision') == 'accepted-risk':
+            review = item.get('review', {})
+            if (not isinstance(review.get('rationale'), str) or not review['rationale'].strip()
+                    or not isinstance(review.get('approved_by'), str) or not review['approved_by'].strip()
+                    or not isinstance(item.get('expires_at'), str)
+                    or not re.fullmatch(r'GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}', item.get('ghsa', ''))):
+                raise ValueError('Incomplete accepted Dependabot risk in promotion report')
+            result.add(f"{item['ghsa']} (approved by {review['approved_by']}, expires {item['expires_at']}): {review['rationale']}")
+    return result
 
 
 def gh_json(*args):
@@ -71,6 +103,8 @@ def main():
     evidence = json.loads(os.environ['EVIDENCE_JSON'])
     policy = json.loads((ROOT / 'build/release/policy.json').read_text())
     validate_release(version, tag, commit, evidence, policy)
+    dependabot = json.loads((ROOT / 'out/dependabot-promotion.json').read_text())
+    dependabot_risks = dependabot_accepted_risks(dependabot, os.environ['GH_REPO'], commit)
     if str(evidence.get('candidate_run')) != run_id:
         raise ValueError('Evidence must qualify this candidate run, not just its source commit')
     run = gh_json('api', f'repos/{os.environ["GH_REPO"]}/actions/runs/{run_id}')
@@ -81,7 +115,7 @@ def main():
     assets = ROOT / 'out/release-assets'
     assets.parent.mkdir(exist_ok=True)
     assets.mkdir(exist_ok=False)
-    accepted_risks = set()
+    accepted_risks = dependabot_risks
     for artifact in evidence['artifacts']:
         identity = artifact['identity']
         key = f'{identity["profile"]}-{identity["hardware_profile"]}-{identity["architecture"]}'

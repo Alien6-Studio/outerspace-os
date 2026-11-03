@@ -44,7 +44,15 @@ documentation-only changes skip image builds. Runtime and unknown changes run
 the full native qualification on both architectures. Weekly and manual runs
 retain the full campaign; a protected merge does not launch it again. Do not
 rerun a passing campaign unless the code, inputs or an unresolved failure require
-it. Use a failed-job retry only for an identified infrastructure failure.
+it. Use a failed-job retry only for an identified infrastructure failure. Before
+dispatching a manual run, check whether a PR run for the same branch is already
+running. Same-branch manual and PR runs share a concurrency group; GitHub queues
+one pending run and newer pending runs replace older ones, without cancelling the
+running qualification. This avoids overlap but does not reuse its result.
+
+Before qualifying a release change, run `make dependabot-preview` and triage the
+default-branch alerts against the proposed inputs. Candidate builds and draft
+promotion independently recheck live alerts; see the [release process](build/release/README.md).
 
 Keep status and acceptance criteria in GitHub issues and milestones. Attach
 generated evidence to the relevant run or release; do not add progress diaries

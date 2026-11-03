@@ -80,6 +80,8 @@ class CPUServingTests(unittest.TestCase):
                    lambda p: p['spec']['containers'][0]['args'].extend(['--n-gpu-layers', '1']),
                    lambda p: p['spec']['containers'][0]['securityContext'].update(seccompProfile={'type': 'Unconfined'}),
                    lambda p: p['spec']['containers'][0].update(command=['/bin/sh']),
+                   lambda p: p['spec']['containers'][0].pop('startupProbe'),
+                   lambda p: p['spec']['containers'][0]['startupProbe'].update(exec={'command': ['true']}),
                    lambda p: p['spec']['containers'][0].pop('readinessProbe'),
                    lambda p: p['spec']['containers'][0]['readinessProbe'].update(exec={'command': ['true']}),
                    lambda p: p['spec']['containers'][0]['volumeMounts'][0].update(readOnly=False),
@@ -145,7 +147,7 @@ class StartupTests(unittest.TestCase):
         pod['metadata']['uid'] = 'pod-1'
         pod['spec']['nodeName'] = 'oos-test'
         state = {'running': {'startedAt': '2026-10-29T00:00:00Z'}} if self.now >= self.delivery else {'waiting': {'reason': 'ContainerCreating'}}
-        pod['status'] = {'containerStatuses': [{'name': 'server', 'state': state, 'ready': ready,
+        pod['status'] = {'containerStatuses': [{'name': 'server', 'state': state, 'ready': ready, 'started': ready,
                                                 'containerID': 'containerd://1', 'restartCount': 0}],
                          'conditions': [{'type': 'Ready', 'status': 'True' if ready else 'False'}]}
         self.change(deployment, pod)
@@ -214,13 +216,15 @@ class StartupTests(unittest.TestCase):
 
     def test_pod_ready_and_available_deployment_are_both_required(self):
         self.available = 0
-        for missing in ['pod', 'deployment']:
+        for missing in ['pod', 'deployment', 'startup']:
             self.now = 0
             def change(deployment, pod):
                 if missing == 'pod':
                     pod['status']['conditions'][0]['status'] = 'False'
-                else:
+                elif missing == 'deployment':
                     deployment['status']['availableReplicas'] = 0
+                else:
+                    pod['status']['containerStatuses'][0]['started'] = False
             self.change = change
             with self.subTest(missing=missing), self.assertRaisesRegex(TimeoutError, 'token-generation readiness'):
                 self.scenario.ready()

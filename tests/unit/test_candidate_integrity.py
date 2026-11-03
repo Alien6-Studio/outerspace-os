@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (C) 2026 OuterSpace OS contributors
 import importlib.util
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import sys
@@ -125,3 +126,37 @@ class CandidateIntegrityTests(unittest.TestCase):
             (self.bundle / 'link').symlink_to('/etc/passwd')
             with self.assertRaisesRegex(ValueError, 'integrity failure'):
                 self.verify(prepare.sha256(self.inventory))
+
+
+class DependabotPromotionTests(unittest.TestCase):
+    def setUp(self):
+        now = datetime.now(timezone.utc)
+        self.commit = 'a' * 40
+        self.report = {'schema': 1, 'repository': 'owner/repo', 'commit': self.commit,
+                       'default_branch_commit': self.commit, 'preview': False, 'status': 'pass',
+                       'blockers': [], 'evaluated_at': now.isoformat(), 'alerts': [
+                           {'number': 10, 'ghsa': 'GHSA-abcd-2345-6789', 'severity': 'high',
+                            'decision': 'accepted-risk', 'expires_at': (now + timedelta(days=1)).isoformat(),
+                            'review': {'approved_by': 'owner', 'rationale': 'A documented, approved risk.'}}]}
+
+    def test_accepted_risk_is_carried_into_release_notes(self):
+        risks = prepare.dependabot_accepted_risks(self.report, 'owner/repo', self.commit)
+        self.assertEqual(len(risks), 1)
+        self.assertIn('GHSA-abcd-2345-6789', next(iter(risks)))
+        self.assertIn('documented, approved risk', next(iter(risks)))
+
+    def test_rejects_stale_preview_wrong_source_and_unreviewed_high(self):
+        for field, value in [('commit', 'b' * 40), ('preview', True), ('status', 'blocked'),
+                             ('blockers', [10]), ('evaluated_at', '2020-01-01T00:00:00Z')]:
+            report = {**self.report, field: value}
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                prepare.dependabot_accepted_risks(report, 'owner/repo', self.commit)
+        report = {**self.report, 'alerts': [{'decision': 'unreviewed', 'severity': 'high'}]}
+        with self.assertRaisesRegex(ValueError, 'unreviewed'):
+            prepare.dependabot_accepted_risks(report, 'owner/repo', self.commit)
+        report = {**self.report, 'alerts': [{'decision': 'unreviewed'}]}
+        with self.assertRaisesRegex(ValueError, 'Invalid'):
+            prepare.dependabot_accepted_risks(report, 'owner/repo', self.commit)
+        report = {**self.report, 'alerts': [{**self.report['alerts'][0], 'expires_at': '2020-01-01T00:00:00Z'}]}
+        with self.assertRaisesRegex(ValueError, 'expired'):
+            prepare.dependabot_accepted_risks(report, 'owner/repo', self.commit)

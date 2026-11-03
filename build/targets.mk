@@ -1,5 +1,11 @@
 # Image assembly and candidate packaging. Generated files belong in out/.
-.PHONY: builder build package security-gate config-drive
+.PHONY: builder build package security-gate config-drive dependabot-preview
+
+# The API covers GitHub's default branch; preview never qualifies the current PR.
+dependabot-preview:
+	$(PYTHON) build/tools/dependabot_preflight.py --preview \
+	    --repo "$$(gh repo view --json nameWithOwner --jq .nameWithOwner)" \
+	    --commit "$$(git rev-parse HEAD)" --report "$(OUT_DIR)/dependabot-preview.json"
 
 builder:
 	docker build -t "$(OUTERSPACE_BUILDER)" -f build/Dockerfile .

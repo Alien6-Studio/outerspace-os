@@ -55,6 +55,32 @@
       "unresolved_notices": [],
       "notice_resolutions": {},
       "approval_proposal_sha256": "285d57fdaeb194ab1d61ef13bff656def51bc9a85ac872da47575ff31072f52a"
+    },
+    {
+      "materials_sha256": "0f1f053e9a5424a89ccac31f637ee0b4d74641cbe05f622223cae9ba91763be8",
+      "scope": {
+        "hardware_profile": "cpu",
+        "profiles": [
+          "agent",
+          "inference"
+        ],
+        "architectures": [
+          "amd64",
+          "arm64"
+        ]
+      },
+      "approved_by": "Coopyrightdmin",
+      "approved_at": "2026-11-03T09:57:02.361706+00:00",
+      "decision": "redistributable",
+      "rationale": "Approve distribution of this exact reviewed source and original-notice inventory. Ship corresponding-source and original project-source archives alongside each binary and preserve upstream notices, including the original Moby notice. This does not relicense the distribution; GPU firmware, proprietary drivers, model weights and external workload containers are excluded. Every image must independently match these exact materials.",
+      "evidence": [
+        "https://github.com/Alien6-Studio/outerspace-os/pull/62",
+        "https://github.com/kubernetes-sigs/cri-tools/commit/dfd5525ffe74cea9e8368107f15ae22c4219c69b",
+        "https://github.com/moby/moby/blob/c88c10ed4cb6c6a1882ad8dc2ec46468e29dd614/NOTICE",
+        "https://www.apache.org/licenses/LICENSE-2.0"
+      ],
+      "unresolved_notices": [],
+      "notice_resolutions": {}
     }
   ]
 }

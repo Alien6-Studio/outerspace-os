@@ -26,6 +26,12 @@ COMPONENTS = {
                    'binaries': ['containerd', 'ctr', 'containerd-shim-runc-v2']},
     'kubelet': {'module': 'k8s.io/kubernetes', 'binaries': ['kubelet']},
 }
+CONTAINERD_COMPAT = (ROOT / 'tests/integration/containerd-oci-compat.sh',
+                     ROOT / 'tests/integration/containerd_oci_user_bounds_test.go')
+
+
+def compatibility_inputs(component):
+    return {path.name: sha256(path) for path in CONTAINERD_COMPAT} if component == 'containerd' else {}
 
 
 def recipe_path(component='crictl'):
@@ -120,6 +126,7 @@ def verify_receipt(directory, arch, *, packaged=False, component='crictl'):
             or report.get('builder_script_sha256') != sha256(Path(__file__))
             or report.get('extraction_script_sha256') != sha256(Path(runtime_build.__file__))
             or report.get('dependency_script_sha256') != sha256(Path(go_dependencies.__file__))
+            or report.get('compatibility_inputs', {}) != compatibility_inputs(component)
             or report.get('dependency_lock_sha256') != lock['dependency_lock_sha256']
             or report.get('source_inputs') != go_dependencies.build_inputs(
                 go_dependencies.read_lock(lock['dependency_lock_sha256'], component))
@@ -158,7 +165,8 @@ def cache_directory(cache, arch, component='crictl'):
         raise ValueError('Go runtime compilation requires an immutable builder image ID')
     subject = {'architecture': arch, 'builder': builder, 'recipe': sha256(recipe_path(component)),
                'script': sha256(Path(__file__)), 'extractor': sha256(Path(runtime_build.__file__)),
-               'dependencies': sha256(Path(go_dependencies.__file__))}
+               'dependencies': sha256(Path(go_dependencies.__file__)),
+               'compatibility_inputs': compatibility_inputs(component)}
     key = hashlib.sha256(json.dumps(subject, sort_keys=True).encode()).hexdigest()
     return cache / 'go-runtime-builds' / arch / key
 
@@ -202,6 +210,8 @@ def build(cache, output, arch, jobs, component='crictl'):
         inputs = go_dependencies.build_inputs(config)
         if inputs != {n: sha256(source / n) for n in inputs}:
             raise ValueError('Offline vendoring differs from pinned Go dependency update')
+        if component == 'containerd':
+            subprocess.run([str(CONTAINERD_COMPAT[0]), str(source)], env=env, check=True)
         module = COMPONENTS[component]['module']
         if component == 'crictl':
             flags = '-X ' + module + '/pkg/version.Version=v' + lock['source']['version']
@@ -247,6 +257,7 @@ def build(cache, output, arch, jobs, component='crictl'):
                   'builder_script_sha256': sha256(Path(__file__)),
                   'extraction_script_sha256': sha256(Path(runtime_build.__file__)),
                   'dependency_script_sha256': sha256(Path(go_dependencies.__file__)),
+                  'compatibility_inputs': compatibility_inputs(component),
                   'dependency_lock_sha256': lock['dependency_lock_sha256'],
                   'builder_image_id': os.environ['OUTERSPACE_BUILDER_ID'],
                   'command': commands[component], 'commands': commands,

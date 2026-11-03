@@ -8,8 +8,60 @@ on:
         type: string
 permissions:
   contents: read
+concurrency:
+  group: candidate-${{ inputs.tag }}
+  cancel-in-progress: false
 jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    env:
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Validate candidate identity
+        run: |
+          python3 - <<'PY'
+          import os, subprocess, sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('build/tools').resolve()))
+          import release
+          version = Path('VERSION').read_text().strip()
+          assert release.parse_version(version) != 'dev', 'Development snapshots are not candidates'
+          assert os.environ['TAG'] == 'v' + version, 'Tag must match VERSION'
+          assert os.environ['GITHUB_REF'] == 'refs/tags/' + os.environ['TAG'], 'Dispatch this workflow at the candidate tag'
+          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == os.environ['GITHUB_SHA'], 'Workflow and source must be the same revision'
+          PY
+      - name: Review Dependabot alerts before image builds
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_ALERTS_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN" || { echo 'Configure DEPENDABOT_ALERTS_TOKEN with read-only Dependabot alerts access.' >&2; exit 1; }
+          python3 build/tools/dependabot_preflight.py --repo "$GH_REPO" --commit "$GITHUB_SHA" --report out/dependabot-preflight.json
+      - name: Run AMD64 contracts
+        run: make check
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: candidate-dependabot-preflight
+          path: out/dependabot-preflight.json
+          if-no-files-found: ignore
+          retention-days: 30
+  contracts_arm64:
+    needs: preflight
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Run ARM64 contracts
+        run: make check
   build:
+    needs: [preflight, contracts_arm64]
     permissions:
       contents: read
       id-token: write
@@ -31,23 +83,7 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
-      - name: Validate candidate identity
-        env:
-          TAG: ${{ inputs.tag }}
-        run: |
-          python3 - <<'PY'
-          import os, sys
-          from pathlib import Path
-          sys.path.insert(0, str(Path('build/tools').resolve()))
-          import release
-          version = Path('VERSION').read_text().strip()
-          assert release.parse_version(version) != 'dev', 'Development snapshots are not candidates'
-          assert os.environ['TAG'] == 'v' + version, 'Tag must match VERSION'
-          assert os.environ['GITHUB_REF'] == 'refs/tags/' + os.environ['TAG'], 'Dispatch this workflow at the candidate tag'
-          import subprocess
-          assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == os.environ['GITHUB_SHA'], 'Workflow and source must be the same revision'
-          PY
-      - run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu check builder build smoke package
+      - run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu builder build smoke package
       - name: Require the supply-chain release decisions
         run: make PROFILE=${{ matrix.profile }} HARDWARE=cpu security-gate
       - name: Qualify workloads on the exact candidate image

@@ -1,6 +1,6 @@
 # Release and maintenance policy
 
-Current channel: **development**, `0.1.0-dev.1`. No supported production release,
+Current channel: **development**; the root `VERSION` is the version authority. No supported production release,
 public alpha, CIS certification or published performance guarantee exists.
 
 ## Version identity
@@ -57,27 +57,43 @@ cannot waive those minimum gates by changing their descriptions.
 
 ## Build once, qualify, promote the same bytes
 
-1. Prepare a reviewed change on `main` (or later a supported `release/X.Y` branch).
+1. Before marking the release change ready for CI, commit the proposed inputs and
+   run `make dependabot-preview` with an authenticated `gh` account. Review the
+   report at `out/dependabot-preview.json`, including open, dismissed and
+   automatically dismissed Dependabot alerts. The API describes the default
+   branch, not the PR: compare each finding with the proposed inputs and do not
+   treat the preview as a release approval. Complete fixes or obtain a scoped
+   review before launching the expensive image matrix. Reviewers must not dismiss
+   alerts merely to make checks green. For frozen Go runtimes, the report shows
+   the selected target version and GitHub's first patched version as aids to
+   triage; it does not infer that a finding is resolved from those values.
+2. Prepare a reviewed change on `main` (or later a supported `release/X.Y` branch).
    Update VERSION, locked runtimes/hashes, kernel ABI and version-specific notes.
    Define the exact configuration and hardware matrix for this release.
-2. Create an immutable candidate tag after contracts pass. Run **Candidate images**
-   with that existing tag. The Agent/Inference × native amd64/arm64 matrix builds, QEMU-smokes, packages
-   and upload candidate bundles. No release is published by a tag push.
-3. Download those bundles and run the phase-specific tests against these exact
+3. Create an immutable candidate tag after contracts pass. Run **Candidate images**
+   with that existing tag. A single preflight verifies its identity, checks live
+   Dependabot alerts and runs contracts once per native architecture before starting any image job. The
+   Agent/Inference × native amd64/arm64 matrix builds, QEMU-smokes, packages
+   and uploads candidate bundles. Before dispatching, check whether a successful
+   run for this exact tag and commit already has its unexpired artifacts; reuse
+   that run for promotion rather than rebuilding. Same-tag dispatches do not
+   overlap, but GitHub may queue a second run and does not deduplicate it. No
+   release is published by a tag push.
+4. Download those bundles and run the phase-specific tests against these exact
    images. Preserve logs/reports outside the source commit, so evidence can refer
    to that commit without a self-referential Git hash. Record candidate run ID,
    full source SHA and the SHA256 of each bundle's `SHA256SUMS` file.
-4. Complete [evidence.example.json](evidence.example.json). Attach version-specific
+5. Complete [evidence.example.json](evidence.example.json). Attach version-specific
    release notes in its `release_notes` object. They are rendered directly into the draft. A human reviewer
    checks evidence quality; a nonempty URL alone is not proof of compliance.
-5. Run **Prepare draft release** with tag, successful candidate run ID and evidence
-   JSON. It validates all gates, downloads that run's candidates, checks identity,
+6. Run **Prepare draft release** with tag, successful candidate run ID and evidence
+   JSON. It rechecks live Dependabot alerts before promotion, validates all gates, downloads that run's candidates, checks identity,
    bound inventories and every file hash, and prepares a GitHub **draft** release.
    It never rebuilds during promotion and never marks a release public itself.
-6. Inspect the draft, provenance/signature reports, limitations, upgrade directions
+7. Inspect the draft, provenance/signature reports, limitations, upgrade directions
    and support matrix. Publish only after the release owner accepts the evidence.
    Alpha/beta/RC remain GitHub prereleases; stable publication also needs support.
-7. Update the website's displayed version/status and support/download links in a
+8. Update the website's displayed version/status and support/download links in a
    separate `gh-pages` change. Keep directory submissions consistent with reality.
 
 Candidates expire after 30 days in Actions storage. If artifacts have expired,
@@ -85,6 +101,49 @@ build a new candidate and repeat qualification. Do not silently rebuild and reus
 the old evidence. SHA256 inventories alone do not authenticate the publisher;
 the candidate workflow signs them and promotion verifies the trusted provenance.
 Trusted boot still requires separate implementation and qualification before RC.
+
+### Dependabot preflight and scoped reviews
+
+Candidate and draft workflows require the repository secret
+`DEPENDABOT_ALERTS_TOKEN`: use a narrowly scoped fine-grained token with
+repository metadata/contents read, **Dependabot alerts: read**, and
+**Administration: read** to verify that alerts are enabled. Set and
+rotate it in GitHub's secret settings; an installation token expires and should
+not be stored as a long-lived secret. The default Actions token cannot be
+assumed to have that permission. Do not put tokens in source, evidence, logs or PRs. Missing access,
+disabled alerts, API errors, malformed responses and a default-branch change during the query
+stop the release before the image matrix. The preflight compares two REST alert
+inventories with GraphQL state counts before and after; disagreement or changed
+alert details blocks the release and requires a retry. Both APIs depend on
+GitHub’s underlying data and may share the same ingestion delay. Until release-branch alert scoping is
+implemented, the candidate commit must equal the current default-branch head.
+
+The preflight records all active and dismissed alerts and blocks unreviewed
+Critical, High or unknown severity findings at minimum, honoring any stricter
+threshold in `build/security/policy.json`. Medium and Low findings are reported
+for review under the current policy. GitHub's dependency graph is asynchronous and may lag a recent merge;
+this is a separate input to the exact-image Grype and redistribution gates, not
+proof that every dependency is safe or that a proposed PR has fixed an alert.
+Do not start a candidate while its graph is still updating.
+
+Human-approved exceptions belong in `dependabot-reviews.json` and are empty by
+default. Each entry records `number`, `ghsa`, `package`, `manifest`, `severity`,
+`advisory_updated_at`, `alert_updated_at`, `vulnerable_range`, `decision`
+(`not-affected` or `accepted-risk`), `owner`, `approved_by`, `reviewed_at`,
+`expires_at`, a detailed `rationale`, HTTPS `evidence` and `materials`. The
+materials must match the manifest, Ubuntu/source locks and, for frozen Go
+runtimes, the component recipe, dependency lock and build scripts. An absent
+manifest or removed component lock is recorded as `absent` and must remain absent.
+Approvers and the maximum
+30-day lifetime come from `build/security/policy.json`. A changed input, expired
+review, unsupported reviewer or missing evidence blocks the finding again. This
+does not automatically approve a vulnerability or dismiss a GitHub alert; the
+maintainer must inspect the exact executable and obtain the documented review.
+The reviewer name is a repository record, not a cryptographic signature; branch
+protection and the maintainer's review remain necessary.
+Promotion refuses a stale, blocked or wrong-commit preflight report and includes
+explicitly accepted Dependabot risks, reviewer and expiry in the draft release
+notes. A `not-affected` decision is not represented as an accepted risk.
 
 The validator enforces gate status and identity, not the truth of an audit report.
 Repository access and workflow review remain part of release trust. No stable
@@ -112,7 +171,10 @@ reproducibility must not be claimed without passing comparisons.
   Ubuntu snapshot; refresh vulnerability data; preserve logs/inventories and
   reproducibility differences; run contract and boot tests. Snapshot updates
   require a reviewed input-lock change and whole-image requalification.
-  Dependabot proposes Docker base-image and GitHub Actions updates in PRs.
+  Dependabot proposes Docker base-image and GitHub Actions updates in PRs. Its
+  Go security and version update PRs are ignored only for the frozen runtime
+  manifests because they cannot regenerate the complete source locks; alerts
+  remain enabled and must be reviewed by the preflight and maintainers.
 - **Weekly maintainer review:** Ubuntu security notices, kernel ABI, containerd LTS,
   Kubernetes skew/support, Cilium and Dragonfly releases. The custom component lock
   is updated by reviewed PR with upstream digest verification, not Dependabot.

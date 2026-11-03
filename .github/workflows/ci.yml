@@ -9,8 +9,10 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: distribution-${{ github.ref }}
-  cancel-in-progress: true
+  # A manual run and a PR for the same branch share one slot; do not
+  # interrupt a qualification already running. Newer pending runs replace older ones.
+  group: distribution-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: false
 jobs:
   contracts:
     # Drafts are local work in progress. Ready PRs qualify once before the

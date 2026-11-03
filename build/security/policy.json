@@ -34,12 +34,12 @@
       "materials": {
         "build/inputs.lock.json": "4f12cce3cb89d62f53e42e2cf2bd67b4db101772ebb8b1330304da67f68afc1a",
         "build/runtime/dragonfly.lock.json": "5250c7264dea916bb007e6923c90388536ca735b6660f1ee3aad46e6f076c876",
-        "build/runtime/crictl.lock.json": "1cc9655a240cecfacb01693406da2ed242cae5b2d6dd9635ac4201241463b08e",
-        "build/runtime/crictl-dependencies.lock.json": "f98848feb9b4a1c74ecb9740b5b7ebbacb0e34bcd2500cc589333d3640bbf6a2",
+        "build/runtime/crictl.lock.json": "b88d3816789b1c3677327e6f1dd2165de4a98c415bc10fb04a28af040c889d15",
+        "build/runtime/crictl-dependencies.lock.json": "fa64d49373927446b07d90acaf8fdab5fda8c45b85e936b4bab3b11e2f8a299c",
         "build/tools/runtime_build.py": "6420f43ae40c566348e69f51f58bb0a0e0dc8b87857bf3c84c50c6f9819503d8",
         "build/tools/go_runtime_build.py": "2c09fdce0fa307bd305bad2518edd4aa66310bfe163a07a575a2bb9799cfcb6e",
         "build/tools/go_dependencies.py": "96ca6e459a29f3964bb6f4c87a10b2ee25d922a710b891b40d62f30dc8d158d4",
-        "build/sbom/sources.lock.json": "13d80190520bd7eb6192bf901b9eb2e76b2063e413fa35c4457e8f03089f84dd"
+        "build/sbom/sources.lock.json": "0b2e5ae721bc9ed9b7f0c80985c6a569cda4e8de260d8b4f8596664090dfd357"
       },
       "cases": [
         {
@@ -292,6 +292,22 @@
             "build/tools/go_runtime_build.py": "2c09fdce0fa307bd305bad2518edd4aa66310bfe163a07a575a2bb9799cfcb6e"
           },
           "preliminary_evidence": "Agent ARM64 image at commit 6d546c456e2b0f73753f19a1009b3f5d0da641fb; all existing applicable predicates passed in a local simulation."
+        },
+        {
+          "approved_by": "Coopyrightdmin",
+          "approved_at": "2026-11-03T09:57:02.361706+00:00",
+          "reason": "Owner reaffirmed the existing decisions for the upstream crictl change without extending expiry. Each exact candidate image must independently satisfy all applicable source, configuration and binary predicates.",
+          "previous_materials": {
+            "build/runtime/crictl-dependencies.lock.json": "f98848feb9b4a1c74ecb9740b5b7ebbacb0e34bcd2500cc589333d3640bbf6a2",
+            "build/runtime/crictl.lock.json": "1cc9655a240cecfacb01693406da2ed242cae5b2d6dd9635ac4201241463b08e",
+            "build/sbom/sources.lock.json": "13d80190520bd7eb6192bf901b9eb2e76b2063e413fa35c4457e8f03089f84dd"
+          },
+          "updated_materials": {
+            "build/runtime/crictl-dependencies.lock.json": "fa64d49373927446b07d90acaf8fdab5fda8c45b85e936b4bab3b11e2f8a299c",
+            "build/runtime/crictl.lock.json": "b88d3816789b1c3677327e6f1dd2165de4a98c415bc10fb04a28af040c889d15",
+            "build/sbom/sources.lock.json": "0b2e5ae721bc9ed9b7f0c80985c6a569cda4e8de260d8b4f8596664090dfd357"
+          },
+          "preliminary_evidence": "Agent ARM64 alpha.2 image at commit b7b22a8e7217be59e6fcf2c29ca0bde5bf310d24; all applicable kernel and runtime predicates and binary bindings passed a local simulation."
         }
       ]
     }
@@ -315,8 +331,8 @@
         "build/kernel/release-key.gpg": "8467aa3e7270895f8d1e27a274ea37cffffaa8d204eb4cf4991f296a8f12fc6f",
         "build/tools/kernel_build.py": "1d31305535b4a0c8cd1c5af6648ff9e7d14f5e64054e9987b216d393cc921b54",
         "build/tools/kernel_inventory.py": "e3cde8ca4ad4598f9f0032e7a7c31371f39d52d5c4d190737f15c3f562d2a6cd",
-        "build/sbom/sources.lock.json": "13d80190520bd7eb6192bf901b9eb2e76b2063e413fa35c4457e8f03089f84dd",
-        "src/components.lock.json": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7",
+        "build/sbom/sources.lock.json": "0b2e5ae721bc9ed9b7f0c80985c6a569cda4e8de260d8b4f8596664090dfd357",
+        "src/components.lock.json": "f84ff25161ddd302c743222c714f7fe15212b3b33dd781fa14da21de5dda46a3",
         "src/image/mkosi.conf": "9ee1dd3ac0bd397c7fc93db1481c32790dce048592cfebe3921cdedd878baf86",
         "src/image/mkosi.postinst": "e4532f92ca280b3dd7e0f5d8fe908613e808fa293c176b6d827e7ed1403c159c"
       },
@@ -1554,6 +1570,20 @@
             "build/sbom/sources.lock.json": "13d80190520bd7eb6192bf901b9eb2e76b2063e413fa35c4457e8f03089f84dd"
           },
           "preliminary_evidence": "Agent ARM64 image at commit 6d546c456e2b0f73753f19a1009b3f5d0da641fb; all existing applicable predicates passed in a local simulation."
+        },
+        {
+          "approved_by": "Coopyrightdmin",
+          "approved_at": "2026-11-03T09:57:02.361706+00:00",
+          "reason": "Owner reaffirmed the existing decisions for the upstream crictl change without extending expiry. Each exact candidate image must independently satisfy all applicable source, configuration and binary predicates.",
+          "previous_materials": {
+            "build/sbom/sources.lock.json": "13d80190520bd7eb6192bf901b9eb2e76b2063e413fa35c4457e8f03089f84dd",
+            "src/components.lock.json": "23ef1d1bf9b386ae9a04b43eda256ff7543a862666523b9ac6076804b0010fd7"
+          },
+          "updated_materials": {
+            "build/sbom/sources.lock.json": "0b2e5ae721bc9ed9b7f0c80985c6a569cda4e8de260d8b4f8596664090dfd357",
+            "src/components.lock.json": "f84ff25161ddd302c743222c714f7fe15212b3b33dd781fa14da21de5dda46a3"
+          },
+          "preliminary_evidence": "Agent ARM64 alpha.2 image at commit b7b22a8e7217be59e6fcf2c29ca0bde5bf310d24; all applicable kernel and runtime predicates and binary bindings passed a local simulation."
         }
       ]
     }

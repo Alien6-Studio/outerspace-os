@@ -3,11 +3,11 @@
   "component": "crictl",
   "source": {
     "repo": "kubernetes-sigs/cri-tools",
-    "version": "1.36.0",
-    "commit": "88d8ad9d40f82726fda53c2d271e6172b4c619c9",
-    "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/88d8ad9d40f82726fda53c2d271e6172b4c619c9",
-    "sha256": "0e7559231dd55918dd3a488f9ac833e939ef0f7579492d5528a0346260bcaba7",
-    "size": 7433281
+    "version": "1.36.0+outerspace.1",
+    "commit": "dfd5525ffe74cea9e8368107f15ae22c4219c69b",
+    "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/dfd5525ffe74cea9e8368107f15ae22c4219c69b",
+    "sha256": "43306811b1b1a382579500dcf648dc55333888c753ac08b5d6ed8868ea4d2f4a",
+    "size": 7392480
   },
   "go_version": "go1.26.10",
   "go_source": {
@@ -27,5 +27,5 @@
       "size": 63827526
     }
   },
-  "dependency_lock_sha256": "f98848feb9b4a1c74ecb9740b5b7ebbacb0e34bcd2500cc589333d3640bbf6a2"
+  "dependency_lock_sha256": "fa64d49373927446b07d90acaf8fdab5fda8c45b85e936b4bab3b11e2f8a299c"
 }

@@ -24,6 +24,15 @@ class GoRuntimeBuildTests(unittest.TestCase):
                      '\tbuild\tCGO_ENABLED=0\n\tbuild\tGOOS=linux\n'
                      '\tbuild\tGOARCH=arm64\n\tbuild\t-trimpath=true\n')
 
+    def test_crictl_excludes_deprecated_docker_module_and_preserves_timestamp_source(self):
+        config = builder.go_dependencies.read_lock(self.lock['dependency_lock_sha256'])
+        self.assertNotIn('github.com/docker/docker',
+                         {module['path'] for module in config['modules'] + config['graph_metadata']})
+        self.assertNotIn('github.com/docker/docker', builder.go_dependencies.vendor_modules(config))
+        origin = json.loads(builder.sources.LOCK.read_text())['sources']['moby-timestamp-origin']
+        self.assertEqual(origin['source_kind'], 'embedded-upstream-source')
+        self.assertEqual(origin['upstream_commit'], 'c88c10ed4cb6c6a1882ad8dc2ec46468e29dd614')
+
     def test_embedded_compiler_target_and_dependencies(self):
         parsed = builder.build_info(self.info, 'arm64', self.lock)
         self.assertEqual(parsed['modules']['example.org/dependency'], 'v1.0.0')

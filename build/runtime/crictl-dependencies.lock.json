@@ -2,9 +2,9 @@
   "schema": 1,
   "component": "crictl",
   "manifests": {
-    "go.mod": "cf213f97dd6f73480c5273e4c01c1e976dadacea408629b2806b4e69e32a5648",
-    "go.sum": "f9fdc339c329ffbadc2af8865ae0007019461d1266a00630577d687bf22dd897",
-    "vendor/modules.txt": "62fc198a28593c29bd62f8a717d231668b4385affbedcfa19387d92b59e9593a"
+    "go.mod": "fc94e9a3d1336ec65088b102239d28f1da8682accc29208668d1c1b1db235a2e",
+    "go.sum": "3a4ebae6637099079267c652577bb27f701d57432d7ba26b1a0bf823de43c9de",
+    "vendor/modules.txt": "13052f3c0fbdd1280f701f2319421bd999c3725fda0719c6648d044d8c1a30f4"
   },
   "modules": [
     {
@@ -625,29 +625,6 @@
           "url": "https://proxy.golang.org/github.com/distribution/reference/@v/v0.6.0.info",
           "sha256": "8b21131e9cd49777583b8fe8a7479dd54d3473af26b39b9ba8596422854cdd34",
           "size": 198
-        }
-      }
-    },
-    {
-      "path": "github.com/docker/docker",
-      "version": "v28.5.2+incompatible",
-      "sum": "h1:DBX0Y0zAjZbSrm1uzOkdr1onVghKaftjlSWt4AFexzM=",
-      "go_mod_sum": "h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=",
-      "files": {
-        "zip": {
-          "url": "https://proxy.golang.org/github.com/docker/docker/@v/v28.5.2+incompatible.zip",
-          "sha256": "eb2091e8336c55b1996489eccbc01c06b1b9fed028b5b38e0499b49c9fa0d468",
-          "size": 7116652
-        },
-        "mod": {
-          "url": "https://proxy.golang.org/github.com/docker/docker/@v/v28.5.2+incompatible.mod",
-          "sha256": "91fd0ed2743da47a21157d0f6b7685932f54a8c363217e6c5bc67cf223ffd822",
-          "size": 32
-        },
-        "info": {
-          "url": "https://proxy.golang.org/github.com/docker/docker/@v/v28.5.2+incompatible.info",
-          "sha256": "2b6e631e69df7fb00d2f72e4784953926dd639fdde516db1ab0750deb065f81e",
-          "size": 204
         }
       }
     },

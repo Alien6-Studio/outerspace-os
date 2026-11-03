@@ -37,20 +37,20 @@
       }
     },
     "crictl": {
-      "version": "1.36.0",
+      "version": "1.36.0+outerspace.1",
       "binaries": [
         "crictl"
       ],
       "artifacts": {
         "amd64": {
           "source_build": true,
-          "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/88d8ad9d40f82726fda53c2d271e6172b4c619c9",
-          "sha256": "0e7559231dd55918dd3a488f9ac833e939ef0f7579492d5528a0346260bcaba7"
+          "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/dfd5525ffe74cea9e8368107f15ae22c4219c69b",
+          "sha256": "43306811b1b1a382579500dcf648dc55333888c753ac08b5d6ed8868ea4d2f4a"
         },
         "arm64": {
           "source_build": true,
-          "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/88d8ad9d40f82726fda53c2d271e6172b4c619c9",
-          "sha256": "0e7559231dd55918dd3a488f9ac833e939ef0f7579492d5528a0346260bcaba7"
+          "url": "https://codeload.github.com/kubernetes-sigs/cri-tools/tar.gz/dfd5525ffe74cea9e8368107f15ae22c4219c69b",
+          "sha256": "43306811b1b1a382579500dcf648dc55333888c753ac08b5d6ed8868ea4d2f4a"
         }
       }
     },

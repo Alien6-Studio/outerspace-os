@@ -36,6 +36,12 @@ jobs:
         with:
           ref: ${{ inputs.tag }}
           persist-credentials: false
+      - name: Recheck Dependabot alerts before promotion
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_ALERTS_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN" || { echo 'Configure DEPENDABOT_ALERTS_TOKEN with read-only Dependabot alerts access.' >&2; exit 1; }
+          python3 build/tools/dependabot_preflight.py --repo "$GH_REPO" --commit "$(git rev-parse HEAD)" --report out/dependabot-promotion.json
       - name: Load the verifier from this promotion revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

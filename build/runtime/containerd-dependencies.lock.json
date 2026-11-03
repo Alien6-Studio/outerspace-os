@@ -2,9 +2,9 @@
   "schema": 1,
   "component": "containerd",
   "manifests": {
-    "go.mod": "3e74fdefb7f08db16e41951601e5b14e7bdcf3068211d34248a1f75d0a0875a1",
-    "go.sum": "e8c7e54cc04330a80f1d013b190def88b60991c747ab98a03b29fb77e30d34ee",
-    "vendor/modules.txt": "c33ab155869b7dac0af838a07d64121ccbf400684129e2679519f3df4e04ec93"
+    "go.mod": "dfe7d6cc6f1fcf1719d2e5a15f9c6acca96d0269bf665a68ab22b17bbfe14c33",
+    "go.sum": "ac81d928205688e7f08c6bff36e1a4c9f526ae44759151a7071577defe9cdff1",
+    "vendor/modules.txt": "743e7a962c99757defcbff27b4704e77e1d5d7cb5bbcc9cb74fe76ba37261fae"
   },
   "modules": [
     {
@@ -1090,23 +1090,23 @@
     },
     {
       "path": "github.com/cloudflare/circl",
-      "version": "v1.6.2",
-      "sum": "h1:hL7VBpHHKzrV5WTfHCaBsgx/HGbBYlgrwvNXEVDYYsQ=",
+      "version": "v1.6.3",
+      "sum": "h1:9GPOhQGF9MCYUeXyMYlqTR6a5gTrgR/fBLXvUgtVcg8=",
       "go_mod_sum": "h1:2eXP6Qfat4O/Yhh8BznvKnJ+uzEoTQ6jVKJRn81BiS4=",
       "files": {
         "zip": {
-          "url": "https://proxy.golang.org/github.com/cloudflare/circl/@v/v1.6.2.zip",
-          "sha256": "07400ed2808f2324faf1aeca9b5f5539de884d6820ad36453bcefbd96bfd7fc4",
-          "size": 48568648
+          "url": "https://proxy.golang.org/github.com/cloudflare/circl/@v/v1.6.3.zip",
+          "sha256": "9aed6385d52ccd66e0a3b8cc093b5f0e7744640485405dd08c8ef89ef6bbeb06",
+          "size": 48568798
         },
         "mod": {
-          "url": "https://proxy.golang.org/github.com/cloudflare/circl/@v/v1.6.2.mod",
+          "url": "https://proxy.golang.org/github.com/cloudflare/circl/@v/v1.6.3.mod",
           "sha256": "2eeb15c166c5960d63e47e44432e12b93f1ab5ec997d6d61a0deb73d989ab5e5",
           "size": 155
         },
         "info": {
-          "url": "https://proxy.golang.org/github.com/cloudflare/circl/@v/v1.6.2.info",
-          "sha256": "a9b763ead3b4c9a5586179087126d1c4ff4e81b46359f372eb6278cd0117a161",
+          "url": "https://proxy.golang.org/github.com/cloudflare/circl/@v/v1.6.3.info",
+          "sha256": "4688e80f396ca8b71557c76bc1aeab2e2dc90805085ecfdacc00e34e425d4c61",
           "size": 192
         }
       }
@@ -7817,6 +7817,23 @@
           "url": "https://proxy.golang.org/github.com/cilium/ebpf/@v/v0.16.0.mod",
           "sha256": "52f7c88e08ff3f861824d3485f576ed215b1f483b95023fae5e1054cd0ed6915",
           "size": 609
+        }
+      }
+    },
+    {
+      "path": "github.com/cloudflare/circl",
+      "version": "v1.6.2",
+      "go_mod_sum": "h1:2eXP6Qfat4O/Yhh8BznvKnJ+uzEoTQ6jVKJRn81BiS4=",
+      "files": {
+        "mod": {
+          "url": "https://proxy.golang.org/github.com/cloudflare/circl/@v/v1.6.2.mod",
+          "sha256": "2eeb15c166c5960d63e47e44432e12b93f1ab5ec997d6d61a0deb73d989ab5e5",
+          "size": 155
+        },
+        "info": {
+          "url": "https://proxy.golang.org/github.com/cloudflare/circl/@v/v1.6.2.info",
+          "sha256": "a9b763ead3b4c9a5586179087126d1c4ff4e81b46359f372eb6278cd0117a161",
+          "size": 192
         }
       }
     },

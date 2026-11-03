@@ -167,6 +167,8 @@ def evaluate(alerts, reviews, root, policy, now):
         if review and reviewed(record, review, root, policy, now):
             record['decision'] = review['decision']
             record['expires_at'] = review['expires_at']
+            record['review'] = {key: review[key] for key in
+                                ('owner', 'approved_by', 'reviewed_at', 'rationale', 'evidence')}
         records.append(record)
     blockers = [r['number'] for r in records
                 if r['severity'] in blocked_levels and r['decision'] == 'unreviewed']

@@ -138,6 +138,9 @@ does not automatically approve a vulnerability or dismiss a GitHub alert; the
 maintainer must inspect the exact executable and obtain the documented review.
 The reviewer name is a repository record, not a cryptographic signature; branch
 protection and the maintainer's review remain necessary.
+Promotion refuses a stale, blocked or wrong-commit preflight report and includes
+explicitly accepted Dependabot risks, reviewer and expiry in the draft release
+notes. A `not-affected` decision is not represented as an accepted risk.
 
 The validator enforces gate status and identity, not the truth of an audit report.
 Repository access and workflow review remain part of release trust. No stable

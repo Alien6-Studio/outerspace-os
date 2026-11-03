@@ -94,7 +94,10 @@ class DependabotPreflightTests(unittest.TestCase):
         self.assertEqual(result['blockers'], [10])
 
     def test_valid_review_is_exact_scoped_and_expires(self):
-        self.assertEqual(self.evaluate([self.alert], [self.review])['status'], 'pass')
+        result = self.evaluate([self.alert], [self.review])
+        self.assertEqual(result['status'], 'pass')
+        self.assertEqual(result['alerts'][0]['review']['approved_by'], 'reviewer')
+        self.assertEqual(result['alerts'][0]['review']['rationale'], self.review['rationale'])
         for field, value in [('number', 20), ('ghsa', 'GHSA-eeee-ffff-2222'),
                              ('advisory_updated_at', '2026-10-30T00:00:00Z'),
                              ('alert_updated_at', '2026-10-30T00:00:00Z'),

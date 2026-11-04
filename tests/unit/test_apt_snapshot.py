@@ -25,6 +25,10 @@ class AptSnapshotTests(unittest.TestCase):
         self.archive = self.root / 'build/apt-snapshot.tar.gz'
         self.lock = json.loads((self.root / 'build/inputs.lock.json').read_text())
 
+    def test_builder_image_matches_the_frozen_input_lock(self):
+        first_line = (self.root / 'build/Dockerfile').read_text().splitlines()[0]
+        self.assertEqual(first_line, 'FROM ' + self.lock['builder'])
+
     def test_locked_indexes_match_the_ubuntu_release_records(self):
         self.assertEqual(apt_snapshot.validate(self.archive, self.lock),
                          {'snapshot': '20261027T000000Z', 'indexes': 12})

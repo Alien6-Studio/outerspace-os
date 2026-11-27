@@ -1,4 +1,4 @@
-FROM ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852
+FROM ubuntu:24.04@sha256:562111b88caa79c71391c0c4d3c2114a7d5c35915c20561fd893cb1e07929e6b
 
 ENV DEBIAN_FRONTEND=noninteractive
 COPY build/apt.sources /etc/apt/sources.list.d/ubuntu.sources
